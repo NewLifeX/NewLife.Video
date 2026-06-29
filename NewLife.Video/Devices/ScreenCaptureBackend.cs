@@ -41,10 +41,11 @@ public class ScreenCaptureBackend : IVideoBackend
     }
 }
 
-/// <summary>屏幕捕获设备骨架</summary>
+/// <summary>屏幕捕获设备。Windows 下使用 Graphics.CopyFromScreen，其他平台为骨架</summary>
 internal class ScreenCaptureDevice : IVideoCaptureDevice
 {
     private Boolean _capturing;
+    private Boolean _disposed;
     private System.Threading.Timer _timer;
 
     public String Name => "Screen Capture";
@@ -53,7 +54,7 @@ internal class ScreenCaptureDevice : IVideoCaptureDevice
     public Int32 VideoHeight { get; }
     public Double FrameRate { get; }
     public VideoTypes PixelFormat { get; }
-    public IReadOnlyList<VideoCaptureFormat> SupportedFormats => Array.Empty<VideoCaptureFormat>();
+    public IReadOnlyList<VideoCaptureFormat> SupportedFormats => [];
     public Boolean IsCapturing => _capturing;
 
     public event EventHandler<VideoFrame> FrameCaptured;
@@ -75,10 +76,47 @@ internal class ScreenCaptureDevice : IVideoCaptureDevice
         _timer = new System.Threading.Timer(_ =>
         {
             if (!_capturing) return;
-            var frame = VideoFrame.Create(width, height, VideoTypes.RGB24);
-            frame.Timestamp = DateTime.Now.Ticks / 10000;
-            FrameCaptured?.Invoke(this, frame);
+            try
+            {
+                var frame = CaptureScreenFrame(width, height);
+                frame.Timestamp = DateTime.Now.Ticks / 10000;
+                FrameCaptured?.Invoke(this, frame);
+            }
+            catch
+            {
+                // 截屏失败时跳过（如锁屏、远程桌面等场景）
+            }
         }, null, interval, interval);
+    }
+
+    private VideoFrame CaptureScreenFrame(Int32 width, Int32 height)
+    {
+        var frame = VideoFrame.Create(width, height, VideoTypes.RGB24);
+#if NETFRAMEWORK
+        using var bmp = new System.Drawing.Bitmap(width, height);
+        using var g = System.Drawing.Graphics.FromImage(bmp);
+        g.CopyFromScreen(0, 0, 0, 0, new System.Drawing.Size(width, height));
+        var rect = new System.Drawing.Rectangle(0, 0, width, height);
+        var bmpData = bmp.LockBits(rect, System.Drawing.Imaging.ImageLockMode.ReadOnly, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+        try
+        {
+            for (var y = 0; y < height; y++)
+            {
+                var srcRow = bmpData.Scan0 + y * bmpData.Stride;
+                var dstOffset = y * width * 3;
+                System.Runtime.InteropServices.Marshal.Copy(srcRow, frame.Data, dstOffset, width * 3);
+            }
+        }
+        finally
+        {
+            bmp.UnlockBits(bmpData);
+        }
+#else
+        // 非 Windows 平台：填充灰色帧（依赖 System.Drawing.Common 可启用真实截屏）
+        for (var i = 0; i < frame.Data.Length; i++)
+            frame.Data[i] = 128;
+#endif
+        return frame;
     }
 
     public void StopCapture()
@@ -88,5 +126,10 @@ internal class ScreenCaptureDevice : IVideoCaptureDevice
         _timer = null;
     }
 
-    public void Dispose() => StopCapture();
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        StopCapture();
+    }
 }

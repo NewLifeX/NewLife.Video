@@ -2,11 +2,10 @@ using NewLife.Data;
 
 namespace NewLife.Video.Containers;
 
-/// <summary>MKV/WebM (Matroska) 容器读取器骨架。基于 EBML 格式解析</summary>
+/// <summary>MKV/WebM (Matroska) 容器读取器。基于 EBML 格式解析</summary>
 /// <remarks>
-/// MKV 使用 EBML (Extensible Binary Meta Language) 编码。
-/// 关键元素：Segment → Tracks → TrackEntry → Cluster → BlockGroup → Block
-/// 当前为骨架实现，提供 EBML 基本解析能力。
+/// 解析 EBML → Segment → Tracks/TrackEntry → Cluster → SimpleBlock/BlockGroup。
+/// 支持 VP8/VP9/H.264/H.265 编码和 Matroska/WebM 文件。
 /// </remarks>
 public class MkvReader : IVideoContainerReader
 {
@@ -18,7 +17,11 @@ public class MkvReader : IVideoContainerReader
     private Double _frameRate;
     private Int64 _totalFrames;
     private Int64 _duration;
-    private Int64 _segmentDataStart;
+    private Int64 _segmentEnd;
+    private Int64 _clusterPos;
+    private readonly List<BlockEntry> _blocks = [];
+    private Byte[] _trackCodecPrivate;
+    private String _trackCodecId;
 
     public VideoTypes VideoCodecType => _codecType;
     public Int32 VideoWidth => _videoWidth;
@@ -41,56 +44,404 @@ public class MkvReader : IVideoContainerReader
 
     private void ParseEbml()
     {
-        // 验证 EBML 头
-        var header = new Byte[4];
-        if (_stream.Read(header, 0, 4) < 4) throw new InvalidOperationException("无效的 MKV 文件");
-
-        if (header[0] != 0x1A || header[1] != 0x45 || header[2] != 0xDF || header[3] != 0xA3)
-            throw new InvalidOperationException("无效的 EBML 头");
-
         // 跳过 EBML 头，查找 Segment
         _stream.Seek(0, SeekOrigin.Begin);
-        var buffer = new Byte[4096];
-        _stream.Read(buffer, 0, buffer.Length);
 
-        // 查找 Segment 元素 (0x18 0x53 0x80 0x67)
-        for (var i = 0; i < buffer.Length - 8; i++)
+        while (_stream.Position + 4 <= _stream.Length)
         {
-            if (buffer[i] == 0x18 && buffer[i + 1] == 0x53 && buffer[i + 2] == 0x80 && buffer[i + 3] == 0x67)
-            {
-                // 读取 Segment 大小
-                var sizeLen = buffer[i + 4];
-                Int64 size = 0;
-                for (var j = 0; j < sizeLen; j++)
-                    size = (size << 8) | buffer[i + 5 + j];
+            var (id, size) = ReadEbmlElement();
+            if (id == 0) break;
 
-                _segmentDataStart = i + 4 + sizeLen;
-                _totalFrames = size / 5000;
+            if (id == 0x1A45DFA3) // EBML header
+            {
+                _stream.Seek(size, SeekOrigin.Current);
+                continue;
+            }
+            if (id == 0x18538067) // Segment
+            {
+                _segmentEnd = size == Int64.MaxValue ? _stream.Length : _stream.Position + size;
+                ParseSegment();
                 break;
             }
+            // 跳过未知元素
+            if (size <= 0 || _stream.Position + size > _stream.Length) break;
+            _stream.Seek(size, SeekOrigin.Current);
+        }
+    }
+
+    private void ParseSegment()
+    {
+        while (_stream.Position < _segmentEnd)
+        {
+            var pos = _stream.Position;
+            var (id, size) = ReadEbmlElement();
+            if (id == 0) break;
+            var endPos = _stream.Position + size;
+
+            switch (id)
+            {
+                case 0x1549A966: // Info
+                    ParseInfo(size);
+                    break;
+                case 0x1654AE6B: // Tracks
+                    ParseTracks(size);
+                    break;
+                case 0x1F43B675: // Cluster
+                    ParseCluster(size);
+                    break;
+                default:
+                    _stream.Seek(size, SeekOrigin.Current);
+                    break;
+            }
+
+            if (endPos > _segmentEnd) break;
         }
 
-        _stream.Seek(0, SeekOrigin.Begin);
+        _totalFrames = _blocks.Count;
+    }
+
+    private void ParseInfo(Int64 size)
+    {
+        var end = _stream.Position + size;
+        while (_stream.Position < end)
+        {
+            var (id, sz) = ReadEbmlElement();
+            if (id == 0) break;
+
+            if (id == 0x2AD7B1) // TimecodeScale
+            {
+                _frameRate = 1_000_000_000.0 / ReadEbmlUint(sz);
+            }
+            else if (id == 0x4489) // Duration (float)
+            {
+                _duration = (Int64)(ReadEbmlFloat(sz) * 1000);
+            }
+            else _stream.Seek(sz, SeekOrigin.Current);
+
+            if (_stream.Position >= end) break;
+        }
+        _stream.Seek(end, SeekOrigin.Begin);
+    }
+
+    private void ParseTracks(Int64 size)
+    {
+        var end = _stream.Position + size;
+        while (_stream.Position < end)
+        {
+            var (id, sz) = ReadEbmlElement();
+            if (id == 0xAE) // TrackEntry
+            {
+                ParseTrackEntry(sz);
+            }
+            else _stream.Seek(sz, SeekOrigin.Current);
+
+            if (_stream.Position >= end) break;
+        }
+        _stream.Seek(end, SeekOrigin.Begin);
+    }
+
+    private void ParseTrackEntry(Int64 size)
+    {
+        var end = _stream.Position + size;
+        Int64 trackType = 0;
+
+        while (_stream.Position < end)
+        {
+            var (id, sz) = ReadEbmlElement();
+            if (id == 0) break;
+
+            switch (id)
+            {
+                case 0x83: trackType = (Int64)ReadEbmlUint(sz); break; // TrackType
+                case 0x86: _trackCodecId = ReadEbmlString(sz); break; // CodecID
+                case 0xE0: _videoWidth = (Int32)ReadEbmlUint(sz); break; // PixelWidth
+                case 0xBA: _videoHeight = (Int32)ReadEbmlUint(sz); break; // PixelHeight
+                case 0x63A2: _trackCodecPrivate = ReadEbmlBinary(sz); break; // CodecPrivate
+                default: _stream.Seek(sz, SeekOrigin.Current); break;
+            }
+            if (_stream.Position >= end) break;
+        }
+
+        if (trackType == 1) // video
+        {
+            _codecType = _trackCodecId switch
+            {
+                "V_VP8" => VideoTypes.VP8,
+                "V_VP9" => VideoTypes.VP9,
+                "V_MPEG4/ISO/AVC" => VideoTypes.H264,
+                "V_MPEGH/ISO/HEVC" => VideoTypes.H265,
+                _ => VideoTypes.Unknown,
+            };
+        }
+
+        _stream.Seek(end, SeekOrigin.Begin);
+    }
+
+    private void ParseCluster(Int64 size)
+    {
+        var end = _stream.Position + size;
+        Int64 clusterTimecode = 0;
+
+        while (_stream.Position < end)
+        {
+            var (id, sz) = ReadEbmlElement();
+            if (id == 0) break;
+
+            switch (id)
+            {
+                case 0xE7: clusterTimecode = (Int64)ReadEbmlUint(sz); break; // Timecode
+                case 0xA0: // BlockGroup
+                    ParseBlockGroup(sz, clusterTimecode);
+                    break;
+                case 0xA3: // SimpleBlock
+                    ParseSimpleBlock(sz, clusterTimecode);
+                    break;
+                default:
+                    _stream.Seek(sz, SeekOrigin.Current);
+                    break;
+            }
+            if (_stream.Position >= end) break;
+        }
+
+        _stream.Seek(end, SeekOrigin.Begin);
+    }
+
+    private void ParseSimpleBlock(Int64 size, Int64 clusterTimecode)
+    {
+        var start = _stream.Position;
+        var trackNumber = ReadEbmlVint();       // Track Number
+        var timecode = ReadInt16BE();            // Timecode (relative to cluster)
+        var flags = _stream.ReadByte();          // flags
+        var dataLen = (Int32)(size - (_stream.Position - start));
+
+        if (dataLen > 0 && dataLen < 100 * 1024 * 1024)
+        {
+            var data = new Byte[dataLen];
+            _stream.Read(data, 0, dataLen);
+            _blocks.Add(new BlockEntry
+            {
+                Data = data,
+                PTS = clusterTimecode + timecode,
+                IsKeyFrame = (flags & 0x80) != 0,
+            });
+        }
+
+        _stream.Seek(start + size, SeekOrigin.Begin);
+    }
+
+    private void ParseBlockGroup(Int64 size, Int64 clusterTimecode)
+    {
+        var end = _stream.Position + size;
+        Byte[] blockData = null;
+        Int64 blockPts = clusterTimecode;
+        Boolean isKeyFrame = true;
+
+        while (_stream.Position < end)
+        {
+            var (id, sz) = ReadEbmlElement();
+            if (id == 0) break;
+
+            if (id == 0xA1) // Block
+            {
+                var blockStart = _stream.Position;
+                ReadEbmlVint(); // track number
+                var timecode = ReadInt16BE();
+                var flags = _stream.ReadByte();
+                var dataLen = (Int32)(sz - (_stream.Position - blockStart));
+                if (dataLen > 0 && dataLen < 100 * 1024 * 1024)
+                {
+                    blockData = new Byte[dataLen];
+                    _stream.Read(blockData, 0, dataLen);
+                    blockPts = clusterTimecode + timecode;
+                    isKeyFrame = (flags & 0x80) == 0;
+                }
+            }
+            else _stream.Seek(sz, SeekOrigin.Current);
+
+            if (_stream.Position >= end) break;
+        }
+
+        if (blockData != null)
+        {
+            _blocks.Add(new BlockEntry
+            {
+                Data = blockData,
+                PTS = blockPts,
+                IsKeyFrame = isKeyFrame,
+            });
+        }
+
+        _stream.Seek(end, SeekOrigin.Begin);
     }
 
     public VPacket ReadFrame()
     {
-        if (_stream.Position >= _stream.Length) return null;
-
-        // 骨架: 简单读取固定大小数据块
-        var data = new Byte[4096];
-        var read = _stream.Read(data, 0, data.Length);
-        if (read <= 0) return null;
+        if (_frameIndex >= _blocks.Count) return null;
+        var block = _blocks[(Int32)_frameIndex];
 
         return new VPacket
         {
-            Data = new Packet(data, 0, read),
+            Data = new Packet(block.Data),
             CodecType = _codecType,
-            PTS = _frameIndex * 40,
+            PTS = block.PTS,
             FrameIndex = _frameIndex++,
+            IsKeyFrame = block.IsKeyFrame,
         };
     }
 
-    public Boolean SeekFrame(Int64 frameIndex) { _frameIndex = frameIndex; return true; }
+    public Boolean SeekFrame(Int64 frameIndex)
+    {
+        if (frameIndex < 0 || frameIndex >= _blocks.Count) return false;
+        _frameIndex = frameIndex;
+        return true;
+    }
+
     public void Dispose() => _stream?.Dispose();
+
+    #region EBML 工具
+
+    private (UInt32 Id, Int64 Size) ReadEbmlElement()
+    {
+        var first = _stream.ReadByte();
+        if (first < 0) return (0, 0);
+
+        // EBML VINT 编码：检查首字节是否有前导 1（否则为原始 4 字节 ID）
+        UInt32 id;
+        if ((first & 0x80) != 0)
+        {
+            var idLen = 1;
+            var mask = (Byte)first;
+            while ((mask & 0x40) != 0) { mask <<= 1; idLen++; }
+
+            id = (UInt32)(first & (0x7F >> (idLen - 1)));
+            for (var i = 1; i < idLen; i++)
+            {
+                var b = _stream.ReadByte();
+                if (b < 0) return (0, 0);
+                id = (id << 8) | (UInt32)b;
+            }
+        }
+        else
+        {
+            // 兼容原始 4 字节 ID（MkvWriter 产生的格式）
+            id = (UInt32)first;
+            for (var i = 0; i < 3; i++)
+            {
+                var b = _stream.ReadByte();
+                if (b < 0) return (0, 0);
+                id = (id << 8) | (UInt32)b;
+            }
+        }
+
+        // 读取 Element Size (EBML VINT)
+        first = _stream.ReadByte();
+        if (first < 0) return (0, 0);
+
+        var sizeLen = 1;
+        var mask2 = (Byte)first;
+        while ((mask2 & 0x80) == 0) { mask2 <<= 1; sizeLen++; }
+
+        Int64 size = (first & (0xFF >> sizeLen));
+        for (var i = 1; i < sizeLen; i++)
+        {
+            var b = _stream.ReadByte();
+            if (b < 0) return (0, 0);
+            size = (size << 8) | b;
+        }
+
+        // Unknown size: all 1s
+        if ((first & (0xFF >> (sizeLen - 1))) == (0xFF >> (sizeLen - 1)))
+        {
+            var allOnes = true;
+            for (var i = 0; i < sizeLen - 1; i++)
+                if (((size >> (i * 8)) & 0xFF) != 0xFF) allOnes = false;
+            if (allOnes && sizeLen > 1) size = Int64.MaxValue;
+        }
+
+        return (id, size);
+    }
+
+    private Int64 ReadEbmlVint()
+    {
+        var first = _stream.ReadByte();
+        if (first < 0) return 0;
+
+        var len = 1;
+        var mask = (Byte)first;
+        while ((mask & 0x80) == 0) { mask <<= 1; len++; }
+
+        Int64 value = (first & (0xFF >> len));
+        for (var i = 1; i < len; i++)
+        {
+            var b = _stream.ReadByte();
+            if (b < 0) break;
+            value = (value << 8) | b;
+        }
+        return value;
+    }
+
+    private UInt64 ReadEbmlUint(Int64 size)
+    {
+        if (size <= 0 || size > 8) return 0;
+        UInt64 value = 0;
+        for (var i = 0; i < size; i++)
+        {
+            var b = _stream.ReadByte();
+            if (b < 0) break;
+            value = (value << 8) | (UInt64)b;
+        }
+        return value;
+    }
+
+    private Double ReadEbmlFloat(Int64 size)
+    {
+        if (size == 4)
+        {
+            var bytes = new Byte[4];
+            _stream.Read(bytes, 0, 4);
+            if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
+            return BitConverter.ToSingle(bytes, 0);
+        }
+        if (size == 8)
+        {
+            var bytes = new Byte[8];
+            _stream.Read(bytes, 0, 8);
+            if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
+            return BitConverter.ToDouble(bytes, 0);
+        }
+        return 0;
+    }
+
+    private String ReadEbmlString(Int64 size)
+    {
+        if (size <= 0 || size > 4096) return "";
+        var bytes = new Byte[size];
+        _stream.Read(bytes, 0, (Int32)size);
+        return System.Text.Encoding.ASCII.GetString(bytes).TrimEnd('\0');
+    }
+
+    private Byte[] ReadEbmlBinary(Int64 size)
+    {
+        if (size <= 0 || size > 1024 * 1024) return [];
+        var bytes = new Byte[size];
+        _stream.Read(bytes, 0, (Int32)size);
+        return bytes;
+    }
+
+    private Int16 ReadInt16BE()
+    {
+        var hi = _stream.ReadByte();
+        var lo = _stream.ReadByte();
+        return (Int16)((hi << 8) | lo);
+    }
+
+    private sealed class BlockEntry
+    {
+        public Byte[] Data;
+        public Int64 PTS;
+        public Boolean IsKeyFrame;
+    }
+
+    #endregion
 }
+

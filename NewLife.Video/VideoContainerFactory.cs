@@ -62,15 +62,15 @@ public static class VideoContainerFactory
         {
             // MP4: ftyp 盒通常从偏移 4 开始
             if (read >= 8 && magic[4] == 'f' && magic[5] == 't' && magic[6] == 'y' && magic[7] == 'p')
-                throw new NotSupportedException("MP4 容器读取器实现中，请使用 .mp4 扩展名或显式构造 Mp4Reader");
+                return new Mp4Reader(filePath);
 
             // FLV: "FLV" 魔术字节
             if (magic[0] == 'F' && magic[1] == 'L' && magic[2] == 'V')
-                throw new NotSupportedException("FLV 容器读取器实现中，请使用 .flv 扩展名或显式构造 FlvReader");
+                return new FlvReader(filePath);
 
             // RIFF (AVI)
             if (magic[0] == 'R' && magic[1] == 'I' && magic[2] == 'F' && magic[3] == 'F')
-                throw new NotSupportedException("AVI 容器读取器实现中，请使用 .avi 扩展名或显式构造 AviReader");
+                return new AviReader(filePath);
         }
 
         // 回退：当作原始 YUV420P 数据

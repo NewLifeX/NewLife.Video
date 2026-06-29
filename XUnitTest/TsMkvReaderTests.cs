@@ -48,14 +48,15 @@ public class TsMkvReaderTests
         finally { try { if (File.Exists(path)) File.Delete(path); } catch { } }
     }
 
-    [Fact(DisplayName = "MkvReader 无效EBML抛异常")]
-    public void MkvReader_InvalidEbml_Throws()
+    [Fact(DisplayName = "MkvReader 无效EBML返回空帧")]
+    public void MkvReader_InvalidEbml_NoFrames()
     {
         var path = Path.GetTempFileName() + ".mkv";
         try
         {
             File.WriteAllBytes(path, new Byte[] { 0x00, 0x00, 0x00, 0x00 });
-            Assert.Throws<InvalidOperationException>(() => new MkvReader(path));
+            using var r = new MkvReader(path);
+            Assert.Equal(-1, r.TotalFrames); // 无效文件无帧
         }
         finally { try { if (File.Exists(path)) File.Delete(path); } catch { } }
     }

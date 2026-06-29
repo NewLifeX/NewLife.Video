@@ -63,33 +63,17 @@ public class MkvWriter : IVideoContainerWriter
         WriteEbmlId(_stream, 0x18538067);
         WriteBytes(_stream, new Byte[] { 0x01, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF });
 
-        // Info
+        // Info — 预计算大小，不依赖回填
         WriteEbmlId(_stream, 0x1549A966);
-        _infoSizePos = _stream.Position;
-        WriteEbmlSize(_stream, 0); // placeholder
-        var infoStart = _stream.Position;
-        WriteEbmlUint(_stream, 0x2AD7B1, 1000000);  // TimecodeScale (1ms)
-        WriteEbmlFloat(_stream, 0x4489, 25.0);        // Duration (placeholder)
-        WriteEbmlString(_stream, 0x4D80, "NewLife.Video");
-        WriteEbmlString(_stream, 0x5741, "NewLife.Video MkvWriter");
-        var infoSize = (UInt64)(_stream.Position - infoStart);
-        var cur = _stream.Position;
-        _stream.Seek(_infoSizePos, SeekOrigin.Begin);
-        WriteEbmlSize(_stream, infoSize);
-        _stream.Seek(cur, SeekOrigin.Begin);
+        var infoContent = BuildInfoContent();
+        WriteEbmlSize(_stream, (UInt64)infoContent.Length);
+        _stream.Write(infoContent, 0, infoContent.Length);
 
-        // Tracks
+        // Tracks — 预计算内容
+        var tracksContent = BuildTracksContent();
         WriteEbmlId(_stream, 0x1654AE6B);
-        WriteEbmlSize(_stream, 40);
-        WriteEbmlId(_stream, 0xAE); // TrackEntry
-        WriteEbmlSize(_stream, 30);
-        WriteEbmlUint(_stream, 0xD7, 1);       // TrackNumber
-        WriteEbmlUint(_stream, 0x73C5, 1);     // TrackUID
-        WriteEbmlUint(_stream, 0x83, 1);       // TrackType = video
-        WriteEbmlUint(_stream, 0x9C, 0);       // FlagLacing
-        WriteEbmlString(_stream, 0x86, _codecType == VideoTypes.VP9 ? "V_VP9" : _codecType == VideoTypes.VP8 ? "V_VP8" : "V_MPEG4/ISO/AVC");
-        WriteEbmlUint(_stream, 0xE0, (UInt64)_width);  // PixelWidth
-        WriteEbmlUint(_stream, 0xBA, (UInt64)_height); // PixelHeight
+        WriteEbmlSize(_stream, (UInt64)tracksContent.Length);
+        _stream.Write(tracksContent, 0, tracksContent.Length);
 
         _headerWritten = true;
     }
@@ -104,14 +88,95 @@ public class MkvWriter : IVideoContainerWriter
 
     #region EBML 工具
 
-    private Int64 _infoSizePos;
+    private Byte[] BuildInfoContent()
+    {
+        using var ms = new System.IO.MemoryStream(256);
+        WriteEbmlUintToStream(ms, 0x2AD7B1, 1_000_000);  // TimecodeScale (1ms)
+        WriteEbmlFloatToStream(ms, 0x4489, 0.0);           // Duration (unknown)
+        WriteEbmlStringToStream(ms, 0x4D80, "NewLife.Video");
+        WriteEbmlStringToStream(ms, 0x5741, "MkvWriter");
+        return ms.ToArray();
+    }
+
+    private Byte[] BuildTracksContent()
+    {
+        using var ms = new System.IO.MemoryStream(256);
+        // TrackEntry
+        var trackEntryContent = BuildTrackEntryContent();
+        WriteEbmlIdToStream(ms, 0xAE);
+        WriteEbmlSizeToStream(ms, (UInt64)trackEntryContent.Length);
+        ms.Write(trackEntryContent, 0, trackEntryContent.Length);
+        return ms.ToArray();
+    }
+
+    private Byte[] BuildTrackEntryContent()
+    {
+        using var ms = new System.IO.MemoryStream(256);
+        var codecId = _codecType == VideoTypes.VP9 ? "V_VP9" : _codecType == VideoTypes.VP8 ? "V_VP8" : "V_MPEG4/ISO/AVC";
+        WriteEbmlUintToStream(ms, 0xD7, 1);           // TrackNumber
+        WriteEbmlUintToStream(ms, 0x73C5, 1);         // TrackUID
+        WriteEbmlUintToStream(ms, 0x83, 1);           // TrackType = video
+        WriteEbmlUintToStream(ms, 0x9C, 0);           // FlagLacing
+        WriteEbmlStringToStream(ms, 0x86, codecId);   // CodecID
+        WriteEbmlUintToStream(ms, 0xE0, (UInt64)_width);  // PixelWidth
+        WriteEbmlUintToStream(ms, 0xBA, (UInt64)_height); // PixelHeight
+        return ms.ToArray();
+    }
+
+    private void WriteEbmlUintToStream(System.IO.MemoryStream ms, UInt32 id, UInt64 value)
+    {
+        WriteEbmlIdToStream(ms, id);
+        var sz = value < 0x100 ? 1 : value < 0x10000 ? 2 : value < 0x1000000 ? 3 : 4;
+        WriteEbmlSizeToStream(ms, (UInt64)sz);
+        for (var i = sz - 1; i >= 0; i--)
+            ms.WriteByte((Byte)(value >> (i * 8)));
+    }
+
+    private void WriteEbmlFloatToStream(System.IO.MemoryStream ms, UInt32 id, Double value)
+    {
+        WriteEbmlIdToStream(ms, id);
+        WriteEbmlSizeToStream(ms, 8);
+        var bytes = BitConverter.GetBytes(value);
+        if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
+        ms.Write(bytes, 0, 8);
+    }
+
+    private void WriteEbmlStringToStream(System.IO.MemoryStream ms, UInt32 id, String value)
+    {
+        var b = System.Text.Encoding.ASCII.GetBytes(value);
+        WriteEbmlIdToStream(ms, id);
+        WriteEbmlSizeToStream(ms, (UInt64)b.Length);
+        ms.Write(b, 0, b.Length);
+    }
+
+    private static void WriteEbmlIdToStream(System.IO.MemoryStream ms, UInt32 id)
+    {
+        ms.WriteByte((Byte)(id >> 24));
+        ms.WriteByte((Byte)(id >> 16));
+        ms.WriteByte((Byte)(id >> 8));
+        ms.WriteByte((Byte)id);
+    }
+
+    private static void WriteEbmlSizeToStream(System.IO.MemoryStream ms, UInt64 size)
+    {
+        if (size == UInt64.MaxValue) { ms.WriteByte(0x01); for (var i = 0; i < 7; i++) ms.WriteByte(0xFF); return; }
+        if (size < 0x7F) { ms.WriteByte((Byte)(0x80 | size)); return; }
+        var len = 1;
+        var temp = size;
+        while (temp > 0) { temp >>= 8; len++; }
+        if (len > 8) len = 8;
+        ms.WriteByte((Byte)(0x80 | (len - 1)));
+        for (var i = len - 2; i >= 0; i--)
+            ms.WriteByte((Byte)(size >> (i * 8)));
+    }
 
     private static void WriteEbmlId(FileStream fs, UInt32 id)
     {
-        if (id >= 0x10000000) { fs.WriteByte((Byte)(id >> 24)); fs.WriteByte((Byte)(id >> 16)); fs.WriteByte((Byte)(id >> 8)); fs.WriteByte((Byte)id); }
-        else if (id >= 0x100000) { fs.WriteByte((Byte)(id >> 16)); fs.WriteByte((Byte)(id >> 8)); fs.WriteByte((Byte)id); }
-        else if (id >= 0x1000) { fs.WriteByte((Byte)(id >> 8)); fs.WriteByte((Byte)id); }
-        else fs.WriteByte((Byte)id);
+        // 统一 4 字节原始 ID（兼容 MkvReader）
+        fs.WriteByte((Byte)(id >> 24));
+        fs.WriteByte((Byte)(id >> 16));
+        fs.WriteByte((Byte)(id >> 8));
+        fs.WriteByte((Byte)id);
     }
 
     private static void WriteEbmlSize(FileStream fs, UInt64 size)
