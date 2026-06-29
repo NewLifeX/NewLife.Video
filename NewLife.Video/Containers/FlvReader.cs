@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Containers;
@@ -72,14 +73,15 @@ public class FlvReader : IVideoContainerReader
         if (header[0] != 'F' || header[1] != 'L' || header[2] != 'V')
             throw new InvalidOperationException("不是有效的 FLV 文件");
 
-        var flags = header[4];
+        var reader = new SpanReader(header) { IsLittleEndian = false };
+        reader.ReadBytes(4); // 跳过签名 + 版本
+        var flags = reader.ReadByte();
         var hasVideo = (flags & 0x01) != 0;
-        var hasAudio = (flags & 0x04) != 0;
 
         if (!hasVideo)
             throw new NotSupportedException("FLV 文件中没有视频轨");
 
-        var dataOffset = (header[5] << 24) | (header[6] << 16) | (header[7] << 8) | header[8];
+        var dataOffset = reader.ReadUInt32();
 
         // 跳过到第一个标签
         _stream.Seek(dataOffset, SeekOrigin.Begin);
@@ -95,22 +97,28 @@ public class FlvReader : IVideoContainerReader
 
         try
         {
+            var tagHeader = new Byte[11]; // 循环外分配，复用
             while (_stream.Position < fileLength - 11)
             {
                 // 跳过 PreviousTagSize (4字节)
                 _stream.Seek(4, SeekOrigin.Current);
 
-                var tagHeader = new Byte[11];
                 if (_stream.Read(tagHeader, 0, 11) < 11) break;
+                var tagReader = new SpanReader(tagHeader) { IsLittleEndian = false };
 
-                var tagType = tagHeader[0];
-                var dataSize = (tagHeader[1] << 16) | (tagHeader[2] << 8) | tagHeader[3];
-                var timestamp = (tagHeader[4] << 16) | (tagHeader[5] << 8) | tagHeader[6] | (tagHeader[7] << 24);
+                var tagType = tagReader.ReadByte();
+                // DataSize: 3 字节大端
+                var dataSize = ((Int32)tagReader.ReadByte() << 16) | ((Int32)tagReader.ReadByte() << 8) | tagReader.ReadByte();
+                // Timestamp: 3 字节大端 + 1 字节扩展
+                var tsLow = ((UInt32)tagReader.ReadByte() << 16) | ((UInt32)tagReader.ReadByte() << 8) | tagReader.ReadByte();
+                var tsHigh = (UInt32)tagReader.ReadByte();
+                var timestamp = (Int64)(tsLow | (tsHigh << 24));
+                var frameTypeAndCodec = tagReader.ReadByte();
 
                 if (tagType == 9) // 视频标签
                 {
-                    var frameType = (tagHeader[8] >> 4) & 0x0F; // 前 4 位为帧类型
-                    var codecId = tagHeader[8] & 0x0F;           // 后 4 位为编码 ID
+                    var frameType = (frameTypeAndCodec >> 4) & 0x0F;
+                    var codecId = frameTypeAndCodec & 0x0F;
 
                     if (frameType == 1) // 关键帧
                     {
@@ -185,7 +193,8 @@ public class FlvReader : IVideoContainerReader
         var offset = 4 + 8;
         for (var i = 0; i < numSps && offset + 2 < data.Length; i++)
         {
-            var spsLen = (data[offset] << 8) | data[offset + 1];
+            var reader = new SpanReader(data, offset) { IsLittleEndian = false };
+            var spsLen = reader.ReadUInt16();
             offset += 2;
 
             if (offset + spsLen <= data.Length && spsLen > 4)
@@ -231,25 +240,31 @@ public class FlvReader : IVideoContainerReader
     /// <summary>读取下一帧</summary>
     public VPacket ReadFrame()
     {
+        var tagHeader = new Byte[11]; // 循环外分配，复用
         while (_stream.Position < _stream.Length - 11)
         {
             // 跳过 PreviousTagSize
             _stream.Seek(4, SeekOrigin.Current);
 
-            var tagHeader = new Byte[11];
             if (_stream.Read(tagHeader, 0, 11) < 11) return null;
+            var tagReader = new SpanReader(tagHeader) { IsLittleEndian = false };
 
-            var tagType = tagHeader[0];
-            var dataSize = (tagHeader[1] << 16) | (tagHeader[2] << 8) | tagHeader[3];
-            var timestamp = (tagHeader[4] << 16) | (tagHeader[5] << 8) | tagHeader[6] | (tagHeader[7] << 24);
+            var tagType = tagReader.ReadByte();
+            // DataSize: 3 字节大端
+            var dataSize = ((Int32)tagReader.ReadByte() << 16) | ((Int32)tagReader.ReadByte() << 8) | tagReader.ReadByte();
+            // Timestamp: 3 字节大端 + 1 字节扩展
+            var tsLow = ((UInt32)tagReader.ReadByte() << 16) | ((UInt32)tagReader.ReadByte() << 8) | tagReader.ReadByte();
+            var tsHigh = (UInt32)tagReader.ReadByte();
+            var timestamp = (Int64)(tsLow | (tsHigh << 24));
+            var frameTypeAndCodec = tagReader.ReadByte();
 
             if (dataSize <= 0 || dataSize > _stream.Length - _stream.Position)
                 return null;
 
             if (tagType == 9) // 视频标签
             {
-                var frameType = (tagHeader[8] >> 4) & 0x0F;
-                var codecId = tagHeader[8] & 0x0F;
+                var frameType = (frameTypeAndCodec >> 4) & 0x0F;
+                var codecId = frameTypeAndCodec & 0x0F;
 
                 var videoData = new Byte[dataSize];
                 var read = _stream.Read(videoData, 0, dataSize);

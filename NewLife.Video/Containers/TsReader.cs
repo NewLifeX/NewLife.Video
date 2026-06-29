@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Containers;
@@ -46,14 +47,20 @@ public class TsReader : IVideoContainerReader
         {
             if (packet[0] != 0x47) break; // 同步字节
 
-            var pid = ((packet[1] & 0x1F) << 8) | packet[2];
-            var hasPayload = (packet[3] & 0x10) != 0;
-            var adaptationFieldLen = (packet[3] & 0x20) != 0 ? packet[4] + 1 : 0;
+            var reader = new SpanReader(packet);
+            reader.ReadByte(); // sync byte
+            var b1 = reader.ReadByte();
+            var pid = ((b1 & 0x1F) << 8) | reader.ReadByte();
+            var b3 = reader.ReadByte();
+            var hasPayload = (b3 & 0x10) != 0;
+            var adaptationFieldLen = (b3 & 0x20) != 0 ? reader.ReadByte() + 1 : 0;
+            // payloadOffset 从 TS 头后(4)开始 + adaptation
             var payloadOffset = 4 + adaptationFieldLen;
 
             if (pid == 0 && hasPayload && payloadOffset < 188)
             {
                 // PAT: 提取 PMT PID
+                // reader is past the 4-byte header; need payload-relative access
                 var sectionLen = ((packet[payloadOffset + 1] & 0x0F) << 8) | packet[payloadOffset + 2];
                 if (payloadOffset + 8 + 4 <= 188)
                 {
@@ -83,10 +90,14 @@ public class TsReader : IVideoContainerReader
         {
             if (packet[0] != 0x47) return null;
 
-            var pid = ((packet[1] & 0x1F) << 8) | packet[2];
-            var payloadStart = (packet[1] & 0x40) != 0;
-            var hasPayload = (packet[3] & 0x10) != 0;
-            var adaptationLen = (packet[3] & 0x20) != 0 ? packet[4] + 1 : 0;
+            var reader = new SpanReader(packet);
+            reader.ReadByte(); // sync
+            var b1 = reader.ReadByte();
+            var pid = ((b1 & 0x1F) << 8) | reader.ReadByte();
+            var payloadStart = (b1 & 0x40) != 0;
+            var b3 = reader.ReadByte();
+            var hasPayload = (b3 & 0x10) != 0;
+            var adaptationLen = (b3 & 0x20) != 0 ? reader.ReadByte() + 1 : 0;
             var payloadOffset = 4 + adaptationLen;
 
             if (pid == _videoPid && hasPayload && payloadOffset < 188)

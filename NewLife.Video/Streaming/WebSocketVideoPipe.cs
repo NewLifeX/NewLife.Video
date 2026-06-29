@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 using System.Net.WebSockets;
 using System.Text;
@@ -31,10 +32,8 @@ public class WebSocketVideoPipe
 
         var data = packet.Data.ToArray();
         var lengthPrefix = new Byte[4];
-        lengthPrefix[0] = (Byte)(data.Length >> 24);
-        lengthPrefix[1] = (Byte)(data.Length >> 16);
-        lengthPrefix[2] = (Byte)(data.Length >> 8);
-        lengthPrefix[3] = (Byte)(data.Length);
+        var lw = new SpanWriter(lengthPrefix) { IsLittleEndian = false };
+        lw.Write(data.Length);
 
         // 发送长度前缀
         await _socket.SendAsync(new ArraySegment<Byte>(lengthPrefix), WebSocketMessageType.Binary, false, CancellationToken.None);
@@ -52,7 +51,8 @@ public class WebSocketVideoPipe
         var result = await _socket.ReceiveAsync(new ArraySegment<Byte>(lengthBuffer), CancellationToken.None);
         if (result.MessageType == WebSocketMessageType.Close) return null;
 
-        var dataLength = (lengthBuffer[0] << 24) | (lengthBuffer[1] << 16) | (lengthBuffer[2] << 8) | lengthBuffer[3];
+        var lr = new SpanReader(lengthBuffer) { IsLittleEndian = false };
+        var dataLength = (Int32)lr.ReadUInt32();
         if (dataLength <= 0 || dataLength > 100 * 1024 * 1024) return null; // 最大 100MB
 
         // 读取数据

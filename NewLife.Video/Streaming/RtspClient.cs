@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 using System.Net.Sockets;
 using System.Text;
@@ -111,7 +112,8 @@ public class RtspClient : IDisposable
         if (header[0] == '$')
         {
             var channel = header[1];
-            var length = (header[2] << 8) | header[3];
+            var hr = new SpanReader(header, 2) { IsLittleEndian = false };
+            var length = hr.ReadUInt16();
             if (length <= 0 || length > 65535) return null;
 
             var data = new Byte[length];

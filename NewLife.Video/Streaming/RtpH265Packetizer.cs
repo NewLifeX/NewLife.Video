@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Streaming;
@@ -89,11 +90,11 @@ public class RtpH265Packetizer
                 fuHeader |= 0x4000; // End bit (bit 14)
 
             var fuData = new Byte[4 + length];
-            fuData[0] = (Byte)(fuIndicator >> 8);
-            fuData[1] = (Byte)(fuIndicator & 0xFF);
-            fuData[2] = (Byte)(fuHeader >> 8);
-            fuData[3] = (Byte)(fuHeader & 0xFF);
-            Array.Copy(nal, start, fuData, 4, length);
+            var fw = new SpanWriter(fuData) { IsLittleEndian = false };
+            fw.Write(fuIndicator);
+            fw.Write(fuHeader);
+            nal.AsSpan(start, length).CopyTo(fw.GetSpan(length));
+            fw.Advance(length);
 
             packets.Add(new RtpPacket
             {
@@ -158,17 +159,16 @@ public class RtpH265Packetizer
             }
             else if (nalType == 48) // AP (聚合包)
             {
-                var offset = 2;
-                while (offset + 2 <= packet.Data.Length)
+                var sr = new SpanReader(packet.Data, 2) { IsLittleEndian = false };
+                while (sr.Capacity - sr.Position >= 2)
                 {
-                    var nalSize = (packet.Data[offset] << 8) | packet.Data[offset + 1];
-                    offset += 2;
-                    if (nalSize == 0 || offset + nalSize > packet.Data.Length) break;
+                    var nalSize = sr.ReadUInt16();
+                    if (nalSize == 0 || sr.Capacity - sr.Position < nalSize) break;
 
-                    var nal = new Byte[nalSize];
-                    Array.Copy(packet.Data, offset, nal, 0, nalSize);
+                    var nalSpan = packet.Data.AsSpan((Int32)sr.Position, nalSize);
+                    var nal = nalSpan.ToArray();
                     nals.Add(nal);
-                    offset += nalSize;
+                    sr.ReadBytes(nalSize);
                 }
             }
         }

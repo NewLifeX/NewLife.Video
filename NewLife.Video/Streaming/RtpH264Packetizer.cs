@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Streaming;
@@ -84,9 +85,11 @@ public class RtpH264Packetizer
                 fuHeaderByte |= 0x40; // End bit
 
             var fuData = new Byte[2 + length];
-            fuData[0] = fuIndicator;
-            fuData[1] = fuHeaderByte;
-            Array.Copy(nal, start, fuData, 2, length);
+            var fw = new SpanWriter(fuData);
+            fw.WriteByte(fuIndicator);
+            fw.WriteByte(fuHeaderByte);
+            nal.AsSpan(start, length).CopyTo(fw.GetSpan(length));
+            fw.Advance(length);
 
             packets.Add(new RtpPacket
             {
@@ -133,8 +136,10 @@ public class RtpH264Packetizer
                 {
                     var originalNalHeader = (Byte)((packet.Data[0] & 0xE0) | (fuHeader & 0x1F));
                     var nalData = new Byte[1 + packet.Data.Length - 2];
-                    nalData[0] = originalNalHeader;
-                    Array.Copy(packet.Data, 2, nalData, 1, packet.Data.Length - 2);
+                    var nw = new SpanWriter(nalData);
+                    nw.WriteByte(originalNalHeader);
+                    packet.Data.AsSpan(2).CopyTo(nw.GetSpan(packet.Data.Length - 2));
+                    nw.Advance(packet.Data.Length - 2);
                     nals.Add(nalData);
                 }
                 else if (nals.Count > 0)
@@ -143,8 +148,8 @@ public class RtpH264Packetizer
                     var lastNal = nals[^1];
                     var appendSize = packet.Data.Length - 2;
                     var newNal = new Byte[lastNal.Length + appendSize];
-                    Array.Copy(lastNal, newNal, lastNal.Length);
-                    Array.Copy(packet.Data, 2, newNal, lastNal.Length, appendSize);
+                    lastNal.AsSpan().CopyTo(newNal);
+                    packet.Data.AsSpan(2, appendSize).CopyTo(newNal.AsSpan(lastNal.Length));
                     nals[^1] = newNal;
                 }
             }
@@ -154,12 +159,13 @@ public class RtpH264Packetizer
                 var offset = 1;
                 while (offset + 2 <= packet.Data.Length)
                 {
-                    var nalSize = (packet.Data[offset] << 8) | packet.Data[offset + 1];
+                    var sr = new SpanReader(packet.Data, offset) { IsLittleEndian = false };
+                    var nalSize = sr.ReadUInt16();
                     offset += 2;
                     if (nalSize == 0 || offset + nalSize > packet.Data.Length) break;
 
-                    var nal = new Byte[nalSize];
-                    Array.Copy(packet.Data, offset, nal, 0, nalSize);
+                    var nalSpan = packet.Data.AsSpan(offset, nalSize);
+                    var nal = nalSpan.ToArray();
                     nals.Add(nal);
                     offset += nalSize;
                 }

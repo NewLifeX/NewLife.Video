@@ -74,6 +74,93 @@ public class VideoContainerFactoryTests
         }
     }
 
+    [Fact(DisplayName = "VideoContainerFactory.CreateWriter 路由正确")]
+    public void CreateWriter_Routes()
+    {
+        var w1 = VideoContainerFactory.CreateWriter("test.mp4");
+        Assert.IsType<Mp4Writer>(w1);
+        w1.Dispose();
+
+        var w2 = VideoContainerFactory.CreateWriter("test.flv");
+        Assert.IsType<FlvWriter>(w2);
+        w2.Dispose();
+
+        var w3 = VideoContainerFactory.CreateWriter("test.avi");
+        Assert.IsType<AviWriter>(w3);
+        w3.Dispose();
+
+        var w4 = VideoContainerFactory.CreateWriter("test.ts");
+        Assert.IsType<TsWriter>(w4);
+        w4.Dispose();
+
+        var w5 = VideoContainerFactory.CreateWriter("test.mkv");
+        Assert.IsType<MkvWriter>(w5);
+        w5.Dispose();
+
+        var w6 = VideoContainerFactory.CreateWriter("test.webm");
+        Assert.IsType<MkvWriter>(w6);
+        w6.Dispose();
+
+        var w7 = VideoContainerFactory.CreateWriter("test.yuv");
+        Assert.IsType<RawVideoWriter>(w7);
+        w7.Dispose();
+    }
+
+    [Fact(DisplayName = "VideoContainerFactory 魔术字节检测FLV")]
+    public void MagicBytes_DetectsFlv()
+    {
+        var path = Path.GetTempFileName() + ".dat";
+        try
+        {
+            // 最小合法 FLV: FLV(3) + version(1) + flags(1) + headerSize(4) = 9 bytes
+            using (var fs = new FileStream(path, FileMode.Create))
+            {
+                fs.WriteByte((Byte)'F'); fs.WriteByte((Byte)'L'); fs.WriteByte((Byte)'V');
+                fs.WriteByte(0x01); // version
+                fs.WriteByte(0x05); // flags: video + audio
+                WriteUInt32BE(fs, 9); // header size
+                WriteUInt32BE(fs, 0); // previous tag size
+            }
+            var reader = VideoContainerFactory.CreateReader(path);
+            Assert.IsType<FlvReader>(reader);
+            reader.Dispose();
+        }
+        finally { try { if (File.Exists(path)) File.Delete(path); } catch { } }
+    }
+
+    [Fact(DisplayName = "VideoContainerFactory 魔术字节检测AVI")]
+    public void MagicBytes_DetectsAvi()
+    {
+        var path = Path.GetTempFileName() + ".dat";
+        try
+        {
+            // 最小合法 RIFF AVI: RIFF + size + "AVI "
+            using (var fs = new FileStream(path, FileMode.Create))
+            {
+                fs.WriteByte((Byte)'R'); fs.WriteByte((Byte)'I'); fs.WriteByte((Byte)'F'); fs.WriteByte((Byte)'F');
+                WriteUInt32LE(fs, 100); // file size placeholder
+                fs.WriteByte((Byte)'A'); fs.WriteByte((Byte)'V'); fs.WriteByte((Byte)'I'); fs.WriteByte((Byte)' ');
+                fs.Write(new Byte[100], 0, 100);
+            }
+            var reader = VideoContainerFactory.CreateReader(path);
+            Assert.IsType<AviReader>(reader);
+            reader.Dispose();
+        }
+        finally { try { if (File.Exists(path)) File.Delete(path); } catch { } }
+    }
+
+    private static void WriteUInt32BE(FileStream fs, UInt32 v)
+    {
+        fs.WriteByte((Byte)(v >> 24)); fs.WriteByte((Byte)(v >> 16));
+        fs.WriteByte((Byte)(v >> 8)); fs.WriteByte((Byte)v);
+    }
+
+    private static void WriteUInt32LE(FileStream fs, UInt32 v)
+    {
+        fs.WriteByte((Byte)v); fs.WriteByte((Byte)(v >> 8));
+        fs.WriteByte((Byte)(v >> 16)); fs.WriteByte((Byte)(v >> 24));
+    }
+
     /// <summary>创建最小 MP4 用于测试工厂路由</summary>
     private static Byte[] CreateMinimalMp4Bytes()
     {

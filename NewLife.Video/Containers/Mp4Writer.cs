@@ -274,11 +274,19 @@ public class Mp4Writer : IVideoContainerWriter
         fs.Write(buf, 0, buf.Length);
     }
 
+    private static readonly Byte[] _zeroBuf = new Byte[256];
+
     /// <summary>写入 n 个零字节到流</summary>
     private static void Z(FileStream fs, Int32 n)
     {
-        var buf = new Byte[n];
-        fs.Write(buf, 0, n);
+        var buf = _zeroBuf;
+        var remaining = n;
+        while (remaining > 0)
+        {
+            var chunk = Math.Min(remaining, buf.Length);
+            fs.Write(buf, 0, chunk);
+            remaining -= chunk;
+        }
     }
 
     #endregion

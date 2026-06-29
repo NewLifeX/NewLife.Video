@@ -36,22 +36,25 @@ public class FlvWriter : IVideoContainerWriter
 
         var data = packet.Data.ToArray();
 
-        // FLV Tag Header: 11 bytes (大端)
+        // FLV Tag Header: 11 bytes (大端)，用 SpanWriter 构建
         // [0] tagType(1) [1-3] dataSize(BE24) [4-6] timestamp(BE24) [7] tsExt(1) [8-10] streamId(3)
         var tagBuf = new Byte[11];
-        tagBuf[0] = 9; // video tag
-        tagBuf[1] = (Byte)(data.Length >> 16);
-        tagBuf[2] = (Byte)(data.Length >> 8);
-        tagBuf[3] = (Byte)data.Length;
+        var tw = new SpanWriter(tagBuf) { IsLittleEndian = false };
+        tw.WriteByte(9); // video tag
+        // DataSize: 3 字节大端
+        tw.WriteByte((Byte)(data.Length >> 16));
+        tw.WriteByte((Byte)(data.Length >> 8));
+        tw.WriteByte((Byte)data.Length);
+        // Timestamp: 3 字节大端 + 1 字节扩展
         var ts = (UInt32)(packet.PTS > 0 ? packet.PTS : 0);
-        tagBuf[4] = (Byte)((ts >> 16) & 0xFF);
-        tagBuf[5] = (Byte)((ts >> 8) & 0xFF);
-        tagBuf[6] = (Byte)(ts & 0xFF);
-        tagBuf[7] = (Byte)((ts >> 24) & 0xFF);
+        tw.WriteByte((Byte)((ts >> 16) & 0xFF));
+        tw.WriteByte((Byte)((ts >> 8) & 0xFF));
+        tw.WriteByte((Byte)(ts & 0xFF));
+        tw.WriteByte((Byte)((ts >> 24) & 0xFF));
         var codecId = _codecType == VideoTypes.H265 ? (Byte)12 : (Byte)7;
-        tagBuf[8] = (Byte)((packet.IsKeyFrame ? 1 : 2) << 4 | codecId);
-        tagBuf[9] = 0;
-        tagBuf[10] = 0;
+        tw.WriteByte((Byte)((packet.IsKeyFrame ? 1 : 2) << 4 | codecId));
+        tw.WriteByte(0);
+        tw.WriteByte(0);
 
         _stream.Write(tagBuf, 0, 11);
         _stream.Write(data, 0, data.Length);

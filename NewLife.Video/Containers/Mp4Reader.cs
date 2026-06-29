@@ -257,8 +257,10 @@ public class Mp4Reader : IVideoContainerReader
         var data = new Byte[20];
         _stream.Read(data, 0, data.Length);
         // version(1) + flags(3) + creation(4) + modification(4)
-        _timeScale = (data[12] << 24) | (data[13] << 16) | (data[14] << 8) | data[15];
-        var duration64 = (Int64)(data[16] << 24) | (Int64)(data[17] << 16) | (Int64)(data[18] << 8) | data[19];
+        var reader = new SpanReader(data) { IsLittleEndian = false };
+        reader.ReadBytes(12);
+        _timeScale = (Int32)reader.ReadUInt32();
+        var duration64 = (Int64)reader.ReadUInt32();
 
         if (_timeScale > 0)
             _duration = duration64 * 1000 / _timeScale;
@@ -273,7 +275,8 @@ public class Mp4Reader : IVideoContainerReader
         // 读取第一个条目
         var entryHeader = new Byte[8];
         _stream.Read(entryHeader, 0, 8);
-        var entrySize = (Int32)((entryHeader[0] << 24) | (entryHeader[1] << 16) | (entryHeader[2] << 8) | entryHeader[3]);
+        var entryReader = new SpanReader(entryHeader) { IsLittleEndian = false };
+        var entrySize = (Int32)entryReader.ReadUInt32();
         var entryType = System.Text.Encoding.ASCII.GetString(entryHeader, 4, 4);
 
         var entryData = new Byte[entrySize - 8];
@@ -283,47 +286,48 @@ public class Mp4Reader : IVideoContainerReader
         {
             case "avc1" or "avc3":
                 _codecType = VideoTypes.H264;
-                if (entryData.Length >= 24)
-                {
-                    _videoWidth = (entryData[24] << 8) | entryData[25];
-                    _videoHeight = (entryData[26] << 8) | entryData[27];
-                }
+                if (entryData.Length >= 28)
+                    ParseVisualSampleEntry(entryData);
                 break;
             case "hvc1" or "hev1":
                 _codecType = VideoTypes.H265;
-                if (entryData.Length >= 24)
-                {
-                    _videoWidth = (entryData[24] << 8) | entryData[25];
-                    _videoHeight = (entryData[26] << 8) | entryData[27];
-                }
+                if (entryData.Length >= 28)
+                    ParseVisualSampleEntry(entryData);
                 break;
             case "mp4v":
                 _codecType = VideoTypes.MJPEG; // MPEG-4 Visual 近似
-                if (entryData.Length >= 24)
-                {
-                    _videoWidth = (entryData[24] << 8) | entryData[25];
-                    _videoHeight = (entryData[26] << 8) | entryData[27];
-                }
+                if (entryData.Length >= 28)
+                    ParseVisualSampleEntry(entryData);
                 break;
         }
     }
 
+    private void ParseVisualSampleEntry(Byte[] entryData)
+    {
+        var reader = new SpanReader(entryData) { IsLittleEndian = false };
+        reader.ReadBytes(24); // 跳过到 width/height (VisualSampleEntry 固定偏移 24)
+        _videoWidth = reader.ReadUInt16();
+        _videoHeight = reader.ReadUInt16();
+    }
+
     private void ParseStts(Int64 endOffset)
     {
+        var buf = new Byte[8]; // 循环外分配，复用
         var data = new Byte[4];
         _stream.Read(data, 0, 4); // version + flags
         _stream.Read(data, 0, 4); // entry count
-        var entryCount = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+        var countReader = new SpanReader(data) { IsLittleEndian = false };
+        var entryCount = (Int32)countReader.ReadUInt32();
 
         var totalFrames = 0L;
         var totalDuration = 0L;
 
         for (var i = 0; i < entryCount && i < 1000; i++)
         {
-            var entry = new Byte[8];
-            _stream.Read(entry, 0, 8);
-            var sampleCount = (entry[0] << 24) | (entry[1] << 16) | (entry[2] << 8) | entry[3];
-            var sampleDelta = (entry[4] << 24) | (entry[5] << 16) | (entry[6] << 8) | entry[7];
+            _stream.Read(buf, 0, 8);
+            var reader = new SpanReader(buf) { IsLittleEndian = false };
+            var sampleCount = (Int32)reader.ReadUInt32();
+            var sampleDelta = (Int32)reader.ReadUInt32();
 
             totalFrames += sampleCount;
             totalDuration += sampleCount * sampleDelta;
@@ -341,23 +345,24 @@ public class Mp4Reader : IVideoContainerReader
         var data = new Byte[4];
         _stream.Read(data, 0, 4); // version + flags
         _stream.Read(data, 0, 4); // entry count
-        var entryCount = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+        var countReader = new SpanReader(data) { IsLittleEndian = false };
+        var entryCount = (Int32)countReader.ReadUInt32();
 
         _chunkOffsets.Clear();
+        var buf = new Byte[8]; // 循环外分配，复用（最大 8 字节）
         for (var i = 0; i < entryCount && i < 10000; i++)
         {
             if (is64)
             {
-                var offset = new Byte[8];
-                _stream.Read(offset, 0, 8);
-                _chunkOffsets.Add((Int64)(offset[0] << 56) | (Int64)(offset[1] << 48) | (Int64)(offset[2] << 40) | (Int64)(offset[3] << 32)
-                                  | (Int64)(offset[4] << 24) | (Int64)(offset[5] << 16) | (Int64)(offset[6] << 8) | offset[7]);
+                _stream.Read(buf, 0, 8);
+                var reader = new SpanReader(buf) { IsLittleEndian = false };
+                _chunkOffsets.Add(reader.ReadInt64());
             }
             else
             {
-                var offset = new Byte[4];
-                _stream.Read(offset, 0, 4);
-                _chunkOffsets.Add((Int64)(offset[0] << 24) | (Int64)(offset[1] << 16) | (Int64)(offset[2] << 8) | offset[3]);
+                _stream.Read(buf, 0, 4);
+                var reader = new SpanReader(buf) { IsLittleEndian = false };
+                _chunkOffsets.Add(reader.ReadUInt32());
             }
         }
     }
@@ -366,18 +371,23 @@ public class Mp4Reader : IVideoContainerReader
     {
         var data = new Byte[8];
         _stream.Read(data, 0, 8); // version + flags + default size
-        _defaultSampleSize = (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
+        var hdrReader = new SpanReader(data) { IsLittleEndian = false };
+        hdrReader.ReadBytes(4);
+        _defaultSampleSize = (Int32)hdrReader.ReadUInt32();
+
         _stream.Read(data, 0, 4); // entry count
-        var entryCount = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+        var countReader = new SpanReader(data) { IsLittleEndian = false };
+        var entryCount = (Int32)countReader.ReadUInt32();
 
         _sampleSizes.Clear();
         if (_defaultSampleSize == 0)
         {
+            var sizeBuf = new Byte[4]; // 循环外分配，复用
             for (var i = 0; i < entryCount && i < 10000; i++)
             {
-                var size = new Byte[4];
-                _stream.Read(size, 0, 4);
-                _sampleSizes.Add((size[0] << 24) | (size[1] << 16) | (size[2] << 8) | size[3]);
+                _stream.Read(sizeBuf, 0, 4);
+                var reader = new SpanReader(sizeBuf) { IsLittleEndian = false };
+                _sampleSizes.Add((Int32)reader.ReadUInt32());
             }
         }
     }
@@ -393,10 +403,11 @@ public class Mp4Reader : IVideoContainerReader
             // 跳转到块偏移
             _stream.Seek(_chunkOffsets[(Int32)_frameIndex], SeekOrigin.Begin);
 
-            // 读取 NAL 长度前缀 (4字节)
+            // 读取 NAL 长度前缀 (4字节，大端)
             var lenBytes = new Byte[4];
             if (_stream.Read(lenBytes, 0, 4) < 4) return null;
-            var nalLength = (lenBytes[0] << 24) | (lenBytes[1] << 16) | (lenBytes[2] << 8) | lenBytes[3];
+            var lenReader = new SpanReader(lenBytes) { IsLittleEndian = false };
+            var nalLength = (Int32)lenReader.ReadUInt32();
 
             if (nalLength <= 0 || nalLength > 10 * 1024 * 1024) return null;
 

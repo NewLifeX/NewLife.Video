@@ -1,3 +1,5 @@
+using NewLife.Buffers;
+
 namespace NewLife.Video;
 
 /// <summary>视频编码格式自动检测器。根据数据流起始字节识别编码类型</summary>
@@ -26,10 +28,11 @@ public static class VideoFormatDetector
                 if (h264Type is >= 1 and <= 9)
                     return VideoTypes.H264;
 
-                // H.265 NAL header (2 bytes)
+                // H.265 NAL header (2 bytes, 大端)
                 if (offset + 1 < data.Length)
                 {
-                    var nalHeader = (data[offset] << 8) | data[offset + 1];
+                    var nr = new SpanReader(data, offset) { IsLittleEndian = false };
+                    var nalHeader = nr.ReadUInt16();
                     var forbiddenBit = (nalHeader >> 15) & 1;
                     var h265Type = (nalHeader >> 9) & 0x3F;
                     if (forbiddenBit == 0 && h265Type is >= 1 and <= 40)

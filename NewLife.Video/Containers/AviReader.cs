@@ -48,8 +48,9 @@ public class AviReader : IVideoContainerReader
             if (riff[8] != 'A' || riff[9] != 'V' || riff[10] != 'I' || riff[11] != ' ')
                 throw new InvalidOperationException("不是 AVI");
 
-            // 递归解析
-            var fileSize = riff[4] | (riff[5] << 8) | (riff[6] << 16) | (riff[7] << 24);
+            // 递归解析（RIFF 小端）
+            var riffReader = new SpanReader(riff, 4);
+            var fileSize = riffReader.ReadUInt32();
             ParseChunks(12, Math.Min(12 + fileSize, _stream.Length));
         }
         catch { _stream.Dispose(); throw; }

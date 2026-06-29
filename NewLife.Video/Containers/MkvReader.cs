@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Containers;
@@ -383,14 +384,22 @@ public class MkvReader : IVideoContainerReader
     private UInt64 ReadEbmlUint(Int64 size)
     {
         if (size <= 0 || size > 8) return 0;
-        UInt64 value = 0;
-        for (var i = 0; i < size; i++)
+        var buf = new Byte[8];
+        var readSize = _stream.Read(buf, 0, (Int32)size);
+        if (readSize < size) return 0;
+        var reader = new SpanReader(buf) { IsLittleEndian = false };
+        return size switch
         {
-            var b = _stream.ReadByte();
-            if (b < 0) break;
-            value = (value << 8) | (UInt64)b;
-        }
-        return value;
+            1 => reader.ReadByte(),
+            2 => reader.ReadUInt16(),
+            3 => ((UInt64)reader.ReadByte() << 16) | ((UInt64)reader.ReadByte() << 8) | reader.ReadByte(),
+            4 => reader.ReadUInt32(),
+            5 => ((UInt64)reader.ReadByte() << 32) | reader.ReadUInt32(),
+            6 => ((UInt64)reader.ReadUInt16() << 32) | reader.ReadUInt32(),
+            7 => ((UInt64)reader.ReadByte() << 48) | ((UInt64)reader.ReadUInt16() << 32) | reader.ReadUInt32(),
+            8 => reader.ReadUInt64(),
+            _ => 0u,
+        };
     }
 
     private Double ReadEbmlFloat(Int64 size)
@@ -399,15 +408,15 @@ public class MkvReader : IVideoContainerReader
         {
             var bytes = new Byte[4];
             _stream.Read(bytes, 0, 4);
-            if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
-            return BitConverter.ToSingle(bytes, 0);
+            var reader = new SpanReader(bytes) { IsLittleEndian = false };
+            return reader.ReadSingle();
         }
         if (size == 8)
         {
             var bytes = new Byte[8];
             _stream.Read(bytes, 0, 8);
-            if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
-            return BitConverter.ToDouble(bytes, 0);
+            var reader = new SpanReader(bytes) { IsLittleEndian = false };
+            return reader.ReadDouble();
         }
         return 0;
     }
@@ -430,9 +439,10 @@ public class MkvReader : IVideoContainerReader
 
     private Int16 ReadInt16BE()
     {
-        var hi = _stream.ReadByte();
-        var lo = _stream.ReadByte();
-        return (Int16)((hi << 8) | lo);
+        var buf = new Byte[2];
+        _stream.Read(buf, 0, 2);
+        var reader = new SpanReader(buf) { IsLittleEndian = false };
+        return reader.ReadInt16();
     }
 
     private sealed class BlockEntry

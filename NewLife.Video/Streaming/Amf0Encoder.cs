@@ -21,9 +21,10 @@ public class Amf0Encoder : IDisposable
     public void WriteNumber(Double value)
     {
         _stream.WriteByte(0x00); // type marker
-        var bytes = BitConverter.GetBytes(value);
-        if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
-        _stream.Write(bytes, 0, 8);
+        var buf = new Byte[8];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.Write(value);
+        _stream.Write(buf, 0, 8);
     }
 
     public void WriteBoolean(Boolean value)

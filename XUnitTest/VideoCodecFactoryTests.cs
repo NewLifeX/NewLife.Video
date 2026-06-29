@@ -115,4 +115,35 @@ public class VideoCodecFactoryTests
         var packet = _factory.Encode([VideoFrame.Create(640, 480, VideoTypes.YUV420P)], VideoTypes.MJPEG);
         Assert.NotNull(packet);
     }
+
+    [Fact(DisplayName = "VideoCodecFactory 自动注册MJPEG")]
+    public void AutoRegisters_Mjpeg()
+    {
+        var factory = new VideoCodecFactory();
+        var codec = factory.Registry.GetCodec(VideoTypes.MJPEG);
+        Assert.NotNull(codec);
+        Assert.True(codec is ICodecInfo ci && ci.SupportedTypes.Contains(VideoTypes.MJPEG));
+    }
+
+    [Fact(DisplayName = "VideoCodecFactory 自动注册H264解码器")]
+    public void AutoRegisters_H264Decoder()
+    {
+        var factory = new VideoCodecFactory();
+        Assert.True(factory.Registry.IsSupported(VideoTypes.H264));
+    }
+
+    [Fact(DisplayName = "VideoCodecFactory 自动注册H265解码器")]
+    public void AutoRegisters_H265Decoder()
+    {
+        var factory = new VideoCodecFactory();
+        Assert.True(factory.Registry.IsSupported(VideoTypes.H265));
+    }
+
+    [Fact(DisplayName = "VideoCodecFactory 自动注册VP8/VP9解码器")]
+    public void AutoRegisters_VP8_VP9()
+    {
+        var factory = new VideoCodecFactory();
+        Assert.True(factory.Registry.IsSupported(VideoTypes.VP8));
+        Assert.True(factory.Registry.IsSupported(VideoTypes.VP9));
+    }
 }

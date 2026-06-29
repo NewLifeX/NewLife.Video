@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 using NewLife.Video.Containers;
 
@@ -137,9 +138,10 @@ public class MkvWriter : IVideoContainerWriter
     {
         WriteEbmlIdToStream(ms, id);
         WriteEbmlSizeToStream(ms, 8);
-        var bytes = BitConverter.GetBytes(value);
-        if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
-        ms.Write(bytes, 0, 8);
+        var buf = new Byte[8];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.Write(value);
+        ms.Write(buf, 0, 8);
     }
 
     private void WriteEbmlStringToStream(System.IO.MemoryStream ms, UInt32 id, String value)
@@ -214,15 +216,18 @@ public class MkvWriter : IVideoContainerWriter
     {
         WriteEbmlId(fs, id);
         WriteEbmlSize(fs, 8);
-        var bytes = BitConverter.GetBytes(value);
-        if (BitConverter.IsLittleEndian) Array.Reverse(bytes);
-        fs.Write(bytes, 0, 8);
+        var buf = new Byte[8];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.Write(value);
+        fs.Write(buf, 0, 8);
     }
 
     private static void WriteUInt16BE(FileStream fs, UInt16 v)
     {
-        fs.WriteByte((Byte)(v >> 8));
-        fs.WriteByte((Byte)v);
+        var buf = new Byte[2];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.Write(v);
+        fs.Write(buf, 0, 2);
     }
 
     private static void WriteBytes(FileStream fs, Byte[] data) => fs.Write(data, 0, data.Length);
