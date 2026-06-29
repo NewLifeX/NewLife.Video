@@ -99,9 +99,6 @@ public class TsWriter : IVideoContainerWriter
         _headerWritten = true;
     }
 
-    public void Dispose()
-    {
-        Flush();
-        _stream?.Dispose();
-    }
+    public void Dispose() { if (_disposed) return; _disposed = true; Flush(); _stream?.Dispose(); }
+    private Boolean _disposed;
 }

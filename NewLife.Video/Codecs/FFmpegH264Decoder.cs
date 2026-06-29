@@ -109,7 +109,8 @@ public class FFmpegH264Decoder : IVideoCodec, ICodecInfo, IDisposable
     }
 
     /// <summary>释放资源</summary>
-    public void Dispose() { }
+    public void Dispose() { if (_disposed) return; _disposed = true; }
+    private Boolean _disposed;
 
     private static readonly (Int32 W, Int32 H)[] CommonResolutions =
     [

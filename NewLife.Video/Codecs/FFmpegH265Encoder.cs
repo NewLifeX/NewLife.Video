@@ -55,5 +55,6 @@ public class FFmpegH265Encoder : IVideoCodec, ICodecInfo, IDisposable
         };
     }
 
-    public void Dispose() { }
+    public void Dispose() { if (_disposed) return; _disposed = true; }
+    private Boolean _disposed;
 }

@@ -57,7 +57,8 @@ public class FFmpegH265Decoder : IVideoCodec, ICodecInfo, IDisposable
 
     public VPacket Encode(VideoFrame[] frames) => throw new NotSupportedException("H.265 解码器不支持编码");
 
-    public void Dispose() { }
+    public void Dispose() { if (_disposed) return; _disposed = true; }
+    private Boolean _disposed;
 
     private static (Int32, Int32) GuessResolution(Int32 size)
     {

@@ -11,6 +11,74 @@
 源码： https://github.com/NewLifeX/NewLife.Video  
 Nuget：NewLife.Video  
 
+## 功能特性
+
+### 编解码引擎
+- H.264/H.265 解码与编码（FFmpeg 管道封装）
+- MJPEG 纯托管编解码
+- VP8/VP9 解码与编码（FFmpeg 管道封装）
+- 颜色空间转换：YUV420P/NV12 ↔ RGB24/BGRA32 (BT.601)
+- 芯片头适配：海思/大华/宇视
+
+### 容器格式
+| 格式 | 读取 | 写入 | 备注 |
+|------|:--:|:--:|------|
+| MP4 (ISO BMFF) | ✅ | ✅ | ftyp/moov/mdat 完整盒结构 |
+| FLV | ✅ | ✅ | FLV 头 + VideoTag |
+| AVI (RIFF) | ✅ | ✅ | avih/strh/strf/movi/idx1 完整结构 |
+| TS (MPEG-TS) | ✅ | ✅ | PAT/PMT + 188字节 TS 包 |
+| MKV/WebM (Matroska) | ✅ | ✅ | EBML/Segment/Tracks/Cluster/SimpleBlock |
+| 原始视频帧 | ✅ | ✅ | YUV420P/NV12/RGB24 |
+
+### 帧处理
+尺寸缩放、区域裁剪、旋转翻转、色彩调整、文字水印、时间戳叠加、缩略图生成、移动侦测、帧率转换
+
+### 流媒体
+- RTP 封包/解包：H.264 (RFC 6184)、H.265 (RFC 7798)
+- RTSP 客户端：OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN
+- RTMP 推流：握手 + AMF0 命令层（connect/createStream/publish）
+- HLS 分段：m3u8 生成 + TS 分段 + 自动清理
+- JitterBuffer、WebSocket 视频通道
+
+### IoT 视频适配
+- ONVIF：WS-Discovery 设备发现、Media 获取流地址、PTZ 云台控制
+- GB/T 28181：SIP 注册/心跳、实时点播（INVITE+SDP+RTP）
+- 录像调度：定时 + 事件触发
+
+### 设备采集
+- ScreenCapture：Windows 下 Graphics.CopyFromScreen 真实截屏（net461）
+- DirectShow / V4L2 后端骨架（待平台适配）
+
+## 快速开始
+
+```csharp
+// 1. 使用内置编解码器
+var factory = new VideoCodecFactory(); // 自动注册 MJPEG/H.264/H.265/VP8/VP9
+
+// 2. 容器读写
+using var writer = VideoContainerFactory.CreateWriter("output.mp4");
+writer.WriteMetadata(1920, 1080, VideoTypes.H264, 30);
+writer.WriteFrame(new VPacket { Data = new Packet(h264Data), CodecType = VideoTypes.H264 });
+// Dispose 时自动写入完整文件
+
+// 3. 帧处理管道
+var pipeline = new VideoPipeline();
+pipeline.Append(new FrameResizer(640, 480))
+       .Append(new TimestampOverlay())
+       .Append(new WatermarkOverlay("Camera-01"));
+
+// 4. 流媒体推流
+var client = new RtmpClient("rtmp://server/live/stream");
+await client.ConnectAsync();
+await client.ConnectStreamAsync();
+await client.CreateStreamAsync();
+await client.PublishAsync();
+await client.PushVideoAsync(avccData, 0);
+
+// 5. ONVIF 设备发现
+var devices = await OnvifDiscovery.DiscoverAsync();
+```
+
 
 ## 新生命项目矩阵
 各项目默认支持net9.0/netstandard2.1/netstandard2.0/net4.62/net4.5，旧版（2024.0801）支持net4.0/net2.0  

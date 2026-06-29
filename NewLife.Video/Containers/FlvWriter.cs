@@ -90,7 +90,10 @@ public class FlvWriter : IVideoContainerWriter
 
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
         Flush();
         _stream?.Dispose();
     }
+    private Boolean _disposed;
 }

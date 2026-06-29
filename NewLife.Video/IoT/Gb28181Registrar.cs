@@ -8,7 +8,7 @@ namespace NewLife.Video.IoT;
 /// 国标 GB/T 28181 使用 SIP 协议进行设备注册、心跳保活和注销。
 /// SIP 服务器默认端口 5060 (UDP)。
 /// </remarks>
-public class Gb28181Registrar
+public class Gb28181Registrar : IDisposable
 {
     private readonly String _serverIp;
     private readonly Int32 _serverPort;
@@ -17,6 +17,7 @@ public class Gb28181Registrar
     private readonly UdpClient _udpClient;
     private Int32 _cSeq;
     private Boolean _registered;
+    private Boolean _disposed;
 
     /// <summary>设备 ID (20位国标编码)</summary>
     public String DeviceId => _deviceId;
@@ -98,5 +99,13 @@ public class Gb28181Registrar
         {
             return "";
         }
+    }
+
+    /// <summary>释放资源</summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _udpClient?.Dispose();
     }
 }

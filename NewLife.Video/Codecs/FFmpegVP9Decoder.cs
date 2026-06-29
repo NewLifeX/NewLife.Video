@@ -45,5 +45,6 @@ public class FFmpegVP9Decoder : IVideoCodec, ICodecInfo, IDisposable
     }
 
     public VPacket Encode(VideoFrame[] frames) => throw new NotSupportedException();
-    public void Dispose() { }
+    public void Dispose() { if (_disposed) return; _disposed = true; }
+    private Boolean _disposed;
 }

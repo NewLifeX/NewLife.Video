@@ -85,5 +85,6 @@ public class RawVideoReader : IVideoContainerReader
     }
 
     /// <summary>释放资源</summary>
-    public void Dispose() => _stream?.Dispose();
+    public void Dispose() { if (_disposed) return; _disposed = true; _stream?.Dispose(); }
+    private Boolean _disposed;
 }

@@ -7,9 +7,10 @@ namespace NewLife.Video.Streaming;
 /// 支持 AMF0 基本类型：Number, Boolean, String, Object, Null, ECMA Array。
 /// RTMP connect/createStream/publish 等命令均依赖此编码器。
 /// </remarks>
-public class Amf0Encoder
+public class Amf0Encoder : IDisposable
 {
     private readonly MemoryStream _stream;
+    private Boolean _disposed;
 
     public Amf0Encoder() => _stream = new MemoryStream(256);
 
@@ -120,5 +121,13 @@ public class Amf0Encoder
         _stream.WriteByte((Byte)(v >> 16));
         _stream.WriteByte((Byte)(v >> 8));
         _stream.WriteByte((Byte)v);
+    }
+
+    /// <summary>释放资源</summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        _stream?.Dispose();
     }
 }

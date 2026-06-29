@@ -144,5 +144,6 @@ public class TsReader : IVideoContainerReader
         return _frameIndex >= frameIndex;
     }
 
-    public void Dispose() => _stream?.Dispose();
+    public void Dispose() { if (_disposed) return; _disposed = true; _stream?.Dispose(); }
+    private Boolean _disposed;
 }

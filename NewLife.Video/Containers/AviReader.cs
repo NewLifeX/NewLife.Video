@@ -142,5 +142,6 @@ public class AviReader : IVideoContainerReader
         return true;
     }
 
-    public void Dispose() => _stream?.Dispose();
+    public void Dispose() { if (_disposed) return; _disposed = true; _stream?.Dispose(); }
+    private Boolean _disposed;
 }

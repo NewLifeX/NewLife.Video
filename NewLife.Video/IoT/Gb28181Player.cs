@@ -8,7 +8,7 @@ namespace NewLife.Video.IoT;
 /// <remarks>
 /// 流程：SIP INVITE (携带 SDP) → 200 OK (设备 SDP) → ACK → RTP 视频流 → BYE
 /// </remarks>
-public class Gb28181Player
+public class Gb28181Player : IDisposable
 {
     private readonly String _serverIp;
     private readonly Int32 _serverPort;
@@ -18,6 +18,7 @@ public class Gb28181Player
     private Int32 _cSeq;
     private String _callId;
     private Boolean _playing;
+    private Boolean _disposed;
 
     /// <summary>设备 ID</summary>
     public String DeviceId => _deviceId;
@@ -106,6 +107,15 @@ public class Gb28181Player
         var bye = BuildByeRequest(_callId);
         var data = Encoding.UTF8.GetBytes(bye);
         await udp.SendAsync(data, data.Length, _serverIp, _serverPort);
+    }
+
+    /// <summary>释放资源</summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        StopAsync().GetAwaiter().GetResult();
+        _rtpClient?.Dispose();
     }
 
     private String BuildLocalSdp(Int32 rtpPort) =>
