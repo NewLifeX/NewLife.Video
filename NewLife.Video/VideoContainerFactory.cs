@@ -26,7 +26,7 @@ public static class VideoContainerFactory
         {
             ".yuv" or ".nv12" or ".rgb" or ".raw" => CreateRawReader(filePath, ext),
             ".mp4" or ".m4v" => throw new NotSupportedException("MP4 容器读取器尚未实现"),
-            ".flv" => throw new NotSupportedException("FLV 容器读取器尚未实现"),
+            ".flv" => new FlvReader(filePath),
             ".avi" => throw new NotSupportedException("AVI 容器读取器尚未实现"),
             ".ts" or ".mts" => throw new NotSupportedException("TS 容器读取器尚未实现"),
             ".mkv" or ".webm" => throw new NotSupportedException("MKV/WebM 容器读取器尚未实现"),
