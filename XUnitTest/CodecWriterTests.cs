@@ -83,10 +83,11 @@ public class CodecWriterTests
         var path = Path.GetTempFileName() + ".avi";
         try
         {
-            using var w = new AviWriter(path);
-            w.WriteMetadata(320, 240, VideoTypes.MJPEG, 25);
-            w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[150]), CodecType = VideoTypes.MJPEG });
-            w.Flush();
+            using (var w = new AviWriter(path))
+            {
+                w.WriteMetadata(320, 240, VideoTypes.MJPEG, 25);
+                w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[150]), CodecType = VideoTypes.MJPEG });
+            }
 
             Assert.True(new FileInfo(path).Length > 0);
         }

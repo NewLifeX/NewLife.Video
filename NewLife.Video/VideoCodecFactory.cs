@@ -19,10 +19,18 @@ public class VideoCodecFactory
     /// <summary>芯片头处理器列表</summary>
     public IReadOnlyList<IVideoChipHeader> ChipHeaders => _chipHeaders;
 
-    /// <summary>初始化编解码工厂</summary>
+    /// <summary>初始化编解码工厂，自动注册所有内置解码器</summary>
+    /// <remarks>编码器需通过 <see cref="Register"/> 或 <see cref="RegisterFactory"/> 手动注册</remarks>
     public VideoCodecFactory()
     {
-        // 子类或外部通过 Register/RegisterFactory 注册具体编解码器
+        // 纯托管编解码器（无外部依赖，同时支持编解码）
+        Register(VideoTypes.MJPEG, new Codecs.MjpegCodec());
+
+        // FFmpeg 解码器（需要 ffmpeg 在 PATH 中；编码器需手动注册）
+        RegisterFactory(VideoTypes.H264, () => new Codecs.FFmpegH264Decoder());
+        RegisterFactory(VideoTypes.H265, () => new Codecs.FFmpegH265Decoder());
+        RegisterFactory(VideoTypes.VP8, () => new Codecs.FFmpegVP8Decoder());
+        RegisterFactory(VideoTypes.VP9, () => new Codecs.FFmpegVP9Decoder());
     }
 
     /// <summary>注册自定义编解码器</summary>

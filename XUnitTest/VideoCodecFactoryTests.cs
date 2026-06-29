@@ -7,10 +7,14 @@ public class VideoCodecFactoryTests
 {
     private readonly VideoCodecFactory _factory = new();
 
-    [Fact(DisplayName = "工厂初始状态无已注册编解码器")]
-    public void Factory_InitialState_HasNoCodecs()
+    [Fact(DisplayName = "工厂初始状态自动注册内置解码器")]
+    public void Factory_InitialState_HasBuiltinCodecs()
     {
-        Assert.Empty(_factory.Registry.RegisteredTypes);
+        // MJPEG + H264 + H265 + VP8 + VP9 = 5 种内置解码器
+        Assert.True(_factory.Registry.RegisteredTypes.Count >= 5);
+        Assert.True(_factory.Registry.IsSupported(VideoTypes.MJPEG));
+        Assert.True(_factory.Registry.IsSupported(VideoTypes.H264));
+        Assert.True(_factory.Registry.IsSupported(VideoTypes.H265));
     }
 
     [Fact(DisplayName = "工厂Register后可通过Decode调用")]
