@@ -31,6 +31,7 @@ public class VideoCodecFactory
         RegisterFactory(VideoTypes.H265, () => new Codecs.FFmpegH265Decoder());
         RegisterFactory(VideoTypes.VP8, () => new Codecs.FFmpegVP8Decoder());
         RegisterFactory(VideoTypes.VP9, () => new Codecs.FFmpegVP9Decoder());
+        RegisterFactory(VideoTypes.AV1, () => new Codecs.FFmpegAV1Decoder());
     }
 
     /// <summary>注册自定义编解码器</summary>
