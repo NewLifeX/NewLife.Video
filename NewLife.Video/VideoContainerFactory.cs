@@ -25,7 +25,7 @@ public static class VideoContainerFactory
         return ext switch
         {
             ".yuv" or ".nv12" or ".rgb" or ".raw" => CreateRawReader(filePath, ext),
-            ".mp4" or ".m4v" => throw new NotSupportedException("MP4 容器读取器尚未实现"),
+            ".mp4" or ".m4v" => new Mp4Reader(filePath),
             ".flv" => new FlvReader(filePath),
             ".avi" => throw new NotSupportedException("AVI 容器读取器尚未实现"),
             ".ts" or ".mts" => throw new NotSupportedException("TS 容器读取器尚未实现"),
