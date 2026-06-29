@@ -81,12 +81,14 @@ public class TimestampOverlay : IVideoProcessor
         }
         else
         {
-            // 使用当前时间 + 时间戳偏移
-            time = DateTime.Now.AddMilliseconds(timestampMs - timestampMs);
             // 如果 timestampMs 有意义（非 0），当作距 Unix epoch 的毫秒数
             if (timestampMs > 0 && timestampMs < 1_000_000_000_000)
             {
                 time = DateTimeOffset.FromUnixTimeMilliseconds(timestampMs).LocalDateTime;
+            }
+            else
+            {
+                time = DateTime.Now;
             }
         }
 
