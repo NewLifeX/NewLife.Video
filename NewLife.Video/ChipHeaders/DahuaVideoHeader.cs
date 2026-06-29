@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.ChipHeaders;
@@ -11,31 +12,34 @@ public class DahuaVideoHeader : IVideoChipHeader
     public Int32 Priority => 2;
 
     /// <summary>尝试去除大华视频头</summary>
-    public Boolean TryTrim(Packet data, out Packet result)
+    public Boolean TryTrim(IPacket data, out IPacket result)
     {
         result = null;
-        if (data == null || data.Total < 6) return false;
+        if (data == null) return false;
 
-        var header = data.ReadBytes(0, 4);
-        for (var i = 0; i < 4; i++)
-            if (header[i] != Magic[i]) return false;
+        var span = data.GetSpan();
+        if (span.Length < 6) return false;
+
+        var reader = new SpanReader(span);
+        var magic = reader.ReadBytes(4);
+        if (!magic.SequenceEqual((ReadOnlySpan<Byte>)Magic)) return false;
 
         result = data.Slice(6);
         return true;
     }
 
     /// <summary>添加大华视频头</summary>
-    public Boolean TryAdd(Packet data, out Packet result)
+    public Boolean TryAdd(IPacket data, out IPacket result)
     {
-        var header = new Byte[6];
-        Array.Copy(Magic, 0, header, 0, 4);
-        header[4] = 0x00; // frame type
-        header[5] = 0x01; // sub type
-
+        var span = data.GetSpan();
         var combined = new Byte[6 + data.Total];
-        Array.Copy(header, 0, combined, 0, 6);
-        Array.Copy(data.Data, data.Offset, combined, 6, data.Total);
-        result = new Packet(combined);
+        var writer = new SpanWriter(combined);
+        writer.Write((ReadOnlySpan<Byte>)Magic);
+        writer.WriteByte(0x00); // frame type
+        writer.WriteByte(0x01); // sub type
+        span.CopyTo(combined.AsSpan(writer.Position));
+
+        result = new ArrayPacket(combined);
         return true;
     }
 }

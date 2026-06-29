@@ -104,7 +104,7 @@ public class TsReader : IVideoContainerReader
 
                     var vpkt = new VPacket
                     {
-                        Data = new Packet(data),
+                        Data = new ArrayPacket(data),
                         CodecType = _codecType,
                         PTS = _frameIndex * 40,
                         FrameIndex = _frameIndex,
@@ -124,7 +124,7 @@ public class TsReader : IVideoContainerReader
             var data = frameData.ToArray();
             return new VPacket
             {
-                Data = new Packet(data),
+                Data = new ArrayPacket(data),
                 CodecType = _codecType,
                 PTS = _frameIndex * 40,
                 FrameIndex = _frameIndex,

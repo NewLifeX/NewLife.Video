@@ -1,3 +1,5 @@
+﻿using System.Text;
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Containers;
@@ -61,8 +63,9 @@ public class AviReader : IVideoContainerReader
             var hdr = new Byte[8];
             if (_stream.Read(hdr, 0, 8) < 8) break;
 
-            var id = System.Text.Encoding.ASCII.GetString(hdr, 0, 4).TrimEnd('\0');
-            var size = hdr[4] | (hdr[5] << 8) | (hdr[6] << 16) | (hdr[7] << 24);
+            var id = Encoding.ASCII.GetString(hdr, 0, 4).TrimEnd('\0');
+            var chunkReader = new SpanReader(hdr, 4); // 小端默认
+            var size = chunkReader.ReadInt32();
             if (size <= 0 || _stream.Position + size > _stream.Length) break;
 
             var dataStart = _stream.Position;
@@ -72,7 +75,7 @@ public class AviReader : IVideoContainerReader
             {
                 var listType = new Byte[4];
                 _stream.Read(listType, 0, 4);
-                var type = System.Text.Encoding.ASCII.GetString(listType);
+                var type = Encoding.ASCII.GetString(listType);
 
                 if (type == "hdrl" || type == "strl")
                     ParseChunks(_stream.Position, dataEnd);
@@ -86,12 +89,15 @@ public class AviReader : IVideoContainerReader
                     var avih = new Byte[56];
                     _stream.Position = dataStart;
                     _stream.Read(avih, 0, 56);
-                    _totalFrames = avih[16] | (avih[17] << 8) | (avih[18] << 16) | (avih[19] << 24);
-                    var scale = avih[20] | (avih[21] << 8) | (avih[22] << 16) | (avih[23] << 24);
-                    var rate = avih[24] | (avih[25] << 8) | (avih[26] << 16) | (avih[27] << 24);
+                    var r = new SpanReader(avih);
+                    _ = r.ReadBytes(16); // skip to dwTotalFrames
+                    _totalFrames = r.ReadInt32();
+                    var scale = r.ReadInt32();
+                    var rate = r.ReadInt32();
                     if (scale > 0) _frameRate = (Double)rate / scale;
-                    _videoWidth = avih[32] | (avih[33] << 8) | (avih[34] << 16) | (avih[35] << 24);
-                    _videoHeight = avih[36] | (avih[37] << 8) | (avih[38] << 16) | (avih[39] << 24);
+                    _ = r.ReadBytes(4); // skip dwSuggestedBufferSize to dwWidth
+                    _videoWidth = r.ReadInt32();
+                    _videoHeight = r.ReadInt32();
                 }
             }
             else if (id == "strh")
@@ -101,8 +107,8 @@ public class AviReader : IVideoContainerReader
                     var strh = new Byte[56];
                     _stream.Position = dataStart;
                     _stream.Read(strh, 0, 56);
-                    var fccType = System.Text.Encoding.ASCII.GetString(strh, 0, 4);
-                    var fccHandler = System.Text.Encoding.ASCII.GetString(strh, 4, 4);
+                    var fccType = Encoding.ASCII.GetString(strh, 0, 4);
+                    var fccHandler = Encoding.ASCII.GetString(strh, 4, 4);
                     if (fccType == "vids")
                         _codecType = fccHandler == "MJPG" ? VideoTypes.MJPEG : fccHandler == "H264" ? VideoTypes.H264 : VideoTypes.Unknown;
                 }
@@ -125,7 +131,7 @@ public class AviReader : IVideoContainerReader
 
         var packet = new VPacket
         {
-            Data = new Packet(data, 0, read),
+            Data = new ArrayPacket(data, 0, read),
             CodecType = _codecType,
             PTS = (Int64)(_frameIndex / _frameRate * 1000),
             FrameIndex = _frameIndex,

@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.ChipHeaders;
@@ -11,17 +12,19 @@ public class HisiliconVideoHeader : IVideoChipHeader
     public Int32 Priority => 1;
 
     /// <summary>尝试去除海思视频头</summary>
-    public Boolean TryTrim(Packet data, out Packet result)
+    public Boolean TryTrim(IPacket data, out IPacket result)
     {
         result = null;
-        if (data == null || data.Total < 8) return false;
+        if (data == null) return false;
 
-        var header = data.ReadBytes(0, 4);
-        for (var i = 0; i < 4; i++)
-            if (header[i] != Magic[i]) return false;
+        var span = data.GetSpan();
+        if (span.Length < 8) return false;
 
-        // 读取后续 4 字节长度
-        var len = (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
+        var reader = new SpanReader(span) { IsLittleEndian = false };
+        var magic = reader.ReadBytes(4);
+        if (!magic.SequenceEqual((ReadOnlySpan<Byte>)Magic)) return false;
+
+        var len = reader.ReadInt32();
         if (len != data.Total - 8) return false;
 
         result = data.Slice(8);
@@ -29,20 +32,16 @@ public class HisiliconVideoHeader : IVideoChipHeader
     }
 
     /// <summary>添加海思视频头</summary>
-    public Boolean TryAdd(Packet data, out Packet result)
+    public Boolean TryAdd(IPacket data, out IPacket result)
     {
-        var header = new Byte[8];
-        Array.Copy(Magic, 0, header, 0, 4);
-        var len = data.Total;
-        header[4] = (Byte)(len >> 24);
-        header[5] = (Byte)(len >> 16);
-        header[6] = (Byte)(len >> 8);
-        header[7] = (Byte)(len);
-
+        var span = data.GetSpan();
         var combined = new Byte[8 + data.Total];
-        Array.Copy(header, 0, combined, 0, 8);
-        Array.Copy(data.Data, data.Offset, combined, 8, data.Total);
-        result = new Packet(combined);
+        var writer = new SpanWriter(combined) { IsLittleEndian = false };
+        writer.Write((ReadOnlySpan<Byte>)Magic);
+        writer.Write((Int32)data.Total);
+        span.CopyTo(combined.AsSpan(writer.Position));
+
+        result = new ArrayPacket(combined);
         return true;
     }
 }

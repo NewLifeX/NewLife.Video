@@ -1,3 +1,4 @@
+using NewLife.Data;
 using NewLife.Video.Containers;
 
 namespace NewLife.Video.Containers;
@@ -29,7 +30,7 @@ public class MkvWriter : IVideoContainerWriter
     {
         if (packet?.Data == null) return;
         if (!_headerWritten) WriteHeader();
-        var data = packet.Data.ReadBytes();
+        var data = packet.Data.ToArray();
         // 简化：直接写 SimpleBlock 结构
         WriteEbmlId(_stream, 0xA3); // SimpleBlock
         var blockLen = 1 + 2 + 1 + data.Length; // track + timecode + flags + data

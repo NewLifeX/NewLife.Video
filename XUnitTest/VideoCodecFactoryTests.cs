@@ -1,3 +1,4 @@
+using NewLife.Data;
 using NewLife.Video;
 using Xunit;
 
@@ -25,7 +26,7 @@ public class VideoCodecFactoryTests
 
         var frames = _factory.Decode(new VPacket
         {
-            Data = new NewLife.Data.Packet(new Byte[10]),
+            Data = new ArrayPacket(new Byte[10]),
             CodecType = VideoTypes.MJPEG,
         });
 
@@ -68,7 +69,7 @@ public class VideoCodecFactoryTests
     {
         var packet = new VPacket
         {
-            Data = new NewLife.Data.Packet(new Byte[10]),
+            Data = new ArrayPacket(new Byte[10]),
             CodecType = VideoTypes.AV1,
         };
 
@@ -86,7 +87,7 @@ public class VideoCodecFactoryTests
         var data = new Byte[] { (Byte)'H', (Byte)'E', (Byte)'A', (Byte)'D', 1, 2, 3 };
         var packet = new VPacket
         {
-            Data = new NewLife.Data.Packet(data),
+            Data = new ArrayPacket(data),
             CodecType = VideoTypes.MJPEG,
         };
 
@@ -106,7 +107,7 @@ public class VideoCodecFactoryTests
         var data = new Byte[] { (Byte)'H', (Byte)'E', (Byte)'A', (Byte)'D', 1, 2, 3 };
         _factory.Decode(new VPacket
         {
-            Data = new NewLife.Data.Packet(data),
+            Data = new ArrayPacket(data),
             CodecType = VideoTypes.MJPEG,
         });
 

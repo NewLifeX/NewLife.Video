@@ -50,7 +50,7 @@ public class FFmpegH264Decoder : IVideoCodec, ICodecInfo, IDisposable
     {
         if (packet?.Data == null) return [];
 
-        var data = packet.Data.ReadBytes();
+        var data = packet.Data.ToArray();
         if (data.Length == 0) return [];
 
         // 构建 ffmpeg 参数

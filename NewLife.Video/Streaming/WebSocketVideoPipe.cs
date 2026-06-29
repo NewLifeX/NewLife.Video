@@ -29,7 +29,7 @@ public class WebSocketVideoPipe
     {
         if (packet?.Data == null) return;
 
-        var data = packet.Data.ReadBytes();
+        var data = packet.Data.ToArray();
         var lengthPrefix = new Byte[4];
         lengthPrefix[0] = (Byte)(data.Length >> 24);
         lengthPrefix[1] = (Byte)(data.Length >> 16);
@@ -69,7 +69,7 @@ public class WebSocketVideoPipe
 
         return new VPacket
         {
-            Data = new Packet(data, 0, dataLength),
+            Data = new ArrayPacket(data, 0, dataLength),
             CodecType = VideoTypes.Unknown,
         };
     }

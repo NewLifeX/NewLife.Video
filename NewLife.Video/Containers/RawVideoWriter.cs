@@ -25,7 +25,7 @@ public class RawVideoWriter : IVideoContainerWriter
     public void WriteFrame(VPacket packet)
     {
         if (packet?.Data == null) return;
-        var data = packet.Data.ReadBytes();
+        var data = packet.Data.ToArray();
         _stream.Write(data, 0, data.Length);
     }
 

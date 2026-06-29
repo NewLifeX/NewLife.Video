@@ -11,7 +11,7 @@ public class VideoChipHeaderTests
     public void Hisilicon_TryTrim_Correct()
     {
         var header = new HisiliconVideoHeader();
-        var data = new Packet(new Byte[]
+        var data = new ArrayPacket(new Byte[]
         {
             (Byte)'H', (Byte)'I', (Byte)'S', (Byte)'I', // magic
             0x00, 0x00, 0x00, 0x05, // length = 5
@@ -29,7 +29,7 @@ public class VideoChipHeaderTests
     public void Hisilicon_NonHisilicon_False()
     {
         var header = new HisiliconVideoHeader();
-        var data = new Packet(new Byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+        var data = new ArrayPacket(new Byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
         Assert.False(header.TryTrim(data, out _));
     }
 
@@ -37,7 +37,7 @@ public class VideoChipHeaderTests
     public void Hisilicon_TryAdd_RoundTrip()
     {
         var header = new HisiliconVideoHeader();
-        var original = new Packet(new Byte[] { 0xAA, 0xBB, 0xCC });
+        var original = new ArrayPacket(new Byte[] { 0xAA, 0xBB, 0xCC });
         Assert.True(header.TryAdd(original, out var withHeader));
         Assert.True(header.TryTrim(withHeader, out var restored));
         Assert.Equal(original.Total, restored.Total);
@@ -49,7 +49,7 @@ public class VideoChipHeaderTests
     public void Dahua_TryTrim_Correct()
     {
         var header = new DahuaVideoHeader();
-        var data = new Packet(new Byte[]
+        var data = new ArrayPacket(new Byte[]
         {
             0xDA, 0x41, 0x48, 0x00, 0x00, 0x01, // 6-byte header
             0x10, 0x20, // payload
@@ -62,7 +62,7 @@ public class VideoChipHeaderTests
     public void Dahua_TryAdd_RoundTrip()
     {
         var header = new DahuaVideoHeader();
-        var original = new Packet(new Byte[] { 0x11, 0x22 });
+        var original = new ArrayPacket(new Byte[] { 0x11, 0x22 });
         Assert.True(header.TryAdd(original, out var withHeader));
         Assert.True(header.TryTrim(withHeader, out var restored));
         Assert.Equal(original.Total, restored.Total);
@@ -72,7 +72,7 @@ public class VideoChipHeaderTests
     public void Uniview_TryTrim_Correct()
     {
         var header = new UniviewVideoHeader();
-        var data = new Packet(new Byte[] { (Byte)'U', (Byte)'N', (Byte)'V', 0x00, 0x01, 0x02 });
+        var data = new ArrayPacket(new Byte[] { (Byte)'U', (Byte)'N', (Byte)'V', 0x00, 0x01, 0x02 });
         Assert.True(header.TryTrim(data, out var trimmed));
         Assert.Equal(2, trimmed.Total);
     }
@@ -81,7 +81,7 @@ public class VideoChipHeaderTests
     public void Uniview_TryAdd_RoundTrip()
     {
         var header = new UniviewVideoHeader();
-        var original = new Packet(new Byte[] { 0x30, 0x31 });
+        var original = new ArrayPacket(new Byte[] { 0x30, 0x31 });
         Assert.True(header.TryAdd(original, out var withHeader));
         Assert.True(header.TryTrim(withHeader, out var restored));
         Assert.Equal(original.Total, restored.Total);
@@ -115,7 +115,7 @@ public class VideoChipHeaderTests
         hisiData[6] = (Byte)(headerLen >> 8); hisiData[7] = (Byte)(headerLen);
         Array.Copy(payload, 0, hisiData, 8, payload.Length);
 
-        var packet = new VPacket { Data = new Packet(hisiData), CodecType = VideoTypes.MJPEG };
+        var packet = new VPacket { Data = new ArrayPacket(hisiData), CodecType = VideoTypes.MJPEG };
         var frames = factory.Decode(packet);
         Assert.NotEmpty(frames);
     }

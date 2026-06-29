@@ -86,7 +86,7 @@ public class Gb28181Player : IDisposable
             var result = await _rtpClient.ReceiveAsync();
             return new VPacket
             {
-                Data = new Packet(result.Buffer),
+                Data = new ArrayPacket(result.Buffer),
                 CodecType = VideoTypes.H264,
                 PTS = DateTime.Now.Ticks / 10000,
             };

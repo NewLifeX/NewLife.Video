@@ -22,7 +22,7 @@ public class MjpegCodecTests
     public void Decode_InvalidJpeg_Throws()
     {
         var data = new Byte[] { 0x00, 0x01, 0x02, 0x03 };
-        var packet = new VPacket(new Packet(data), VideoTypes.MJPEG);
+        var packet = new VPacket(new ArrayPacket(data), VideoTypes.MJPEG);
 
         Assert.Throws<InvalidOperationException>(() => _codec.Decode(packet));
     }
@@ -32,7 +32,7 @@ public class MjpegCodecTests
     {
         // 构建最小 JPEG (SOI + EOI)
         var jpeg = new Byte[] { 0xFF, 0xD8, 0xFF, 0xD9 };
-        var packet = new VPacket(new Packet(jpeg), VideoTypes.MJPEG);
+        var packet = new VPacket(new ArrayPacket(jpeg), VideoTypes.MJPEG);
 
         var frames = _codec.Decode(packet);
 
@@ -62,7 +62,7 @@ public class MjpegCodecTests
         Assert.True(packet.IsKeyFrame);
 
         // 验证 JPEG SOI 标记
-        var jpegData = packet.Data.ReadBytes();
+        var jpegData = PacketHelper.ToArray(packet.Data);
         Assert.Equal(0xFF, jpegData[0]);
         Assert.Equal(0xD8, jpegData[1]);
     }
@@ -81,7 +81,7 @@ public class MjpegCodecTests
         Assert.Equal(VideoTypes.MJPEG, packet.CodecType);
 
         // 验证有效 JPEG
-        var jpegData = packet.Data.ReadBytes();
+        var jpegData = PacketHelper.ToArray(packet.Data);
         Assert.Equal(0xFF, jpegData[0]);
         Assert.Equal(0xD8, jpegData[1]);
     }

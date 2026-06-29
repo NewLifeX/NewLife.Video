@@ -6,7 +6,7 @@ namespace NewLife.Video;
 public class VPacket
 {
     /// <summary>数据</summary>
-    public Packet Data { get; set; }
+    public IPacket Data { get; set; }
 
     /// <summary>编码类型</summary>
     public VideoTypes CodecType { get; set; }
@@ -29,7 +29,7 @@ public class VPacket
     /// <summary>从数据创建数据包</summary>
     /// <param name="data">编码数据</param>
     /// <param name="codecType">编码类型</param>
-    public VPacket(Packet data, VideoTypes codecType)
+    public VPacket(IPacket data, VideoTypes codecType)
     {
         Data = data;
         CodecType = codecType;

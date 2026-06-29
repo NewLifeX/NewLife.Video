@@ -18,15 +18,22 @@ public class TestChipHeader : IVideoChipHeader
 
     public Int32 Priority => _priority;
 
-    public Boolean TryTrim(Packet data, out Packet result)
+    public Boolean TryTrim(IPacket data, out IPacket result)
     {
-        if (data == null || data.Total < _magic.Length)
+        if (data == null)
         {
             result = null;
             return false;
         }
 
-        var header = data.ReadBytes(0, _magic.Length);
+        var span = data.GetSpan();
+        if (span.Length < _magic.Length)
+        {
+            result = null;
+            return false;
+        }
+
+        var header = span.Slice(0, _magic.Length);
         var headerStr = System.Text.Encoding.ASCII.GetString(header);
         if (headerStr == _magic)
         {
@@ -38,13 +45,14 @@ public class TestChipHeader : IVideoChipHeader
         return false;
     }
 
-    public Boolean TryAdd(Packet data, out Packet result)
+    public Boolean TryAdd(IPacket data, out IPacket result)
     {
+        var span = data.GetSpan();
         var headerBytes = System.Text.Encoding.ASCII.GetBytes(_magic);
         var combined = new Byte[headerBytes.Length + data.Total];
         Array.Copy(headerBytes, 0, combined, 0, headerBytes.Length);
-        Array.Copy(data.Data, data.Offset, combined, headerBytes.Length, data.Total);
-        result = new Packet(combined);
+        span.CopyTo(combined.AsSpan(headerBytes.Length));
+        result = new ArrayPacket(combined);
         return true;
     }
 }

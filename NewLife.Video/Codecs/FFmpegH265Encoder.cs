@@ -47,7 +47,7 @@ public class FFmpegH265Encoder : IVideoCodec, ICodecInfo, IDisposable
 
         return new VPacket
         {
-            Data = new Packet(encoded ?? []),
+            Data = new ArrayPacket(encoded ?? []),
             CodecType = VideoTypes.H265,
             PTS = frames[0].Timestamp,
             IsKeyFrame = true,

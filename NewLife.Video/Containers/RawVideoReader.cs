@@ -1,3 +1,5 @@
+using NewLife.Data;
+
 namespace NewLife.Video.Containers;
 
 /// <summary>原始视频帧读取器。按帧读取无容器的原始像素数据（YUV420P/NV12/RGB24等）</summary>
@@ -61,7 +63,7 @@ public class RawVideoReader : IVideoContainerReader
 
         var packet = new VPacket
         {
-            Data = new NewLife.Data.Packet(buffer, 0, read),
+            Data = new ArrayPacket(buffer, 0, read),
             CodecType = _pixelFormat,
             PTS = _frameIndex * 40, // 25fps → 40ms 每帧
             FrameIndex = _frameIndex,

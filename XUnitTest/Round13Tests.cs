@@ -17,8 +17,8 @@ public class Round13Tests
             using (var w = new AviWriter(path))
             {
                 w.WriteMetadata(320, 240, VideoTypes.MJPEG, 25);
-                w.WriteFrame(new VPacket { Data = new Packet(new Byte[100]), CodecType = VideoTypes.MJPEG });
-                w.WriteFrame(new VPacket { Data = new Packet(new Byte[200]), CodecType = VideoTypes.MJPEG });
+                w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[100]), CodecType = VideoTypes.MJPEG });
+                w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[200]), CodecType = VideoTypes.MJPEG });
             }
 
             var data = File.ReadAllBytes(path);
@@ -42,7 +42,7 @@ public class Round13Tests
             using (var w = new AviWriter(path))
             {
                 w.WriteMetadata(640, 480, VideoTypes.H264, 30);
-                w.WriteFrame(new VPacket { Data = new Packet(new Byte[50]), CodecType = VideoTypes.H264 });
+                w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[50]), CodecType = VideoTypes.H264 });
             }
 
             var data = File.ReadAllBytes(path);
@@ -68,7 +68,7 @@ public class Round13Tests
             {
                 w.WriteMetadata(320, 240, VideoTypes.MJPEG, 10);
                 for (var i = 0; i < 3; i++)
-                    w.WriteFrame(new VPacket { Data = new Packet(new Byte[80 + i * 10]), CodecType = VideoTypes.MJPEG });
+                    w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[80 + i * 10]), CodecType = VideoTypes.MJPEG });
             }
 
             var data = File.ReadAllBytes(path);
@@ -92,7 +92,7 @@ public class Round13Tests
             using (var w = new AviWriter(path))
             {
                 w.WriteMetadata(320, 240, VideoTypes.MJPEG, 25);
-                w.WriteFrame(new VPacket { Data = new Packet(new Byte[150]), CodecType = VideoTypes.MJPEG });
+                w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[150]), CodecType = VideoTypes.MJPEG });
             }
 
             using var reader = new AviReader(path);

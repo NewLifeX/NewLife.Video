@@ -257,7 +257,7 @@ public class FlvReader : IVideoContainerReader
 
                 var packet = new VPacket
                 {
-                    Data = new Packet(videoData, 0, read),
+                    Data = new ArrayPacket(videoData, 0, read),
                     CodecType = codecId == 7 ? VideoTypes.H264 :
                                 codecId == 12 ? VideoTypes.H265 :
                                 codecId == 4 ? VideoTypes.H264 : // Screen Video 等

@@ -87,7 +87,7 @@ public class FFmpegH264Encoder : IVideoCodec, ICodecInfo, IDisposable
 
         return new VPacket
         {
-            Data = encoded != null ? new Packet(encoded) : new Packet(Array.Empty<Byte>()),
+            Data = encoded != null ? new ArrayPacket(encoded) : new ArrayPacket(Array.Empty<Byte>()),
             CodecType = VideoTypes.H264,
             PTS = frames.Length > 0 ? frames[0].Timestamp : 0,
             IsKeyFrame = true,

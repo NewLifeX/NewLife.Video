@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Containers;
@@ -33,58 +34,52 @@ public class FlvWriter : IVideoContainerWriter
 
         if (!_headerWritten) WriteFlvHeader();
 
-        var data = packet.Data.ReadBytes();
+        var data = packet.Data.ToArray();
 
-        // FLV Tag: 11 bytes header + data
-        var tagHeader = new Byte[11];
-        tagHeader[0] = 9; // video tag
-        // data size (3 bytes, big-endian)
-        tagHeader[1] = (Byte)(data.Length >> 16);
-        tagHeader[2] = (Byte)(data.Length >> 8);
-        tagHeader[3] = (Byte)(data.Length);
-        // timestamp (3 bytes, big-endian)
+        // FLV Tag Header: 11 bytes (大端)
+        // [0] tagType(1) [1-3] dataSize(BE24) [4-6] timestamp(BE24) [7] tsExt(1) [8-10] streamId(3)
+        var tagBuf = new Byte[11];
+        tagBuf[0] = 9; // video tag
+        tagBuf[1] = (Byte)(data.Length >> 16);
+        tagBuf[2] = (Byte)(data.Length >> 8);
+        tagBuf[3] = (Byte)data.Length;
         var ts = (UInt32)(packet.PTS > 0 ? packet.PTS : 0);
-        tagHeader[4] = (Byte)((ts >> 16) & 0xFF);
-        tagHeader[5] = (Byte)((ts >> 8) & 0xFF);
-        tagHeader[6] = (Byte)(ts & 0xFF);
-        // timestamp extended
-        tagHeader[7] = (Byte)((ts >> 24) & 0xFF);
-        // stream ID (3 bytes, always 0)
-        // frame type + codec id
-        var codecId = _codecType == VideoTypes.H265 ? (Byte)12 : (Byte)7; // 7=AVC, 12=HEVC
-        tagHeader[8] = (Byte)((packet.IsKeyFrame ? 1 : 2) << 4 | codecId);
+        tagBuf[4] = (Byte)((ts >> 16) & 0xFF);
+        tagBuf[5] = (Byte)((ts >> 8) & 0xFF);
+        tagBuf[6] = (Byte)(ts & 0xFF);
+        tagBuf[7] = (Byte)((ts >> 24) & 0xFF);
+        var codecId = _codecType == VideoTypes.H265 ? (Byte)12 : (Byte)7;
+        tagBuf[8] = (Byte)((packet.IsKeyFrame ? 1 : 2) << 4 | codecId);
+        tagBuf[9] = 0;
+        tagBuf[10] = 0;
 
-        _stream.Write(tagHeader, 0, 11);
+        _stream.Write(tagBuf, 0, 11);
         _stream.Write(data, 0, data.Length);
 
         // PreviousTagSize (4 bytes, big-endian)
         _prevTagSize = (UInt32)(11 + data.Length);
-        _stream.WriteByte((Byte)(_prevTagSize >> 24));
-        _stream.WriteByte((Byte)(_prevTagSize >> 16));
-        _stream.WriteByte((Byte)(_prevTagSize >> 8));
-        _stream.WriteByte((Byte)(_prevTagSize));
+        var ptsBuf = new Byte[4];
+        var pw = new SpanWriter(ptsBuf) { IsLittleEndian = false };
+        pw.Write(_prevTagSize);
+        _stream.Write(ptsBuf, 0, 4);
     }
 
     public void Flush() => _stream.Flush();
 
     private void WriteFlvHeader()
     {
-        // FLV Header: "FLV" + version(1) + flags(1) + headerSize(4)
-        _stream.WriteByte((Byte)'F');
-        _stream.WriteByte((Byte)'L');
-        _stream.WriteByte((Byte)'V');
-        _stream.WriteByte(1);     // version 1
-        _stream.WriteByte(0x01);  // flags: video only
-        _stream.WriteByte(0x00);  // header size = 9
-        _stream.WriteByte(0x00);
-        _stream.WriteByte(0x00);
-        _stream.WriteByte(0x09);
-        // First PreviousTagSize = 0
-        _stream.WriteByte(0x00);
-        _stream.WriteByte(0x00);
-        _stream.WriteByte(0x00);
-        _stream.WriteByte(0x00);
+        // FLV Header: 9 bytes + First PreviousTagSize (4 bytes, 0)
+        var buf = new Byte[13];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.WriteByte((Byte)'F');
+        w.WriteByte((Byte)'L');
+        w.WriteByte((Byte)'V');
+        w.WriteByte(1);     // version
+        w.WriteByte(0x01);  // flags: video only
+        w.Write((Int32)9);    // header size = 9
+        w.Write((Int32)0);    // First PreviousTagSize = 0
 
+        _stream.Write(buf, 0, 13);
         _headerWritten = true;
     }
 

@@ -39,7 +39,7 @@ public class MjpegCodec : IVideoCodec, ICodecInfo
     {
         if (packet?.Data == null) return [];
 
-        var data = packet.Data.ReadBytes();
+        var data = packet.Data.ToArray();
         if (data.Length == 0) return [];
 
         // 验证 JPEG SOI 标记 (0xFF 0xD8)
@@ -100,7 +100,7 @@ public class MjpegCodec : IVideoCodec, ICodecInfo
 
         return new VPacket
         {
-            Data = new Packet(jpegData),
+            Data = new ArrayPacket(jpegData),
             CodecType = VideoTypes.MJPEG,
             PTS = frame.Timestamp,
             IsKeyFrame = true,

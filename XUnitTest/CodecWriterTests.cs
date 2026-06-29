@@ -1,3 +1,4 @@
+using NewLife.Data;
 using NewLife.Video;
 using NewLife.Video.Codecs;
 using NewLife.Video.Containers;
@@ -36,7 +37,7 @@ public class CodecWriterTests
         {
             using var w = new TsWriter(path);
             w.WriteMetadata(640, 480, VideoTypes.H264, 25);
-            w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[500]), CodecType = VideoTypes.H264 });
+            w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[500]), CodecType = VideoTypes.H264 });
             w.Flush();
 
             Assert.True(new FileInfo(path).Length > 0);
@@ -52,7 +53,7 @@ public class CodecWriterTests
         {
             using var w = new FlvWriter(path);
             w.WriteMetadata(640, 480, VideoTypes.H264, 25);
-            w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[200]), CodecType = VideoTypes.H264, IsKeyFrame = true });
+            w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[200]), CodecType = VideoTypes.H264, IsKeyFrame = true });
             w.Flush();
 
             Assert.True(new FileInfo(path).Length > 0);
@@ -69,7 +70,7 @@ public class CodecWriterTests
             using (var w = new Mp4Writer(path))
             {
                 w.WriteMetadata(320, 240, VideoTypes.H264, 25);
-                w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[300]), CodecType = VideoTypes.H264 });
+                w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[300]), CodecType = VideoTypes.H264 });
             }
 
             Assert.True(new FileInfo(path).Length > 0);
@@ -86,7 +87,7 @@ public class CodecWriterTests
             using (var w = new AviWriter(path))
             {
                 w.WriteMetadata(320, 240, VideoTypes.MJPEG, 25);
-                w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[150]), CodecType = VideoTypes.MJPEG });
+                w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[150]), CodecType = VideoTypes.MJPEG });
             }
 
             Assert.True(new FileInfo(path).Length > 0);
@@ -103,7 +104,7 @@ public class CodecWriterTests
             using var w = new RawVideoWriter(path);
             w.WriteMetadata(320, 240, VideoTypes.YUV420P, 25);
             var frameSize = VideoFrame.CalculateDataSize(320, 240, VideoTypes.YUV420P);
-            w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[frameSize]), CodecType = VideoTypes.YUV420P });
+            w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[frameSize]), CodecType = VideoTypes.YUV420P });
             w.Flush();
 
             Assert.Equal(frameSize, new FileInfo(path).Length);
@@ -127,7 +128,7 @@ public class CodecWriterTests
         foreach (var w in writers)
         {
             w.WriteMetadata(64, 48, VideoTypes.H264, 25);
-            w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[10]), CodecType = VideoTypes.H264 });
+            w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[10]), CodecType = VideoTypes.H264 });
             w.Dispose();
         }
 

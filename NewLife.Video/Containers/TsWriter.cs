@@ -29,7 +29,7 @@ public class TsWriter : IVideoContainerWriter
         if (packet?.Data == null) return;
         if (!_headerWritten) WritePatPmt();
 
-        var data = packet.Data.ReadBytes();
+        var data = packet.Data.ToArray();
         var offset = 0;
         var payloadStart = true;
 

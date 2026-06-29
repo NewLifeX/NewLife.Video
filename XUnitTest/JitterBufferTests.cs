@@ -1,3 +1,4 @@
+using NewLife.Data;
 using NewLife.Video;
 using NewLife.Video.Streaming;
 using Xunit;
@@ -54,9 +55,9 @@ public class JitterBufferTests
     {
         var buffer = new JitterBuffer(100);
 
-        buffer.Enqueue(new VPacket { PTS = 60, Data = new NewLife.Data.Packet(new Byte[] { 3 }) });
-        buffer.Enqueue(new VPacket { PTS = 0, Data = new NewLife.Data.Packet(new Byte[] { 1 }) });
-        buffer.Enqueue(new VPacket { PTS = 30, Data = new NewLife.Data.Packet(new Byte[] { 2 }) });
+        buffer.Enqueue(new VPacket { PTS = 60, Data = new ArrayPacket(new Byte[] { 3 }) });
+        buffer.Enqueue(new VPacket { PTS = 0, Data = new ArrayPacket(new Byte[] { 1 }) });
+        buffer.Enqueue(new VPacket { PTS = 30, Data = new ArrayPacket(new Byte[] { 2 }) });
 
         var frame1 = buffer.Dequeue(100);
         Assert.Equal(0, frame1.PTS);

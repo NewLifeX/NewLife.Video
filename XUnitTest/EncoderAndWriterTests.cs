@@ -1,3 +1,4 @@
+using NewLife.Data;
 using NewLife.Video;
 using NewLife.Video.Codecs;
 using NewLife.Video.Containers;
@@ -29,7 +30,7 @@ public class EncoderAndWriterTests
         {
             using var w = new MkvWriter(path);
             w.WriteMetadata(640, 480, VideoTypes.VP9, 25);
-            w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[200]), CodecType = VideoTypes.VP9, IsKeyFrame = true });
+            w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[200]), CodecType = VideoTypes.VP9, IsKeyFrame = true });
             w.Flush();
             Assert.True(new FileInfo(path).Length > 0);
         }
@@ -77,7 +78,7 @@ public class EncoderAndWriterTests
             using var w = new Mp4Writer(path);
             w.WriteMetadata(320, 240, VideoTypes.H264, 30);
             for (var i = 0; i < 5; i++)
-                w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[100 + i * 10]), CodecType = VideoTypes.H264 });
+                w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[100 + i * 10]), CodecType = VideoTypes.H264 });
 
             Assert.True(_disposedCheck(w)); // just checks it doesn't throw
             w.Dispose();
@@ -101,7 +102,7 @@ public class EncoderAndWriterTests
         {
             using var w = new Mp4Writer(path);
             w.WriteMetadata(1920, 1080, VideoTypes.H265, 30);
-            w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[200]), CodecType = VideoTypes.H265 });
+            w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[200]), CodecType = VideoTypes.H265 });
             w.Dispose();
             Assert.True(File.Exists(path));
         }

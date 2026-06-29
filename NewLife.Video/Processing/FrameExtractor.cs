@@ -1,3 +1,4 @@
+using NewLife.Data;
 using NewLife.Video.Containers;
 
 namespace NewLife.Video.Processing;
@@ -54,7 +55,7 @@ public class FrameExtractor
                     Timestamp = packet.PTS,
                     FrameIndex = packet.FrameIndex,
                     IsKeyFrame = packet.IsKeyFrame,
-                    Data = packet.Data?.ReadBytes() ?? [],
+                    Data = packet.Data?.ToArray() ?? [],
                 };
             }
         }
@@ -88,7 +89,7 @@ public class FrameExtractor
                     Timestamp = packet.PTS,
                     FrameIndex = packet.FrameIndex,
                     IsKeyFrame = true,
-                    Data = packet.Data?.ReadBytes() ?? [],
+                    Data = packet.Data?.ToArray() ?? [],
                 });
 
                 if (maxFrames > 0 && keyFrames.Count >= maxFrames)

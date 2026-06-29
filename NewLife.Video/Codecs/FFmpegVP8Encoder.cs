@@ -26,7 +26,7 @@ public class FFmpegVP8Encoder : IVideoCodec, ICodecInfo, IDisposable
 
     public VPacket Encode(VideoFrame[] frames)
     {
-        if (frames == null || frames.Length == 0) return new VPacket { Data = new Packet(new Byte[0]), CodecType = VideoTypes.VP8 };
+        if (frames == null || frames.Length == 0) return new VPacket { Data = new ArrayPacket(new Byte[0]), CodecType = VideoTypes.VP8 };
 
         var rawData = new Byte[frames.Length * _width * _height * 3 / 2];
         var offset = 0;
@@ -43,7 +43,7 @@ public class FFmpegVP8Encoder : IVideoCodec, ICodecInfo, IDisposable
 
         return new VPacket
         {
-            Data = result != null ? new Packet(result) : new Packet(new Byte[0]),
+            Data = result != null ? new ArrayPacket(result) : new ArrayPacket(new Byte[0]),
             CodecType = VideoTypes.VP8,
             IsKeyFrame = true,
             FrameIndex = frames.Length > 0 ? frames[0].FrameIndex : 0

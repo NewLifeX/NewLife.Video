@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Containers;
@@ -31,7 +32,7 @@ public class AviWriter : IVideoContainerWriter
     public void WriteFrame(VPacket packet)
     {
         if (packet?.Data == null) return;
-        var data = packet.Data.ReadBytes();
+        var data = packet.Data.ToArray();
         _frames.Add(data);
         if (data.Length > _maxFrameSize) _maxFrameSize = data.Length;
     }
@@ -245,22 +246,26 @@ public class AviWriter : IVideoContainerWriter
 
     private static void WriteLE(FileStream fs, UInt32 v)
     {
-        fs.WriteByte((Byte)v);
-        fs.WriteByte((Byte)(v >> 8));
-        fs.WriteByte((Byte)(v >> 16));
-        fs.WriteByte((Byte)(v >> 24));
+        var buf = new Byte[4];
+        var w = new SpanWriter(buf);
+        w.Write(v);
+        fs.Write(buf, 0, 4);
     }
 
     private static void WriteLE(FileStream fs, UInt16 v)
     {
-        fs.WriteByte((Byte)v);
-        fs.WriteByte((Byte)(v >> 8));
+        var buf = new Byte[2];
+        var w = new SpanWriter(buf);
+        w.Write(v);
+        fs.Write(buf, 0, 2);
     }
 
     private static void WriteFourCC(FileStream fs, String s)
     {
+        var buf = new Byte[4];
         for (var i = 0; i < 4; i++)
-            fs.WriteByte(i < s.Length ? (Byte)s[i] : (Byte)' ');
+            buf[i] = i < s.Length ? (Byte)s[i] : (Byte)' ';
+        fs.Write(buf, 0, 4);
     }
 
     #endregion

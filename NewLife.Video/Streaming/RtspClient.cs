@@ -125,7 +125,7 @@ public class RtspClient : IDisposable
 
             return new VPacket
             {
-                Data = new Packet(data, 0, offset),
+                Data = new ArrayPacket(data, 0, offset),
                 CodecType = VideoTypes.H264,
             };
         }

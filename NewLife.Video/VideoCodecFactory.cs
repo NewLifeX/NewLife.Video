@@ -55,7 +55,7 @@ public class VideoCodecFactory
     /// <summary>去除芯片头。按优先级顺序尝试所有芯片头处理器</summary>
     /// <param name="data">设备数据</param>
     /// <returns>去除芯片头后的数据</returns>
-    public Packet TrimChipHeader(Packet data)
+    public IPacket TrimChipHeader(IPacket data)
     {
         foreach (var header in _chipHeaders)
         {
@@ -73,7 +73,7 @@ public class VideoCodecFactory
     /// <summary>添加芯片头（还原最近一次去除的芯片头）</summary>
     /// <param name="data">原始编码数据</param>
     /// <returns>添加芯片头后的数据</returns>
-    public Packet AddChipHeader(Packet data)
+    public IPacket AddChipHeader(IPacket data)
     {
         if (_lastChipHeader != null && _lastChipHeader.TryAdd(data, out var result))
             return result;

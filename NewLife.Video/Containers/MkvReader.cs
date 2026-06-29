@@ -281,7 +281,7 @@ public class MkvReader : IVideoContainerReader
 
         return new VPacket
         {
-            Data = new Packet(block.Data),
+            Data = new ArrayPacket(block.Data),
             CodecType = _codecType,
             PTS = block.PTS,
             FrameIndex = _frameIndex++,

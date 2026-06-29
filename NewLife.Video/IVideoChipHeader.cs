@@ -16,11 +16,11 @@ public interface IVideoChipHeader
     /// <param name="data">含芯片头的视频数据</param>
     /// <param name="result">去除头后的数据</param>
     /// <returns>是否成功去除</returns>
-    Boolean TryTrim(Packet data, out Packet result);
+    Boolean TryTrim(IPacket data, out IPacket result);
 
     /// <summary>尝试添加芯片头</summary>
     /// <param name="data">原始视频数据</param>
     /// <param name="result">添加头后的数据</param>
     /// <returns>是否成功添加</returns>
-    Boolean TryAdd(Packet data, out Packet result);
+    Boolean TryAdd(IPacket data, out IPacket result);
 }

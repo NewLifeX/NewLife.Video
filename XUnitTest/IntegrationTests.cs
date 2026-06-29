@@ -77,7 +77,7 @@ public class IntegrationTests
 
         var packet = new VPacket
         {
-            Data = new NewLife.Data.Packet(jpegData),
+            Data = new ArrayPacket(jpegData),
             CodecType = VideoFormatDetector.Detect(jpegData),
         };
 

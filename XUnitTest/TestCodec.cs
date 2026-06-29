@@ -29,6 +29,6 @@ public class TestCodec : IVideoCodec, ICodecInfo
     public VPacket Encode(VideoFrame[] frames)
     {
         LastEncodedFrames = frames;
-        return new VPacket { Data = new Packet(new Byte[100]), CodecType = VideoTypes.H264 };
+        return new VPacket { Data = new ArrayPacket(new Byte[100]), CodecType = VideoTypes.H264 };
     }
 }

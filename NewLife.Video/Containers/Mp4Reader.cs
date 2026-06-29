@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Containers;
@@ -103,7 +104,8 @@ public class Mp4Reader : IVideoContainerReader
         if (_stream.Read(header, 0, 8) < 8)
             return (0, null);
 
-        var size = (Int64)(header[0] << 24) | (Int64)(header[1] << 16) | (Int64)(header[2] << 8) | header[3];
+        var reader = new SpanReader(header) { IsLittleEndian = false };
+        var size = (Int64)reader.ReadUInt32();
         var type = System.Text.Encoding.ASCII.GetString(header, 4, 4);
 
         // 扩展大小（64位）
@@ -111,8 +113,8 @@ public class Mp4Reader : IVideoContainerReader
         {
             var extSize = new Byte[8];
             _stream.Read(extSize, 0, 8);
-            size = (Int64)(extSize[0] << 56) | (Int64)(extSize[1] << 48) | (Int64)(extSize[2] << 40) | (Int64)(extSize[3] << 32)
-                 | (Int64)(extSize[4] << 24) | (Int64)(extSize[5] << 16) | (Int64)(extSize[6] << 8) | extSize[7];
+            var extReader = new SpanReader(extSize) { IsLittleEndian = false };
+            size = extReader.ReadInt64();
         }
         else if (size == 0)
         {
@@ -404,7 +406,7 @@ public class Mp4Reader : IVideoContainerReader
 
             var packet = new VPacket
             {
-                Data = new Packet(nalData, 0, read),
+                Data = new ArrayPacket(nalData, 0, read),
                 CodecType = _codecType,
                 PTS = _frameIndex * 40, // 25fps 基准
                 FrameIndex = _frameIndex,

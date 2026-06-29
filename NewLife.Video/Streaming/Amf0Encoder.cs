@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using System.Text;
 
 namespace NewLife.Video.Streaming;
@@ -104,23 +105,27 @@ public class Amf0Encoder : IDisposable
 
     private void WriteUInt16BE(UInt16 v)
     {
-        _stream.WriteByte((Byte)(v >> 8));
-        _stream.WriteByte((Byte)v);
+        var buf = new Byte[2];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.Write(v);
+        _stream.Write(buf, 0, 2);
     }
 
     private void WriteUInt24BE(Int32 v)
     {
-        _stream.WriteByte((Byte)(v >> 16));
-        _stream.WriteByte((Byte)(v >> 8));
-        _stream.WriteByte((Byte)v);
+        Span<Byte> buf = stackalloc Byte[3];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.WriteByte((Byte)(v >> 16));
+        w.WriteByte((Byte)(v >> 8));
+        w.WriteByte((Byte)v);
     }
 
     private void WriteUInt32BE(UInt32 v)
     {
-        _stream.WriteByte((Byte)(v >> 24));
-        _stream.WriteByte((Byte)(v >> 16));
-        _stream.WriteByte((Byte)(v >> 8));
-        _stream.WriteByte((Byte)v);
+        var buf = new Byte[4];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.Write(v);
+        _stream.Write(buf, 0, 4);
     }
 
     /// <summary>释放资源</summary>

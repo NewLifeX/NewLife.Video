@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 
 namespace NewLife.Video.Containers;
@@ -37,7 +38,7 @@ public class Mp4Writer : IVideoContainerWriter
     public void WriteFrame(VPacket packet)
     {
         if (packet?.Data == null) return;
-        var data = packet.Data.ReadBytes();
+        var data = packet.Data.ToArray();
         _frames.Add(data);
         _frameSizes.Add((UInt32)data.Length);
         var delta = _timeScale > 0 ? (UInt32)(_timeScale / _frameRate) : 3000u;
@@ -247,10 +248,38 @@ public class Mp4Writer : IVideoContainerWriter
         var end = fs.Position; var start = _stack.Pop(); var sz = (UInt32)(end - start);
         fs.Seek(start, SeekOrigin.Begin); U4(fs, sz); fs.Seek(end, SeekOrigin.Begin);
     }
-    private static void U4(FileStream fs, UInt32 v) { fs.WriteByte((Byte)(v >> 24)); fs.WriteByte((Byte)(v >> 16)); fs.WriteByte((Byte)(v >> 8)); fs.WriteByte((Byte)v); }
-    private static void U2(FileStream fs, UInt16 v) { fs.WriteByte((Byte)(v >> 8)); fs.WriteByte((Byte)v); }
-    private static void A(FileStream fs, String s) { for (var i = 0; i < s.Length; i++) fs.WriteByte((Byte)s[i]); }
-    private static void Z(FileStream fs, Int32 n) { for (var i = 0; i < n; i++) fs.WriteByte(0); }
+
+    /// <summary>写入大端 UInt32 到流</summary>
+    private static void U4(FileStream fs, UInt32 v)
+    {
+        var buf = new Byte[4];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.Write(v);
+        fs.Write(buf, 0, 4);
+    }
+
+    /// <summary>写入大端 UInt16 到流</summary>
+    private static void U2(FileStream fs, UInt16 v)
+    {
+        var buf = new Byte[2];
+        var w = new SpanWriter(buf) { IsLittleEndian = false };
+        w.Write(v);
+        fs.Write(buf, 0, 2);
+    }
+
+    /// <summary>写入 ASCII 字符串到流</summary>
+    private static void A(FileStream fs, String s)
+    {
+        var buf = System.Text.Encoding.ASCII.GetBytes(s);
+        fs.Write(buf, 0, buf.Length);
+    }
+
+    /// <summary>写入 n 个零字节到流</summary>
+    private static void Z(FileStream fs, Int32 n)
+    {
+        var buf = new Byte[n];
+        fs.Write(buf, 0, n);
+    }
 
     #endregion
 }
