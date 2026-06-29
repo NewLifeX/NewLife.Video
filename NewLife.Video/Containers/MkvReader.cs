@@ -173,6 +173,10 @@ public class MkvReader : IVideoContainerReader
                 "V_MPEGH/ISO/HEVC" => VideoTypes.H265,
                 _ => VideoTypes.Unknown,
             };
+
+            // 若 TrackEntry 未直接提供宽高，尝试从 CodecPrivate 解析
+            if ((_videoWidth == 0 || _videoHeight == 0) && _trackCodecPrivate != null)
+                ParseCodecPrivateForDimensions();
         }
 
         _stream.Seek(end, SeekOrigin.Begin);
@@ -254,7 +258,7 @@ public class MkvReader : IVideoContainerReader
                     blockData = new Byte[dataLen];
                     _stream.Read(blockData, 0, dataLen);
                     blockPts = clusterTimecode + timecode;
-                    isKeyFrame = (flags & 0x80) == 0;
+                    isKeyFrame = (flags & 0x80) != 0;
                 }
             }
             else _stream.Seek(sz, SeekOrigin.Current);
@@ -298,6 +302,149 @@ public class MkvReader : IVideoContainerReader
     }
 
     public void Dispose() => _stream?.Dispose();
+
+    #region CodecPrivate 解析
+
+    /// <summary>从 CodecPrivate（AVCC/HVCC）中回退提取宽高</summary>
+    private void ParseCodecPrivateForDimensions()
+    {
+        if (_trackCodecPrivate == null || _trackCodecPrivate.Length < 7) return;
+        if (_codecType == VideoTypes.H264)
+            ParseAvccForDimensions();
+        else if (_codecType == VideoTypes.H265)
+            ParseHvccForDimensions();
+    }
+
+    private void ParseAvccForDimensions()
+    {
+        var data = _trackCodecPrivate;
+        if (data.Length < 7 || data[0] != 1) return;
+
+        var numSps = data[5] & 0x1F;
+        var offset = 6;
+        for (var i = 0; i < numSps && offset + 2 <= data.Length; i++)
+        {
+            var reader = new SpanReader(data, offset) { IsLittleEndian = false };
+            var spsLen = reader.ReadUInt16();
+            offset += 2;
+            if (offset + spsLen <= data.Length && spsLen >= 4)
+            {
+                ParseSpsForDimensions(data.AsSpan(offset, spsLen), isH264: true);
+                if (_videoWidth > 0 && _videoHeight > 0) return;
+            }
+            offset += spsLen;
+        }
+    }
+
+    private void ParseHvccForDimensions()
+    {
+        var data = _trackCodecPrivate;
+        if (data.Length < 23) return;
+
+        var offset = 22;
+        var numArrays = data[offset++];
+        for (var a = 0; a < numArrays && offset + 3 <= data.Length; a++)
+        {
+            var nalType = data[offset] & 0x3F;
+            var numNalus = (Int32)(((UInt32)data[offset + 1] << 8) | data[offset + 2]);
+            offset += 3;
+            for (var n = 0; n < numNalus && offset + 2 <= data.Length; n++)
+            {
+                var nalLen = (Int32)(((UInt32)data[offset] << 8) | data[offset + 1]);
+                offset += 2;
+                if (nalType == 33 && offset + nalLen <= data.Length && nalLen >= 4)
+                {
+                    ParseSpsForDimensions(data.AsSpan(offset, nalLen), isH264: false);
+                    if (_videoWidth > 0 && _videoHeight > 0) return;
+                }
+                offset += nalLen;
+            }
+        }
+    }
+
+    /// <summary>从 H.264/H.265 SPS 中简化提取宽高</summary>
+    private void ParseSpsForDimensions(Span<Byte> sps, Boolean isH264)
+    {
+        if (sps.Length < 4) return;
+        try
+        {
+            var bitReader = new BitReader(sps, isH264 ? 4 * 8 : 3 * 8);
+
+            if (isH264)
+            {
+                var profileIdc = sps[1];
+                bitReader.ReadUeGolomb(); // seq_parameter_set_id
+                if (profileIdc >= 100)
+                {
+                    var chromaFormatIdc = bitReader.ReadUeGolomb();
+                    if (chromaFormatIdc == 3) bitReader.SkipBits(1);
+                    bitReader.ReadUeGolomb();
+                    bitReader.ReadUeGolomb();
+                    bitReader.SkipBits(1);
+                    if (bitReader.ReadBit() != 0)
+                    {
+                        var mc = chromaFormatIdc != 3 ? 8 : 12;
+                        for (var m = 0; m < mc; m++)
+                            if (bitReader.ReadBit() != 0)
+                            {
+                                var ssl = m < 6 ? 16 : 64; var ls = 8; var ns = 8;
+                                for (var j = 0; j < ssl; j++)
+                                { if (ns != 0) { var ds = bitReader.ReadSeGolomb(); ns = (ls + ds + 256) % 256; } ls = ns == 0 ? ls : ns; }
+                            }
+                    }
+                }
+                bitReader.ReadUeGolomb();
+                var pct = bitReader.ReadUeGolomb();
+                if (pct == 0) bitReader.ReadUeGolomb();
+                else if (pct == 1) { bitReader.SkipBits(1); bitReader.ReadSeGolomb(); bitReader.ReadSeGolomb(); var nr = bitReader.ReadUeGolomb(); for (var r = 0; r < nr; r++) bitReader.ReadSeGolomb(); }
+                bitReader.ReadUeGolomb();
+                bitReader.SkipBits(1);
+                _videoWidth = (bitReader.ReadUeGolomb() + 1) * 16;
+                _videoHeight = (bitReader.ReadUeGolomb() + 1) * 16;
+                if (bitReader.ReadBit() == 0) _videoHeight *= 2;
+            }
+            else // H.265 简化
+            {
+                bitReader.SkipBits(4);
+                var msl = bitReader.ReadBits(3);
+                bitReader.SkipBits(1 + 80);
+                bitReader.ReadUeGolomb();
+                var cfi = bitReader.ReadUeGolomb();
+                if (cfi == 3) bitReader.SkipBits(1);
+                _videoWidth = bitReader.ReadUeGolomb();
+                _videoHeight = bitReader.ReadUeGolomb();
+            }
+        }
+        catch { }
+    }
+
+    /// <summary>位读取器（ref struct）</summary>
+    private ref struct BitReader
+    {
+        private readonly ReadOnlySpan<Byte> _data;
+        private Int32 _bitPosition;
+        public BitReader(ReadOnlySpan<Byte> data, Int32 startBit) { _data = data; _bitPosition = startBit; }
+        public Int32 ReadBit()
+        {
+            if (_bitPosition / 8 >= _data.Length) return 0;
+            var byteIndex = _bitPosition / 8;
+            var bitIndex = 7 - (_bitPosition % 8);
+            _bitPosition++;
+            return (_data[byteIndex] >> bitIndex) & 1;
+        }
+        public Int32 ReadBits(Int32 count) { var v = 0; for (var i = 0; i < count; i++) v = (v << 1) | ReadBit(); return v; }
+        public void SkipBits(Int32 count) => _bitPosition += count;
+        public Int32 ReadUeGolomb()
+        {
+            var lz = 0; while (ReadBit() == 0 && lz < 32) lz++;
+            if (lz >= 32) return 0;
+            var v = 0; for (var i = 0; i < lz; i++) v = (v << 1) | ReadBit();
+            return (1 << lz) - 1 + v;
+        }
+        public Int32 ReadSeGolomb() { var ue = ReadUeGolomb(); return (ue & 1) == 0 ? -(ue >> 1) : (ue + 1) >> 1; }
+    }
+
+    #endregion
 
     #region EBML 工具
 

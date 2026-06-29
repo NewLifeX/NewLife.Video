@@ -7,7 +7,8 @@ namespace NewLife.Video.Containers;
 /// <summary>AVI (Audio Video Interleave) 容器读取器。基于 RIFF 格式解析</summary>
 /// <remarks>
 /// AVI 文件结构：RIFF('AVI ' → LIST('hdrl' → 'avih'/'strl') → LIST('movi') → 'idx1')
-/// 支持未压缩视频和 MJPEG 编码视频。
+/// 支持未压缩视频和 MJPEG/H.264 编码视频。
+/// 优先使用 idx1 索引块获取帧偏移；无 idx1 时回退扫描 movi 块。
 /// </remarks>
 public class AviReader : IVideoContainerReader
 {
@@ -20,6 +21,7 @@ public class AviReader : IVideoContainerReader
     private Int64 _totalFrames;
     private Int64 _duration;
     private Int64 _moviOffset;
+    private Int64 _moviDataStart;
     private readonly List<Int64> _frameOffsets = [];
     private readonly List<Int32> _frameSizes = [];
 
@@ -48,10 +50,17 @@ public class AviReader : IVideoContainerReader
             if (riff[8] != 'A' || riff[9] != 'V' || riff[10] != 'I' || riff[11] != ' ')
                 throw new InvalidOperationException("不是 AVI");
 
-            // 递归解析（RIFF 小端）
+            // 递归解析元数据（RIFF 小端）
             var riffReader = new SpanReader(riff, 4);
             var fileSize = riffReader.ReadUInt32();
             ParseChunks(12, Math.Min(12 + fileSize, _stream.Length));
+
+            // 构建帧索引（idx1 块或扫描 movi）
+            BuildFrameIndex();
+
+            // 计算时长
+            if (_totalFrames > 0 && _frameRate > 0)
+                _duration = (Int64)(_totalFrames / _frameRate * 1000);
         }
         catch { _stream.Dispose(); throw; }
     }
@@ -81,7 +90,10 @@ public class AviReader : IVideoContainerReader
                 if (type == "hdrl" || type == "strl")
                     ParseChunks(_stream.Position, dataEnd);
                 else if (type == "movi")
-                    _moviOffset = dataStart;
+                {
+                    _moviOffset = start;
+                    _moviDataStart = _stream.Position; // LIST type 之后是帧数据区
+                }
             }
             else if (id == "avih")
             {
@@ -118,6 +130,104 @@ public class AviReader : IVideoContainerReader
             _stream.Seek(dataEnd, SeekOrigin.Begin);
         }
     }
+
+    #region 帧索引构建
+
+    /// <summary>构建帧索引：优先 idx1 块，回退扫描 movi</summary>
+    private void BuildFrameIndex()
+    {
+        if (TryParseIdx1())
+            return;
+
+        if (_moviDataStart > 0)
+            ScanMoviBlocks();
+    }
+
+    /// <summary>尝试解析 idx1 索引块（旧式 AVI 索引）。每条记录 16 字节</summary>
+    private Boolean TryParseIdx1()
+    {
+        var searchStart = Math.Max(0, _stream.Length - 1024 * 1024);
+        _stream.Seek(searchStart, SeekOrigin.Begin);
+
+        var buf = new Byte[8];
+        while (_stream.Position + 16 <= _stream.Length)
+        {
+            var pos = _stream.Position;
+            if (_stream.Read(buf, 0, 8) < 8) break;
+
+            var id = Encoding.ASCII.GetString(buf, 0, 4);
+            var chunkReader = new SpanReader(buf, 4);
+            var size = chunkReader.ReadInt32();
+
+            if (id == "idx1" && size > 0 && size % 16 == 0 && pos + 8 + size <= _stream.Length)
+            {
+                var entryCount = size / 16;
+                var idx1Data = new Byte[size];
+                _stream.Read(idx1Data, 0, size);
+
+                for (var i = 0; i < entryCount; i++)
+                {
+                    var off = i * 16;
+                    var reader = new SpanReader(idx1Data, off);
+                    var chunkId = reader.ReadUInt32();
+                    var flags = reader.ReadUInt32();
+                    var chunkOffset = reader.ReadUInt32();
+                    var chunkSize = reader.ReadUInt32();
+
+                    var c1 = (Char)(chunkId & 0xFF);
+                    var c2 = (Char)((chunkId >> 8) & 0xFF);
+                    if ((c1 == 'd' && c2 == 'c') || (c1 == 'd' && c2 == 'b'))
+                    {
+                        _frameOffsets.Add(_moviDataStart + chunkOffset);
+                        _frameSizes.Add((Int32)chunkSize);
+                    }
+                }
+
+                if (_frameOffsets.Count > 0)
+                {
+                    if (_totalFrames <= 0) _totalFrames = _frameOffsets.Count;
+                    return true;
+                }
+            }
+
+            _stream.Seek(pos + 1, SeekOrigin.Begin);
+        }
+
+        return false;
+    }
+
+    /// <summary>扫描 movi 数据块获取帧偏移和大小（无 idx1 时的回退方案）</summary>
+    private void ScanMoviBlocks()
+    {
+        _stream.Seek(_moviDataStart, SeekOrigin.Begin);
+        var fileEnd = _stream.Length;
+        var buf = new Byte[8];
+
+        while (_stream.Position + 8 <= fileEnd)
+        {
+            var pos = _stream.Position;
+            if (_stream.Read(buf, 0, 8) < 8) break;
+
+            var id = Encoding.ASCII.GetString(buf, 0, 4);
+            var chunkReader = new SpanReader(buf, 4);
+            var size = chunkReader.ReadInt32();
+
+            if (size <= 0 || pos + 8 + size > fileEnd) break;
+
+            if ((id == "00dc" || id == "00db") && size > 0)
+            {
+                _frameOffsets.Add(pos + 8);
+                _frameSizes.Add(size);
+            }
+
+            var alignedSize = (size + 1) & ~1;
+            _stream.Seek(pos + 8 + alignedSize, SeekOrigin.Begin);
+        }
+
+        if (_totalFrames <= 0) _totalFrames = _frameOffsets.Count;
+    }
+
+    #endregion
 
     public VPacket ReadFrame()
     {

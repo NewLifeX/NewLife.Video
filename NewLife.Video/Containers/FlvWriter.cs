@@ -3,7 +3,11 @@ using NewLife.Data;
 
 namespace NewLife.Video.Containers;
 
-/// <summary>FLV 容器写入器骨架。将视频编码数据封装为 FLV 文件</summary>
+/// <summary>FLV 容器写入器。将视频编码数据封装为 FLV 文件，自动写入 AVCDecoderConfigurationRecord / HEVCDecoderConfigurationRecord 序列头</summary>
+/// <remarks>
+/// 首个关键帧数据中自动提取 SPS/PPS（H.264）或 VPS/SPS/PPS（H.265），构建解码器配置记录并作为首个视频 Tag 写入。
+/// FLV 视频 Tag 数据格式：AVCPacketType(1) + CompositionTime(3) + Payload
+/// </remarks>
 public class FlvWriter : IVideoContainerWriter
 {
     private readonly FileStream _stream;
@@ -14,11 +18,23 @@ public class FlvWriter : IVideoContainerWriter
     private Double _frameRate;
     private UInt32 _prevTagSize;
 
+    private Boolean _sequenceHeaderWritten;
+    private Byte[] _sps;
+    private Byte[] _pps;
+    private Byte[] _vps;
+
+    /// <summary>创建 FLV 写入器</summary>
+    /// <param name="filePath">输出文件路径</param>
     public FlvWriter(String filePath)
     {
         _stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.Read);
     }
 
+    /// <summary>写入视频元数据</summary>
+    /// <param name="width">视频宽度</param>
+    /// <param name="height">视频高度</param>
+    /// <param name="codecType">编码类型</param>
+    /// <param name="frameRate">帧率</param>
     public void WriteMetadata(Int32 width, Int32 height, VideoTypes codecType, Double frameRate)
     {
         _width = width;
@@ -28,6 +44,8 @@ public class FlvWriter : IVideoContainerWriter
         WriteFlvHeader();
     }
 
+    /// <summary>写入一帧视频数据。首个关键帧自动提取参数集并写入序列头</summary>
+    /// <param name="packet">视频数据包</param>
     public void WriteFrame(VPacket packet)
     {
         if (packet?.Data == null) return;
@@ -36,38 +54,366 @@ public class FlvWriter : IVideoContainerWriter
 
         var data = packet.Data.ToArray();
 
-        // FLV Tag Header: 11 bytes (大端)，用 SpanWriter 构建
+        // 首个关键帧：提取参数集并写入 Sequence Header Tag
+        if (!_sequenceHeaderWritten && packet.IsKeyFrame)
+        {
+            ExtractParameterSets(data);
+            WriteSequenceHeaderTag();
+            _sequenceHeaderWritten = true;
+        }
+
+        // 写入视频帧 Tag（AVCPacketType=1 / HEVCPacketType=1）
+        var codecId = _codecType == VideoTypes.H265 ? (Byte)12 : (Byte)7;
+        WriteVideoTag(data, packet.PTS, packet.IsKeyFrame, codecId, packetType: 1);
+    }
+
+    /// <summary>刷新缓冲区</summary>
+    public void Flush() => _stream.Flush();
+
+    /// <summary>释放资源</summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        Flush();
+        _stream?.Dispose();
+    }
+    private Boolean _disposed;
+
+    #region 辅助
+
+    /// <summary>从关键帧数据中提取 H.264 SPS/PPS 或 H.265 VPS/SPS/PPS</summary>
+    private void ExtractParameterSets(Byte[] data)
+    {
+        if (_codecType == VideoTypes.H265)
+            ExtractHevcParameterSets(data);
+        else
+            ExtractAvcParameterSets(data);
+    }
+
+    /// <summary>提取 H.264 SPS 和 PPS NAL 单元</summary>
+    private void ExtractAvcParameterSets(Byte[] data)
+    {
+        var i = 0;
+        while (i < data.Length - 4)
+        {
+            // 查找 NAL 起始码 0x00000001 或 0x000001
+            var startCodeLen = 0;
+            if (data[i] == 0 && data[i + 1] == 0)
+            {
+                if (data[i + 2] == 1)
+                    startCodeLen = 3;
+                else if (data[i + 2] == 0 && i + 3 < data.Length && data[i + 3] == 1)
+                    startCodeLen = 4;
+            }
+
+            if (startCodeLen == 0)
+            {
+                i++;
+                continue;
+            }
+
+            var nalStart = i + startCodeLen;
+            if (nalStart >= data.Length) break;
+
+            var nalType = data[nalStart] & 0x1F;
+
+            // 查找下一个起始码确定 NAL 长度
+            var nalEnd = nalStart + 1;
+            while (nalEnd < data.Length - 3)
+            {
+                if (data[nalEnd] == 0 && data[nalEnd + 1] == 0)
+                {
+                    if (data[nalEnd + 2] == 1 ||
+                        (data[nalEnd + 2] == 0 && nalEnd + 3 < data.Length && data[nalEnd + 3] == 1))
+                        break;
+                }
+                nalEnd++;
+            }
+            if (nalEnd > data.Length) nalEnd = data.Length;
+
+            var nalData = new Byte[nalEnd - nalStart];
+            Array.Copy(data, nalStart, nalData, 0, nalData.Length);
+
+            if (nalType == 7) // SPS
+                _sps = nalData;
+            else if (nalType == 8) // PPS
+                _pps = nalData;
+
+            if (_sps != null && _pps != null) break;
+
+            i = nalEnd;
+        }
+    }
+
+    /// <summary>提取 H.265 VPS、SPS 和 PPS NAL 单元</summary>
+    private void ExtractHevcParameterSets(Byte[] data)
+    {
+        var i = 0;
+        while (i < data.Length - 4)
+        {
+            var startCodeLen = 0;
+            if (data[i] == 0 && data[i + 1] == 0)
+            {
+                if (data[i + 2] == 1)
+                    startCodeLen = 3;
+                else if (data[i + 2] == 0 && i + 3 < data.Length && data[i + 3] == 1)
+                    startCodeLen = 4;
+            }
+
+            if (startCodeLen == 0)
+            {
+                i++;
+                continue;
+            }
+
+            var nalStart = i + startCodeLen;
+            if (nalStart + 1 >= data.Length) break;
+
+            // H.265 NAL 类型: (nal_header[0] >> 1) & 0x3F
+            var nalType = (data[nalStart] >> 1) & 0x3F;
+
+            var nalEnd = nalStart + 1;
+            while (nalEnd < data.Length - 3)
+            {
+                if (data[nalEnd] == 0 && data[nalEnd + 1] == 0)
+                {
+                    if (data[nalEnd + 2] == 1 ||
+                        (data[nalEnd + 2] == 0 && nalEnd + 3 < data.Length && data[nalEnd + 3] == 1))
+                        break;
+                }
+                nalEnd++;
+            }
+            if (nalEnd > data.Length) nalEnd = data.Length;
+
+            var nalData = new Byte[nalEnd - nalStart];
+            Array.Copy(data, nalStart, nalData, 0, nalData.Length);
+
+            if (nalType == 32) // VPS
+                _vps = nalData;
+            else if (nalType == 33) // SPS
+                _sps = nalData;
+            else if (nalType == 34) // PPS
+                _pps = nalData;
+
+            if (_vps != null && _sps != null && _pps != null) break;
+
+            i = nalEnd;
+        }
+    }
+
+    /// <summary>写入序列头 Tag（AVCPacketType=0 或 HEVCPacketType=0）</summary>
+    private void WriteSequenceHeaderTag()
+    {
+        Byte[] configRecord;
+        var codecId = (Byte)7;
+
+        if (_codecType == VideoTypes.H265)
+        {
+            configRecord = BuildHevcDecoderConfigurationRecord();
+            codecId = 12;
+        }
+        else
+        {
+            configRecord = BuildAvcDecoderConfigurationRecord();
+        }
+
+        // Tag data: PacketType(1) + CompositionTime(3) + ConfigurationRecord
+        var tagData = new Byte[4 + configRecord.Length];
+        tagData[0] = 0; // AVCPacketType/HEVCPacketType = 0 (sequence header)
+        tagData[1] = 0; // CompositionTime[0]
+        tagData[2] = 0; // CompositionTime[1]
+        tagData[3] = 0; // CompositionTime[2]
+        Array.Copy(configRecord, 0, tagData, 4, configRecord.Length);
+
+        WriteVideoTag(tagData, 0, true, codecId, packetType: 0);
+    }
+
+    /// <summary>构建 AVCDecoderConfigurationRecord（ISO 14496-15）</summary>
+    private Byte[] BuildAvcDecoderConfigurationRecord()
+    {
+        var sps = _sps ?? new Byte[] { 0x67, 0x42, 0x00, 0x1E, 0xAB, 0x40, 0x80 };
+        var pps = _pps ?? new Byte[] { 0x68, 0xCE, 0x3C, 0x80 };
+
+        // AVCDecoderConfigurationRecord 结构
+        using var ms = new MemoryStream();
+        ms.WriteByte(1); // configurationVersion
+
+        // profile_indication / profile_compatibility / level_indication 从 SPS 提取
+        if (sps.Length > 3)
+        {
+            ms.WriteByte(sps[1]); // AVCProfileIndication
+            ms.WriteByte(sps[2]); // profile_compatibility
+            ms.WriteByte(sps[3]); // AVCLevelIndication
+        }
+        else
+        {
+            ms.WriteByte(0x42); // Baseline
+            ms.WriteByte(0x00);
+            ms.WriteByte(0x1E); // Level 3.0
+        }
+
+        // 6 bits reserved (111111) + 2 bits lengthSizeMinusOne (11 = 3, 即 NAL 长度字段 4 字节)
+        ms.WriteByte(0xFF);
+
+        // 3 bits reserved (111) + 5 bits numOfSequenceParameterSets
+        ms.WriteByte((Byte)(0xE0 | 1)); // 1 个 SPS
+
+        // SPS 长度 (2 字节大端) + SPS 数据
+        var spsLen = (UInt16)sps.Length;
+        ms.WriteByte((Byte)(spsLen >> 8));
+        ms.WriteByte((Byte)(spsLen & 0xFF));
+        ms.Write(sps, 0, sps.Length);
+
+        // numOfPictureParameterSets
+        ms.WriteByte(1); // 1 个 PPS
+
+        // PPS 长度 (2 字节大端) + PPS 数据
+        var ppsLen = (UInt16)pps.Length;
+        ms.WriteByte((Byte)(ppsLen >> 8));
+        ms.WriteByte((Byte)(ppsLen & 0xFF));
+        ms.Write(pps, 0, pps.Length);
+
+        return ms.ToArray();
+    }
+
+    /// <summary>构建 HEVCDecoderConfigurationRecord（ISO 14496-15）</summary>
+    private Byte[] BuildHevcDecoderConfigurationRecord()
+    {
+        var vps = _vps ?? new Byte[] { 0x40, 0x01, 0x0C, 0x01, 0xFF, 0xFF, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0xB0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0xB9 };
+        var sps = _sps ?? new Byte[] { 0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0xB0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0xB9, 0xA0 };
+        var pps = _pps ?? new Byte[] { 0x44, 0x01, 0xC0, 0x72, 0xB0, 0x46, 0x40 };
+
+        using var ms = new MemoryStream();
+        ms.WriteByte(1); // configurationVersion
+
+        // profile_space(2) + tier_flag(1) + profile_idc(5) = SPS[1] & 0x1F, etc
+        // general_profile_space: (sps[1] >> 6) & 0x03
+        // general_tier_flag: (sps[1] >> 5) & 0x01
+        // general_profile_idc: sps[1] & 0x1F
+        var profileSpace = sps.Length > 1 ? (sps[1] >> 6) & 0x03 : 0;
+        var tierFlag = sps.Length > 1 ? (sps[1] >> 5) & 0x01 : 0;
+        var profileIdc = sps.Length > 1 ? sps[1] & 0x1F : 1;
+        ms.WriteByte((Byte)((profileSpace << 6) | (tierFlag << 5) | profileIdc));
+
+        // general_profile_compatibility_flags (4 bytes)
+        ms.WriteByte(0x60); // bit 31..24
+        ms.WriteByte(0x00); // bit 23..16
+        ms.WriteByte(0x00); // bit 15..8
+        ms.WriteByte(0x00); // bit 7..0
+
+        // general_constraint_indicator_flags (6 bytes)
+        for (var i = 0; i < 6; i++)
+            ms.WriteByte(0x00);
+
+        // general_level_idc
+        var levelIdc = sps.Length > 3 ? sps[3] : (Byte)0x7A;
+        ms.WriteByte(levelIdc);
+
+        // min_spatial_segmentation_idc (4 bits reserved + 12 bits)
+        ms.WriteByte(0xF0);
+        ms.WriteByte(0x00);
+
+        // parallelismType (6 bits reserved + 2 bits)
+        ms.WriteByte(0xFC);
+
+        // chromaFormatIdc (6 bits reserved + 2 bits)
+        ms.WriteByte(0xFC);
+
+        // bitDepthLumaMinus8 (5 bits reserved + 3 bits)
+        ms.WriteByte(0xF8);
+
+        // bitDepthChromaMinus8 (5 bits reserved + 3 bits)
+        ms.WriteByte(0xF8);
+
+        // avgFrameRate (2 bytes)
+        ms.WriteByte(0x00);
+        ms.WriteByte(0x00);
+
+        // constantFrameRate(2) + numTemporalLayers(3) + temporalIdNested(1) + lengthSizeMinusOne(2) = 1 字节
+        ms.WriteByte(0x0F); // constant=0, numTemp=1, nested=1, lenSize=3
+
+        // numOfArrays (8 bits)
+        var arrayCount = (Byte)((_vps != null ? 1 : 0) + (_sps != null ? 1 : 0) + (_pps != null ? 1 : 0));
+        ms.WriteByte(arrayCount);
+
+        // 写入 VPS 数组
+        if (_vps != null)
+        {
+            ms.WriteByte(32); // array_completeness(1) + reserved(1) + NAL_unit_type(6) = VPS=32
+            ms.WriteByte(0x00);
+            ms.WriteByte(1); // numNalus
+            ms.WriteByte((Byte)(_vps.Length >> 8));
+            ms.WriteByte((Byte)(_vps.Length & 0xFF));
+            ms.Write(_vps, 0, _vps.Length);
+        }
+
+        // 写入 SPS 数组
+        if (_sps != null)
+        {
+            ms.WriteByte(33); // SPS
+            ms.WriteByte(0x00);
+            ms.WriteByte(1);
+            ms.WriteByte((Byte)(_sps.Length >> 8));
+            ms.WriteByte((Byte)(_sps.Length & 0xFF));
+            ms.Write(_sps, 0, _sps.Length);
+        }
+
+        // 写入 PPS 数组
+        if (_pps != null)
+        {
+            ms.WriteByte(34); // PPS
+            ms.WriteByte(0x00);
+            ms.WriteByte(1);
+            ms.WriteByte((Byte)(_pps.Length >> 8));
+            ms.WriteByte((Byte)(_pps.Length & 0xFF));
+            ms.Write(_pps, 0, _pps.Length);
+        }
+
+        return ms.ToArray();
+    }
+
+    /// <summary>写入视频 Tag（含 11 字节 TagHeader + Data + 4 字节 PreviousTagSize）</summary>
+    private void WriteVideoTag(Byte[] data, Int64 pts, Boolean isKeyFrame, Byte codecId, Byte packetType)
+    {
+        var ts = (UInt32)(pts > 0 ? pts : 0);
+
+        // Tag Data = VideoTagHeader(1) + payload
+        var dataSize = 1 + data.Length;
+
+        // FLV Tag Header: 11 bytes (大端)
         // [0] tagType(1) [1-3] dataSize(BE24) [4-6] timestamp(BE24) [7] tsExt(1) [8-10] streamId(3)
         var tagBuf = new Byte[11];
         var tw = new SpanWriter(tagBuf) { IsLittleEndian = false };
         tw.WriteByte(9); // video tag
-        // DataSize: 3 字节大端
-        tw.WriteByte((Byte)(data.Length >> 16));
-        tw.WriteByte((Byte)(data.Length >> 8));
-        tw.WriteByte((Byte)data.Length);
-        // Timestamp: 3 字节大端 + 1 字节扩展
-        var ts = (UInt32)(packet.PTS > 0 ? packet.PTS : 0);
+        tw.WriteByte((Byte)(dataSize >> 16));
+        tw.WriteByte((Byte)(dataSize >> 8));
+        tw.WriteByte((Byte)dataSize);
         tw.WriteByte((Byte)((ts >> 16) & 0xFF));
         tw.WriteByte((Byte)((ts >> 8) & 0xFF));
         tw.WriteByte((Byte)(ts & 0xFF));
         tw.WriteByte((Byte)((ts >> 24) & 0xFF));
-        var codecId = _codecType == VideoTypes.H265 ? (Byte)12 : (Byte)7;
-        tw.WriteByte((Byte)((packet.IsKeyFrame ? 1 : 2) << 4 | codecId));
-        tw.WriteByte(0);
-        tw.WriteByte(0);
+        tw.WriteByte(0); // StreamID[0]
+        tw.WriteByte(0); // StreamID[1]
+        tw.WriteByte(0); // StreamID[2]
 
         _stream.Write(tagBuf, 0, 11);
+
+        // VideoTagHeader: 1 字节 FrameType(4bit) + CodecID(4bit)
+        var frameType = isKeyFrame ? 1 : 2;
+        _stream.WriteByte((Byte)((frameType << 4) | codecId));
+
+        // 对于 AVC/HEVC，VideoTagHeader 后紧跟 AVCPacketType / HEVCPacketType（已包含在 data 中）
+        // data 格式：[PacketType(1) + CompositionTime(3) + Payload]
         _stream.Write(data, 0, data.Length);
 
-        // PreviousTagSize (4 bytes, big-endian)
-        _prevTagSize = (UInt32)(11 + data.Length);
+        // PreviousTagSize (4 bytes, big-endian) = 11(TagHeader) + dataSize
+        var prevTagSize = (UInt32)(11 + dataSize);
         var ptsBuf = new Byte[4];
         var pw = new SpanWriter(ptsBuf) { IsLittleEndian = false };
-        pw.Write(_prevTagSize);
+        pw.Write(prevTagSize);
         _stream.Write(ptsBuf, 0, 4);
     }
-
-    public void Flush() => _stream.Flush();
 
     private void WriteFlvHeader()
     {
@@ -86,12 +432,5 @@ public class FlvWriter : IVideoContainerWriter
         _headerWritten = true;
     }
 
-    public void Dispose()
-    {
-        if (_disposed) return;
-        _disposed = true;
-        Flush();
-        _stream?.Dispose();
-    }
-    private Boolean _disposed;
+    #endregion
 }

@@ -13,7 +13,7 @@ public class MjpegCodecTests
     public void ICodecInfo_Correct()
     {
         Assert.Equal("MJPEG", _codec.Name);
-        Assert.Equal("1.0.0", _codec.Version);
+        Assert.Equal("1.1.0", _codec.Version);
         Assert.Contains(VideoTypes.MJPEG, _codec.SupportedTypes);
         Assert.False(_codec.IsStateful);
     }

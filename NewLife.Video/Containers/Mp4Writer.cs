@@ -5,7 +5,7 @@ namespace NewLife.Video.Containers;
 
 /// <summary>MP4 (ISO BMFF) 容器写入器。将 H.264/H.265 编码数据封装为标准 MP4 文件</summary>
 /// <remarks>
-/// 生成立即可播放的 ftyp+moov+mdat 完整结构。
+/// 生成可播放的 ftyp+moov+mdat 完整结构，自动从首个关键帧提取 SPS/PPS 写入 avcC/hvcC 配置盒。
 /// 帧数据暂存内存，Dispose 时一次性写入文件。
 /// 高吞吐场景建议分片 MP4 (fMP4)。
 /// </remarks>
@@ -21,8 +21,14 @@ public class Mp4Writer : IVideoContainerWriter
     private readonly List<Byte[]> _frames = [];
     private readonly List<UInt32> _frameSizes = [];
     private readonly List<UInt32> _frameDts = [];
+    private readonly List<Int32> _keyFrameIndices = [];
     private Int32 _count;
     private Boolean _disposed;
+
+    private Byte[] _sps;
+    private Byte[] _pps;
+    private Byte[] _vps;
+    private Boolean _paramsExtracted;
 
     public Mp4Writer(String filePath) => _filePath = filePath;
 
@@ -39,8 +45,20 @@ public class Mp4Writer : IVideoContainerWriter
     {
         if (packet?.Data == null) return;
         var data = packet.Data.ToArray();
+
+        // 从首个关键帧提取参数集
+        if (!_paramsExtracted && packet.IsKeyFrame)
+        {
+            ExtractParameterSets(data);
+            _paramsExtracted = true;
+        }
+
         _frames.Add(data);
         _frameSizes.Add((UInt32)data.Length);
+
+        if (packet.IsKeyFrame)
+            _keyFrameIndices.Add(_count + 1); // MP4 stss 使用 1-based index
+
         var delta = _timeScale > 0 ? (UInt32)(_timeScale / _frameRate) : 3000u;
         _frameDts.Add((UInt32)(_count * delta));
         _count++;
@@ -62,6 +80,199 @@ public class Mp4Writer : IVideoContainerWriter
         WriteMoov(fs);
         WriteMdat(fs);
     }
+
+    #region 参数集提取
+
+    /// <summary>从关键帧数据中提取 H.264 SPS/PPS 或 H.265 VPS/SPS/PPS</summary>
+    private void ExtractParameterSets(Byte[] data)
+    {
+        if (_codecType == VideoTypes.H265)
+            ExtractHevcParameterSets(data);
+        else
+            ExtractAvcParameterSets(data);
+    }
+
+    private void ExtractAvcParameterSets(Byte[] data)
+    {
+        var i = 0;
+        while (i < data.Length - 4)
+        {
+            var startCodeLen = 0;
+            if (data[i] == 0 && data[i + 1] == 0)
+            {
+                if (data[i + 2] == 1)
+                    startCodeLen = 3;
+                else if (data[i + 2] == 0 && i + 3 < data.Length && data[i + 3] == 1)
+                    startCodeLen = 4;
+            }
+
+            if (startCodeLen == 0) { i++; continue; }
+
+            var nalStart = i + startCodeLen;
+            if (nalStart >= data.Length) break;
+
+            var nalType = data[nalStart] & 0x1F;
+
+            var nalEnd = nalStart + 1;
+            while (nalEnd < data.Length - 3)
+            {
+                if (data[nalEnd] == 0 && data[nalEnd + 1] == 0 &&
+                    (data[nalEnd + 2] == 1 || (data[nalEnd + 2] == 0 && nalEnd + 3 < data.Length && data[nalEnd + 3] == 1)))
+                    break;
+                nalEnd++;
+            }
+            if (nalEnd > data.Length) nalEnd = data.Length;
+
+            var nalData = new Byte[nalEnd - nalStart];
+            Array.Copy(data, nalStart, nalData, 0, nalData.Length);
+
+            if (nalType == 7) _sps = nalData;
+            else if (nalType == 8) _pps = nalData;
+
+            if (_sps != null && _pps != null) break;
+            i = nalEnd;
+        }
+    }
+
+    private void ExtractHevcParameterSets(Byte[] data)
+    {
+        var i = 0;
+        while (i < data.Length - 4)
+        {
+            var startCodeLen = 0;
+            if (data[i] == 0 && data[i + 1] == 0)
+            {
+                if (data[i + 2] == 1)
+                    startCodeLen = 3;
+                else if (data[i + 2] == 0 && i + 3 < data.Length && data[i + 3] == 1)
+                    startCodeLen = 4;
+            }
+
+            if (startCodeLen == 0) { i++; continue; }
+
+            var nalStart = i + startCodeLen;
+            if (nalStart + 1 >= data.Length) break;
+
+            var nalType = (data[nalStart] >> 1) & 0x3F;
+
+            var nalEnd = nalStart + 1;
+            while (nalEnd < data.Length - 3)
+            {
+                if (data[nalEnd] == 0 && data[nalEnd + 1] == 0 &&
+                    (data[nalEnd + 2] == 1 || (data[nalEnd + 2] == 0 && nalEnd + 3 < data.Length && data[nalEnd + 3] == 1)))
+                    break;
+                nalEnd++;
+            }
+            if (nalEnd > data.Length) nalEnd = data.Length;
+
+            var nalData = new Byte[nalEnd - nalStart];
+            Array.Copy(data, nalStart, nalData, 0, nalData.Length);
+
+            if (nalType == 32) _vps = nalData;
+            else if (nalType == 33) _sps = nalData;
+            else if (nalType == 34) _pps = nalData;
+
+            if (_vps != null && _sps != null && _pps != null) break;
+            i = nalEnd;
+        }
+    }
+
+    /// <summary>构建 AVCDecoderConfigurationRecord 或 HEVCDecoderConfigurationRecord</summary>
+    private Byte[] BuildDecoderConfigurationRecord()
+    {
+        if (_codecType == VideoTypes.H265)
+            return BuildHevcDecoderConfigurationRecord();
+        return BuildAvcDecoderConfigurationRecord();
+    }
+
+    private Byte[] BuildAvcDecoderConfigurationRecord()
+    {
+        var sps = _sps ?? new Byte[] { 0x67, 0x42, 0x00, 0x1E, 0xAB, 0x40, 0x80 };
+        var pps = _pps ?? new Byte[] { 0x68, 0xCE, 0x3C, 0x80 };
+
+        using var ms = new MemoryStream();
+        ms.WriteByte(1); // configurationVersion
+
+        if (sps.Length > 3)
+        {
+            ms.WriteByte(sps[1]); // AVCProfileIndication
+            ms.WriteByte(sps[2]); // profile_compatibility
+            ms.WriteByte(sps[3]); // AVCLevelIndication
+        }
+        else
+        {
+            ms.WriteByte(0x42); ms.WriteByte(0x00); ms.WriteByte(0x1E);
+        }
+
+        ms.WriteByte(0xFF); // reserved(6) + lengthSizeMinusOne(2) = 3
+        ms.WriteByte((Byte)(0xE0 | 1)); // reserved(3) + 1 SPS
+
+        var spsLen = (UInt16)sps.Length;
+        ms.WriteByte((Byte)(spsLen >> 8));
+        ms.WriteByte((Byte)(spsLen & 0xFF));
+        ms.Write(sps, 0, sps.Length);
+
+        ms.WriteByte(1); // 1 PPS
+        var ppsLen = (UInt16)pps.Length;
+        ms.WriteByte((Byte)(ppsLen >> 8));
+        ms.WriteByte((Byte)(ppsLen & 0xFF));
+        ms.Write(pps, 0, pps.Length);
+
+        return ms.ToArray();
+    }
+
+    private Byte[] BuildHevcDecoderConfigurationRecord()
+    {
+        var vps = _vps ?? new Byte[] { 0x40, 0x01, 0x0C, 0x01, 0xFF, 0xFF, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0xB0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0xB9 };
+        var sps = _sps ?? new Byte[] { 0x42, 0x01, 0x01, 0x01, 0x60, 0x00, 0x00, 0x03, 0x00, 0xB0, 0x00, 0x00, 0x03, 0x00, 0x00, 0x03, 0x00, 0xB9, 0xA0 };
+        var pps = _pps ?? new Byte[] { 0x44, 0x01, 0xC0, 0x72, 0xB0, 0x46, 0x40 };
+
+        using var ms = new MemoryStream();
+        ms.WriteByte(1); // configurationVersion
+
+        var profileSpace = sps.Length > 1 ? (sps[1] >> 6) & 0x03 : 0;
+        var tierFlag = sps.Length > 1 ? (sps[1] >> 5) & 0x01 : 0;
+        var profileIdc = sps.Length > 1 ? sps[1] & 0x1F : 1;
+        ms.WriteByte((Byte)((profileSpace << 6) | (tierFlag << 5) | profileIdc));
+
+        ms.WriteByte(0x60); ms.WriteByte(0x00); ms.WriteByte(0x00); ms.WriteByte(0x00);
+        for (var i = 0; i < 6; i++) ms.WriteByte(0x00);
+        var levelIdc = sps.Length > 3 ? sps[3] : (Byte)0x7A;
+        ms.WriteByte(levelIdc);
+        ms.WriteByte(0xF0); ms.WriteByte(0x00); // min_spatial_segmentation
+        ms.WriteByte(0xFC); // parallelismType
+        ms.WriteByte(0xFC); // chromaFormatIdc
+        ms.WriteByte(0xF8); // bitDepthLumaMinus8
+        ms.WriteByte(0xF8); // bitDepthChromaMinus8
+        ms.WriteByte(0x00); ms.WriteByte(0x00); // avgFrameRate
+        ms.WriteByte(0x0F); // constantFrameRate + numTemporalLayers + temporalIdNested + lengthSizeMinusOne
+
+        var arrayCount = (Byte)((_vps != null ? 1 : 0) + (_sps != null ? 1 : 0) + (_pps != null ? 1 : 0));
+        ms.WriteByte(arrayCount);
+
+        if (_vps != null)
+        {
+            ms.WriteByte(32); ms.WriteByte(0x00); ms.WriteByte(1);
+            ms.WriteByte((Byte)(_vps.Length >> 8)); ms.WriteByte((Byte)(_vps.Length & 0xFF));
+            ms.Write(_vps, 0, _vps.Length);
+        }
+        if (_sps != null)
+        {
+            ms.WriteByte(33); ms.WriteByte(0x00); ms.WriteByte(1);
+            ms.WriteByte((Byte)(_sps.Length >> 8)); ms.WriteByte((Byte)(_sps.Length & 0xFF));
+            ms.Write(_sps, 0, _sps.Length);
+        }
+        if (_pps != null)
+        {
+            ms.WriteByte(34); ms.WriteByte(0x00); ms.WriteByte(1);
+            ms.WriteByte((Byte)(_pps.Length >> 8)); ms.WriteByte((Byte)(_pps.Length & 0xFF));
+            ms.Write(_pps, 0, _pps.Length);
+        }
+
+        return ms.ToArray();
+    }
+
+    #endregion
 
     #region 盒
 
@@ -161,15 +372,30 @@ public class Mp4Writer : IVideoContainerWriter
     {
         B(fs, "stbl");
 
-        // stsd
+        // stsd — 写入 VisualSampleEntry + avcC/hvcC 配置盒
+        var configRecord = BuildDecoderConfigurationRecord();
+        var configBoxSize = configRecord != null ? 8 + configRecord.Length : 0; // 4(size)+4(type)+data
+        var codecFourCc = _codecType == VideoTypes.H265 ? "hvc1" : "avc1";
+        var configBoxFourCc = _codecType == VideoTypes.H265 ? "hvcC" : "avcC";
+        var entrySize = 86 + configBoxSize; // VisualSampleEntry(86) + config box
+
         B(fs, "stsd"); U4(fs, 0); U4(fs, 1);
-        U4(fs, 86);
-        A(fs, _codecType == VideoTypes.H265 ? "hvc1" : "avc1");
+        U4(fs, (UInt32)entrySize);
+        A(fs, codecFourCc);
         Z(fs, 6); U2(fs, 1); U2(fs, 0); U2(fs, 0); Z(fs, 4); U4(fs, 0);
         U2(fs, (UInt16)_width); U2(fs, (UInt16)_height);
         U4(fs, 0x00480000); U4(fs, 0x00480000); U4(fs, 0); U2(fs, 1);
         Z(fs, 32); U2(fs, 0x0018); U2(fs, 0xFFFF);
-        E(fs);
+
+        // 写入 avcC / hvcC 配置盒
+        if (configRecord != null)
+        {
+            U4(fs, (UInt32)(8 + configRecord.Length)); // box size
+            A(fs, configBoxFourCc);
+            fs.Write(configRecord, 0, configRecord.Length);
+        }
+
+        E(fs); // end stsd
 
         // stts
         var runs = BuildStts();
@@ -195,9 +421,9 @@ public class Mp4Writer : IVideoContainerWriter
         B(fs, "stsc"); U4(fs, 0); U4(fs, 1); U4(fs, 1); U4(fs, 1); U4(fs, 1);
         E(fs);
 
-        // stss (all frames as sync)
-        B(fs, "stss"); U4(fs, 0); U4(fs, (UInt32)_frameSizes.Count);
-        for (UInt32 i = 1; i <= _frameSizes.Count; i++) U4(fs, i);
+        // stss — 仅标记关键帧为同步采样
+        B(fs, "stss"); U4(fs, 0); U4(fs, (UInt32)_keyFrameIndices.Count);
+        foreach (var idx in _keyFrameIndices) U4(fs, (UInt32)idx);
         E(fs);
 
         E(fs);

@@ -90,7 +90,6 @@ public class FlvReader : IVideoContainerReader
     private void PreScanFrames()
     {
         // 快速扫描文件获取帧数、时长等元数据
-        var startPos = _stream.Position;
         var fileLength = _stream.Length;
         var estimatedFrameSize = 0L;
         var frameCount = 0;
@@ -107,13 +106,19 @@ public class FlvReader : IVideoContainerReader
                 var tagReader = new SpanReader(tagHeader) { IsLittleEndian = false };
 
                 var tagType = tagReader.ReadByte();
-                // DataSize: 3 字节大端
+                // DataSize: 3 字节大端（含 1 字节 VideoTagHeader）
                 var dataSize = ((Int32)tagReader.ReadByte() << 16) | ((Int32)tagReader.ReadByte() << 8) | tagReader.ReadByte();
                 // Timestamp: 3 字节大端 + 1 字节扩展
                 var tsLow = ((UInt32)tagReader.ReadByte() << 16) | ((UInt32)tagReader.ReadByte() << 8) | tagReader.ReadByte();
                 var tsHigh = (UInt32)tagReader.ReadByte();
                 var timestamp = (Int64)(tsLow | (tsHigh << 24));
-                var frameTypeAndCodec = tagReader.ReadByte();
+                // StreamID: 3 字节（tagReader 剩余 3 字节 = 0）
+
+                // 读取 Tag Data 首字节获取 FrameType 和 CodecID
+                var videoTagHeader = _stream.ReadByte();
+                if (videoTagHeader < 0) break;
+                var frameTypeAndCodec = (Byte)videoTagHeader;
+                var payloadSize = dataSize - 1; // 减去 VideoTagHeader 字节
 
                 if (tagType == 9) // 视频标签
                 {
@@ -123,9 +128,9 @@ public class FlvReader : IVideoContainerReader
                     if (frameType == 1) // 关键帧
                     {
                         // 读取 AVCDecoderConfigurationRecord 或 HEVCDecoderConfigurationRecord
-                        if (dataSize > 5 && !_headerParsed)
+                        if (payloadSize > 4 && !_headerParsed)
                         {
-                            var configBytes = new Byte[Math.Min(dataSize, 256)];
+                            var configBytes = new Byte[Math.Min(payloadSize, 256)];
                             _stream.Read(configBytes, 0, configBytes.Length);
 
                             if (codecId == 7) // AVC (H.264)
@@ -147,9 +152,10 @@ public class FlvReader : IVideoContainerReader
                     estimatedFrameSize += dataSize;
                 }
 
-                // 跳到下一个标签
-                _stream.Seek(dataSize - (_stream.Position - (startPos + 4 + 11)) + tagHeader.Length - 11, SeekOrigin.Current);
-                _stream.Seek(4, SeekOrigin.Current); // 跳过 PreviousTagSize
+                // 跳到下一个标签：跳过剩余 payload
+                var bytesRead = Math.Min(payloadSize, 256);
+                if (payloadSize > bytesRead)
+                    _stream.Seek(payloadSize - bytesRead, SeekOrigin.Current);
             }
         }
         catch
@@ -182,22 +188,29 @@ public class FlvReader : IVideoContainerReader
     private void ParseAvcConfig(Byte[] data)
     {
         // AVC Decoder Configuration Record (ISO 14496-15)
-        // 跳过 AVCPacketType (1) + CompositionTime (3) = 4 字节
-        if (data.Length < 10) return;
+        // data 格式：[AVCPacketType(1) + CompositionTime(3) + AVCDecoderConfigurationRecord...]
+        // AVCDecoderConfigurationRecord 从 data[4] 开始
+        var avccStart = 4;
+        if (data.Length < avccStart + 6) return;
 
-        var configVersion = data[4 + 5]; // offset: 4(PacketType+CT) + 5(configVersion位置)
+        // 验证 AVCPacketType 应为 0（Sequence Header）
+        if (data[0] != 0) return;
+
+        var configVersion = data[avccStart];
         if (configVersion != 1) return;
 
-        // SPS 数量
-        var numSps = data[4 + 7] & 0x1F;
-        var offset = 4 + 8;
-        for (var i = 0; i < numSps && offset + 2 < data.Length; i++)
+        // reserved(6) + lengthSizeMinusOne(2) = data[avccStart + 4]
+        // reserved(3) + numOfSequenceParameterSets(5) = data[avccStart + 5]
+        var numSps = data[avccStart + 5] & 0x1F;
+        var offset = avccStart + 6; // SPS 长度字段开始位置
+
+        for (var i = 0; i < numSps && offset + 2 <= data.Length; i++)
         {
             var reader = new SpanReader(data, offset) { IsLittleEndian = false };
             var spsLen = reader.ReadUInt16();
             offset += 2;
 
-            if (offset + spsLen <= data.Length && spsLen > 4)
+            if (offset + spsLen <= data.Length && spsLen >= 4)
             {
                 ParseSps(data.AsSpan(offset, spsLen));
             }
@@ -207,34 +220,102 @@ public class FlvReader : IVideoContainerReader
 
     private void ParseSps(Span<Byte> sps)
     {
-        // 简单 SPS 解析：提取宽高
-        // profile_idc (8) + constraints + level_idc (8) = 跳过 3 字节
-        if (sps.Length < 7) return;
+        // H.264 SPS 解析：提取宽高
+        // 跳过 NAL header (1 byte) + profile_idc (1) + constraint_flags (1) + level_idc (1) = 4 bytes
+        if (sps.Length < 4) return;
 
-        var profileIdc = sps[1];
-        // 跳过直到 pic_width_in_luma_samples 和 pic_height_in_luma_samples
-        // 简化：从 H.264 SPS 中解析宽高（使用指数哥伦布编码解码）
         try
         {
-            var width = ParseUeGolomb(sps, 3 * 8) * 16;
-            var height = ParseUeGolomb(sps, -1) * 16; // 继续从当前位置读取
-            if (width > 0 && height > 0)
+            // 从 bit 32 (4 bytes * 8) 开始读取 ue(v) 编码的值
+            var bitReader = new BitReader(sps, 4 * 8);
+
+            // seq_parameter_set_id: ue(v)
+            bitReader.ReadUeGolomb();
+
+            // 根据 profile 判断是否需要读取额外的 SPS 字段
+            var profileIdc = sps[1];
+            if (profileIdc == 100 || profileIdc == 110 || profileIdc == 122 || profileIdc == 244 ||
+                profileIdc == 44 || profileIdc == 83 || profileIdc == 86 || profileIdc == 118 ||
+                profileIdc == 128 || profileIdc == 138 || profileIdc == 139 || profileIdc == 134 || profileIdc == 135)
             {
-                _videoWidth = width;
-                _videoHeight = height;
+                // chroma_format_idc: ue(v)
+                var chromaFormatIdc = bitReader.ReadUeGolomb();
+                if (chromaFormatIdc == 3)
+                    bitReader.SkipBits(1); // separate_colour_plane_flag
+                // bit_depth_luma_minus8: ue(v)
+                bitReader.ReadUeGolomb();
+                // bit_depth_chroma_minus8: ue(v)
+                bitReader.ReadUeGolomb();
+                // qpprime_y_zero_transform_bypass_flag: u(1)
+                bitReader.SkipBits(1);
+                // seq_scaling_matrix_present_flag: u(1)
+                var scalingMatrixFlag = bitReader.ReadBit();
+                if (scalingMatrixFlag != 0)
+                {
+                    var matrixCount = chromaFormatIdc != 3 ? 8 : 12;
+                    for (var m = 0; m < matrixCount; m++)
+                    {
+                        var seqScalingListFlag = bitReader.ReadBit();
+                        if (seqScalingListFlag != 0)
+                        {
+                            // 跳过缩放列表（简化处理，不解析具体值）
+                            var sizeOfScalingList = m < 6 ? 16 : 64;
+                            var lastScale = 8;
+                            var nextScale = 8;
+                            for (var j = 0; j < sizeOfScalingList; j++)
+                            {
+                                if (nextScale != 0)
+                                {
+                                    var deltaScale = bitReader.ReadSeGolomb();
+                                    nextScale = (lastScale + deltaScale + 256) % 256;
+                                }
+                                lastScale = nextScale == 0 ? lastScale : nextScale;
+                            }
+                        }
+                    }
+                }
             }
+
+            // log2_max_frame_num_minus4: ue(v)
+            bitReader.ReadUeGolomb();
+            // pic_order_cnt_type: ue(v)
+            var picOrderCntType = bitReader.ReadUeGolomb();
+            if (picOrderCntType == 0)
+            {
+                // log2_max_pic_order_cnt_lsb_minus4: ue(v)
+                bitReader.ReadUeGolomb();
+            }
+            else if (picOrderCntType == 1)
+            {
+                bitReader.SkipBits(1); // delta_pic_order_always_zero_flag
+                bitReader.ReadSeGolomb(); // offset_for_non_ref_pic
+                bitReader.ReadSeGolomb(); // offset_for_top_to_bottom_field
+                var numRefFramesInPicOrderCntCycle = bitReader.ReadUeGolomb();
+                for (var r = 0; r < numRefFramesInPicOrderCntCycle; r++)
+                    bitReader.ReadSeGolomb();
+            }
+
+            // max_num_ref_frames: ue(v)
+            bitReader.ReadUeGolomb();
+            // gaps_in_frame_num_value_allowed_flag: u(1)
+            bitReader.SkipBits(1);
+            // pic_width_in_mbs_minus1: ue(v)
+            var picWidthInMbs = bitReader.ReadUeGolomb() + 1;
+            // pic_height_in_map_units_minus1: ue(v)
+            var picHeightInMapUnits = bitReader.ReadUeGolomb() + 1;
+
+            _videoWidth = picWidthInMbs * 16;
+            _videoHeight = picHeightInMapUnits * 16;
+
+            // frame_mbs_only_flag: u(1) — 若为 0 则高度需乘 2
+            var frameMbsOnlyFlag = bitReader.ReadBit();
+            if (frameMbsOnlyFlag == 0)
+                _videoHeight *= 2;
         }
         catch
         {
             // 解析失败，保持默认值
         }
-    }
-
-    private static Int32 ParseUeGolomb(Span<Byte> data, Int32 bitOffset)
-    {
-        // 简化的指数哥伦布解码（ue(v)）
-        // 此为实现骨架，后续完善
-        return 0;
     }
 
     /// <summary>读取下一帧</summary>
@@ -250,29 +331,37 @@ public class FlvReader : IVideoContainerReader
             var tagReader = new SpanReader(tagHeader) { IsLittleEndian = false };
 
             var tagType = tagReader.ReadByte();
-            // DataSize: 3 字节大端
+            // DataSize: 3 字节大端（含 1 字节 VideoTagHeader）
             var dataSize = ((Int32)tagReader.ReadByte() << 16) | ((Int32)tagReader.ReadByte() << 8) | tagReader.ReadByte();
             // Timestamp: 3 字节大端 + 1 字节扩展
             var tsLow = ((UInt32)tagReader.ReadByte() << 16) | ((UInt32)tagReader.ReadByte() << 8) | tagReader.ReadByte();
             var tsHigh = (UInt32)tagReader.ReadByte();
             var timestamp = (Int64)(tsLow | (tsHigh << 24));
-            var frameTypeAndCodec = tagReader.ReadByte();
+            // StreamID: 3 字节（跳过，始终为 0）
 
             if (dataSize <= 0 || dataSize > _stream.Length - _stream.Position)
                 return null;
 
+            // 读取 Tag Data（含首字节 FrameType+CodecID）
+            var videoData = new Byte[dataSize];
+            var read = _stream.Read(videoData, 0, dataSize);
+            if (read <= 1) return null;
+
+            // FrameType+CodecID 在 Tag Data 首字节
+            var frameTypeAndCodec = videoData[0];
+            var frameType = (frameTypeAndCodec >> 4) & 0x0F;
+            var codecId = frameTypeAndCodec & 0x0F;
+            var payloadSize = read - 1;
+
             if (tagType == 9) // 视频标签
             {
-                var frameType = (frameTypeAndCodec >> 4) & 0x0F;
-                var codecId = frameTypeAndCodec & 0x0F;
-
-                var videoData = new Byte[dataSize];
-                var read = _stream.Read(videoData, 0, dataSize);
-                if (read <= 0) return null;
+                // 返回 payload（跳过首字节 FrameType+CodecID）
+                var payload = new Byte[payloadSize];
+                Array.Copy(videoData, 1, payload, 0, payloadSize);
 
                 var packet = new VPacket
                 {
-                    Data = new ArrayPacket(videoData, 0, read),
+                    Data = new ArrayPacket(payload),
                     CodecType = codecId == 7 ? VideoTypes.H264 :
                                 codecId == 12 ? VideoTypes.H265 :
                                 codecId == 4 ? VideoTypes.H264 : // Screen Video 等
@@ -287,8 +376,7 @@ public class FlvReader : IVideoContainerReader
                 return packet;
             }
 
-            // 跳过非视频标签数据
-            _stream.Seek(dataSize, SeekOrigin.Current);
+            // 非视频标签已读完 dataSize 字节，继续循环
         }
 
         return null;
@@ -315,4 +403,60 @@ public class FlvReader : IVideoContainerReader
 
     /// <summary>释放资源</summary>
     public void Dispose() => _stream?.Dispose();
+
+    #region 辅助
+
+    /// <summary>位读取器，用于 H.264 SPS 指数哥伦布解码</summary>
+    private ref struct BitReader
+    {
+        private readonly ReadOnlySpan<Byte> _data;
+        private Int32 _bitPosition;
+
+        public BitReader(ReadOnlySpan<Byte> data, Int32 startBit)
+        {
+            _data = data;
+            _bitPosition = startBit;
+        }
+
+        /// <summary>读取 1 位</summary>
+        public Int32 ReadBit()
+        {
+            if (_bitPosition / 8 >= _data.Length) return 0;
+            var byteIndex = _bitPosition / 8;
+            var bitIndex = 7 - (_bitPosition % 8);
+            var bit = (_data[byteIndex] >> bitIndex) & 1;
+            _bitPosition++;
+            return bit;
+        }
+
+        /// <summary>跳过 n 位</summary>
+        public void SkipBits(Int32 count) => _bitPosition += count;
+
+        /// <summary>读取无符号指数哥伦布编码 ue(v)</summary>
+        public Int32 ReadUeGolomb()
+        {
+            var leadingZeros = 0;
+            while (ReadBit() == 0 && leadingZeros < 32)
+                leadingZeros++;
+
+            if (leadingZeros >= 32) return 0;
+
+            var value = 0;
+            for (var i = 0; i < leadingZeros; i++)
+                value = (value << 1) | ReadBit();
+
+            return (1 << leadingZeros) - 1 + value;
+        }
+
+        /// <summary>读取有符号指数哥伦布编码 se(v)</summary>
+        public Int32 ReadSeGolomb()
+        {
+            var ue = ReadUeGolomb();
+            if ((ue & 1) == 0)
+                return -(ue >> 1);
+            return (ue + 1) >> 1;
+        }
+    }
+
+    #endregion
 }
