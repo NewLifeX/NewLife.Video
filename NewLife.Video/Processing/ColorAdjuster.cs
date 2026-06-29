@@ -7,10 +7,10 @@ public class ColorAdjuster : IVideoProcessor
     /// <summary>亮度调整（0.0=不变，正数变亮，负数变暗）</summary>
     public Double Brightness { get; set; }
 
-    /// <summary>对比度调整（1.0=不变，>1增强，<1减弱）</summary>
+    /// <summary>对比度调整（1.0=不变，&gt;1增强，&lt;1减弱）</summary>
     public Double Contrast { get; set; }
 
-    /// <summary>饱和度调整（1.0=不变，>1增强，<1减弱）</summary>
+    /// <summary>饱和度调整（1.0=不变，&gt;1增强，&lt;1减弱）</summary>
     public Double Saturation { get; set; }
 
     /// <summary>支持的输入格式</summary>

@@ -1,3 +1,4 @@
+using NewLife.Data;
 using NewLife.Video.FFmpeg;
 
 namespace NewLife.Video.Processing;
@@ -27,7 +28,8 @@ public static class SnapshotEncoder
         // 使用内置 MjpegCodec 编码
         var codec = new Codecs.MjpegCodec();
         var vpacket = codec.Encode([frame]);
-        return vpacket?.Data?.ToArray() ?? [];
+        if (vpacket?.Data == null) return [];
+        return vpacket.Data.ToArray();
     }
 
     /// <summary>将 VideoFrame 编码为 PNG 字节数组</summary>
@@ -92,9 +94,17 @@ public static class SnapshotEncoder
         var (pixFmt, rawData) = PrepareRawData(frame);
 
         var invoker = new FFmpegInvoker();
-        var args = $"-f rawvideo -pix_fmt {pixFmt} -s {frame.Width}x{frame.Height} -i pipe:0 -frames:v 1 {codecArgs} -f image2 pipe:1";
+        if (!invoker.IsAvailable()) return [];
 
-        return invoker.ExecutePipeAsync(args, rawData).GetAwaiter().GetResult() ?? [];
+        try
+        {
+            var args = $"-f rawvideo -pix_fmt {pixFmt} -s {frame.Width}x{frame.Height} -i pipe:0 -frames:v 1 {codecArgs} -f image2 pipe:1";
+            return invoker.ExecutePipeAsync(args, rawData).GetAwaiter().GetResult() ?? [];
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     /// <summary>准备 rawvideo 格式数据，返回 (pix_fmt_name, raw_bytes)</summary>
@@ -133,10 +143,18 @@ public static class SnapshotEncoder
         Array.Copy(frame.Data, raw, frame.Data.Length);
 
         var invoker = new FFmpegInvoker();
-        var args = $"-f rawvideo -pix_fmt {pixFmt} -s {frame.Width}x{frame.Height} -i pipe:0 -f rawvideo -pix_fmt yuv420p pipe:1";
-        var converted = invoker.ExecutePipeAsync(args, raw).GetAwaiter().GetResult();
+        if (!invoker.IsAvailable()) return ("yuv420p", raw);
 
-        return converted != null ? ("yuv420p", converted) : ("yuv420p", raw);
+        try
+        {
+            var args = $"-f rawvideo -pix_fmt {pixFmt} -s {frame.Width}x{frame.Height} -i pipe:0 -f rawvideo -pix_fmt yuv420p pipe:1";
+            var converted = invoker.ExecutePipeAsync(args, raw).GetAwaiter().GetResult();
+            return converted != null ? ("yuv420p", converted) : ("yuv420p", raw);
+        }
+        catch
+        {
+            return ("yuv420p", raw);
+        }
     }
 
     /// <summary>确保数据为 RGB24 格式（为 BMP 编码准备）</summary>
@@ -151,9 +169,18 @@ public static class SnapshotEncoder
 
         // 其他格式通过 ffmpeg 转为 rgb24
         var (_, rawData) = PrepareRawData(frame);
-        var invoker = new FFmpegInvoker();
-        var args = $"-f rawvideo -pix_fmt yuv420p -s {frame.Width}x{frame.Height} -i pipe:0 -f rawvideo -pix_fmt rgb24 pipe:1";
-        return invoker.ExecutePipeAsync(args, rawData).GetAwaiter().GetResult() ?? rawData;
+        var invoker2 = new FFmpegInvoker();
+        if (!invoker2.IsAvailable()) return rawData;
+
+        try
+        {
+            var args = $"-f rawvideo -pix_fmt yuv420p -s {frame.Width}x{frame.Height} -i pipe:0 -f rawvideo -pix_fmt rgb24 pipe:1";
+            return invoker2.ExecutePipeAsync(args, rawData).GetAwaiter().GetResult() ?? rawData;
+        }
+        catch
+        {
+            return rawData;
+        }
     }
 
     /// <summary>构建 BMP 文件（纯托管）</summary>

@@ -45,6 +45,9 @@ public class FFmpegFilterProcessor : IVideoProcessor
     {
         if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
 
+        if (!_invoker.IsAvailable())
+            throw new InvalidOperationException("FFmpeg 不可用，无法执行滤镜处理。请确保 ffmpeg 在 PATH 中。");
+
         var width = frame.Width;
         var height = frame.Height;
 
@@ -54,10 +57,18 @@ public class FFmpegFilterProcessor : IVideoProcessor
         // 构建 ffmpeg 命令：rawvideo 输入 → 滤镜链 → rawvideo 输出
         var args = $"-f rawvideo -pix_fmt yuv420p -s {width}x{height} -i pipe:0 -vf \"{_filterString}\" -f rawvideo -pix_fmt {_vcodec} pipe:1";
 
-        var outputData = _invoker.ExecutePipeAsync(args, inputData).GetAwaiter().GetResult();
+        Byte[] outputData;
+        try
+        {
+            outputData = _invoker.ExecutePipeAsync(args, inputData).GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"FFmpeg 滤镜处理失败：{_filterString}。{ex.Message}", ex);
+        }
 
         if (outputData == null || outputData.Length == 0)
-            throw new InvalidOperationException($"FFmpeg 滤镜处理失败：{_filterString}");
+            throw new InvalidOperationException($"FFmpeg 滤镜处理失败（空输出）：{_filterString}");
 
         // 推断输出尺寸（滤镜可能改变分辨率）
         var outWidth = width;
@@ -91,7 +102,6 @@ public class FFmpegFilterProcessor : IVideoProcessor
     {
         if (frame.PixelFormat == VideoTypes.YUV420P)
         {
-            // 直接返回数据
             var data = new Byte[frame.Data.Length];
             Array.Copy(frame.Data, data, frame.Data.Length);
             return data;
@@ -107,10 +117,19 @@ public class FFmpegFilterProcessor : IVideoProcessor
         };
 
         var invoker = new FFmpegInvoker();
-        var args = $"-f rawvideo -pix_fmt {pixFmt} -s {frame.Width}x{frame.Height} -i pipe:0 -f rawvideo -pix_fmt yuv420p pipe:1";
-        var data = new Byte[frame.Data.Length];
-        Array.Copy(frame.Data, data, frame.Data.Length);
-        return invoker.ExecutePipeAsync(args, data).GetAwaiter().GetResult() ?? [];
+        if (!invoker.IsAvailable()) return [];
+
+        try
+        {
+            var args = $"-f rawvideo -pix_fmt {pixFmt} -s {frame.Width}x{frame.Height} -i pipe:0 -f rawvideo -pix_fmt yuv420p pipe:1";
+            var rawData = new Byte[frame.Data.Length];
+            Array.Copy(frame.Data, rawData, frame.Data.Length);
+            return invoker.ExecutePipeAsync(args, rawData).GetAwaiter().GetResult() ?? [];
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     /// <summary>尝试从滤镜字符串中解析 scale 参数，获取输出分辨率</summary>

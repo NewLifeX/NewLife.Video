@@ -17,12 +17,7 @@ public class MkvWriter : IVideoContainerWriter
     private VideoTypes _codecType;
     private Double _frameRate;
     private Boolean _headerWritten;
-    private Int64 _clusterStartPos;
-    private Int64 _clusterTimecode;
-    private Int32 _framesInCluster;
     private Byte[] _codecPrivate;
-
-    private const Int32 MaxFramesPerCluster = 30;
 
     public MkvWriter(String filePath)
     {
@@ -49,15 +44,11 @@ public class MkvWriter : IVideoContainerWriter
         if (_codecPrivate == null && packet.IsKeyFrame)
             _codecPrivate = ExtractCodecPrivate(data);
 
-        // 新 Cluster 触发条件：首个帧、超出帧数上限、遇到关键帧
-        if (_framesInCluster == 0 || _framesInCluster >= MaxFramesPerCluster || packet.IsKeyFrame)
-            StartNewCluster(packet.IsKeyFrame);
-
-        // SimpleBlock：track number(VInt) + timecode(2B relative) + flags(1B) + data
-        var timecode = (UInt16)(_frameCount * 1000.0 / _frameRate - _clusterTimecode);
+        // SimpleBlock：track number(VInt) + timecode(2B relative to 0) + flags(1B) + data
+        // 直接写入 Segment 内（Matroska 允许 SimpleBlock 出现在 Segment 层级）
+        var timecode = (UInt16)(_frameCount * 1000.0 / _frameRate);
         var blockLen = GetVIntSize(1) + 2 + 1 + data.Length;
 
-        // 使用 MemoryStream 预计算 SimpleBlock 内容
         var blockContent = new Byte[blockLen];
         var offset = 0;
         offset += WriteVInt(blockContent, offset, 1);           // track number = 1
@@ -71,27 +62,12 @@ public class MkvWriter : IVideoContainerWriter
         _stream.Write(blockContent, 0, blockContent.Length);
 
         _frameCount++;
-        _framesInCluster++;
     }
 
     public void Flush() => _stream.Flush();
 
     private Int64 _frameCount;
     private Boolean _disposed;
-
-    private void StartNewCluster(Boolean containsKeyFrame)
-    {
-        // Cluster
-        WriteEbmlId(_stream, 0x1F43B675);
-        _clusterStartPos = _stream.Position;
-        WriteEbmlSize(_stream, 0x01_FF_FF_FF_FF_FF_FF_FF); // unknown size
-
-        // Cluster Timecode（相对于 TimecodeScale 的单位，TimecodeScale=1ms 则单位是 ms）
-        _clusterTimecode = (Int64)(_frameCount * 1000.0 / _frameRate);
-        WriteEbmlUint(_stream, 0xE7, (UInt64)_clusterTimecode);
-
-        _framesInCluster = 0;
-    }
 
     private void WriteHeader()
     {

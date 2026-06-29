@@ -70,7 +70,7 @@ public class VideoCodecFactoryTests
         var packet = new VPacket
         {
             Data = new ArrayPacket(new Byte[10]),
-            CodecType = VideoTypes.AV1,
+            CodecType = (VideoTypes)255, // 未注册的编解码类型
         };
 
         Assert.Throws<NotSupportedException>(() => _factory.Decode(packet));

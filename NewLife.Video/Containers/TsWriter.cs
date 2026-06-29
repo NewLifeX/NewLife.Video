@@ -115,22 +115,32 @@ public class TsWriter : IVideoContainerWriter
                 // 自适应域填充（stuffing）
                 if (payloadLen < remainingSpace)
                 {
-                    var stuffLen = remainingSpace - payloadLen - (adaptationLen > 0 ? 7 : 0);
-                    if (stuffLen > 0)
+                    if (needPcr)
                     {
-                        if (adaptationLen == 0)
+                        // PCR 已占 8 字节（1 length + 1 flags + 6 PCR），补充 stuffing 填充剩余
+                        var stuffLen = remainingSpace - payloadLen;
+                        if (stuffLen > 0)
                         {
-                            tsPacket[adaptationLenPos] = (Byte)(stuffLen - 1);
-                            tsOffset = adaptationLenPos + 1;
+                            tsPacket[adaptationLenPos] = (Byte)(adaptationLen + stuffLen);
+                            for (var i = 0; i < stuffLen && tsOffset < 188; i++)
+                                tsPacket[tsOffset++] = 0xFF;
                         }
-                        // 填充 0xFF
-                        for (var i = 0; i < stuffLen && tsOffset < 188; i++)
-                            tsPacket[tsOffset++] = 0xFF;
+                    }
+                    else
+                    {
+                        // 无 PCR，需 1 字节 adaptation_field_length + stuffing 字节
+                        var stuffLen = remainingSpace - payloadLen - 1;
+                        if (stuffLen > 0)
+                        {
+                            tsPacket[tsOffset++] = (Byte)stuffLen;
+                            for (var i = 0; i < stuffLen && tsOffset < 188; i++)
+                                tsPacket[tsOffset++] = 0xFF;
+                        }
                     }
                 }
                 else if (!needPcr)
                 {
-                    // 仅填充标志无实际自适应域内容
+                    // 无 PCR 且无 stuffing 需求时，写空自适应域
                     tsPacket[adaptationLenPos] = 0;
                     tsOffset = adaptationLenPos + 1;
                 }
