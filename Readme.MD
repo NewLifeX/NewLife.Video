@@ -34,6 +34,7 @@ Nuget：NewLife.Video
 |  [NewLife.Siemens](https://github.com/NewLifeX/NewLife.Siemens)  | 2022  | 西门子PLC协议，基于IoT标准库实现，支持IoT平台和IoTEdge                                      |
 |      [NewLife.Map](https://github.com/NewLifeX/NewLife.Map)      | 2022  | 地图组件库，封装百度地图、高德地图、腾讯地图、天地图                                        |
 |    [NewLife.Audio](https://github.com/NewLifeX/NewLife.Audio)    | 2023  | 音频编解码库，PCM/ADPCMA/G711A/G722U/WAV/AAC                                                |
+|    [NewLife.Video](https://github.com/NewLifeX/NewLife.Video)    | 2026  | 视频编解码库，H.264/H.265/MJPEG/YUV，RTSP/RTMP/HLS/GB28181/ONVIF                           |
 |                             产品平台                             |       | 产品平台级，编译部署即用，个性化自定义                                                      |
 |         [Stardust](https://github.com/NewLifeX/Stardust)         | 2018  | 星尘，分布式服务平台，节点管理、APM监控中心、配置中心、注册中心、发布中心                   |
 |           [AntJob](https://github.com/NewLifeX/AntJob)           | 2019  | 蚂蚁调度，分布式大数据计算平台（实时/离线），蚂蚁搬家分片思想，万亿级数据量项目验证         |
