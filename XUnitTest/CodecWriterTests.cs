@@ -66,10 +66,11 @@ public class CodecWriterTests
         var path = Path.GetTempFileName() + ".mp4";
         try
         {
-            using var w = new Mp4Writer(path);
-            w.WriteMetadata(320, 240, VideoTypes.H264, 25);
-            w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[300]), CodecType = VideoTypes.H264 });
-            w.Flush();
+            using (var w = new Mp4Writer(path))
+            {
+                w.WriteMetadata(320, 240, VideoTypes.H264, 25);
+                w.WriteFrame(new VPacket { Data = new NewLife.Data.Packet(new Byte[300]), CodecType = VideoTypes.H264 });
+            }
 
             Assert.True(new FileInfo(path).Length > 0);
         }
