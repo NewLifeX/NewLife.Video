@@ -5,7 +5,7 @@
     <Description>支持各种视频编解码、容器格式、帧处理、流媒体传输和IoT视频适配</Description>
     <Company>新生命开发团队</Company>
     <Copyright>©2002-2026 新生命开发团队</Copyright>
-    <VersionPrefix>1.0</VersionPrefix>
+    <VersionPrefix>1.1</VersionPrefix>
     <VersionSuffix>$([System.DateTime]::Now.ToString(`yyyy.MMdd`))</VersionSuffix>
     <Version>$(VersionPrefix).$(VersionSuffix)</Version>
     <FileVersion>$(Version)</FileVersion>
@@ -27,7 +27,7 @@
     <RepositoryUrl>https://github.com/NewLifeX/NewLife.Video</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>视频;Video;H264;H265;MJPEG;RTSP;RTMP;ONVIF;新生命团队;NewLife;$(AssemblyName)</PackageTags>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageReleaseNotes>新增 H.264/H.265/VP8/VP9/MJPEG 编解码引擎，支持 FFmpeg 管道封装与纯托管实现；完整支持 MP4/FLV/AVI/TS/MKV 等主流容器格式读写及格式自动检测；内置帧处理管道：缩放/裁剪/旋转/水印/移动侦测/帧率转换；实现 RTSP/RTMP/HLS/RTP 流媒体协议及 JitterBuffer 抖动缓冲；集成 ONVIF 设备发现与 GB/T 28181 SIP 点播等 IoT 视频适配；提供 Windows 屏幕捕获与 DirectShow/V4L2 采集后端骨架</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

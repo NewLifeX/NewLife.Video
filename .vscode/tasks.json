@@ -1,0 +1,11 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "发版准备-分析提交",
+			"type": "shell",
+			"command": "git log --oneline --no-merges -60",
+			"isBackground": false
+		}
+	]
+}
