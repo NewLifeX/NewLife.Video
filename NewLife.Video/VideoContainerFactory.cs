@@ -28,8 +28,8 @@ public static class VideoContainerFactory
             ".mp4" or ".m4v" => new Mp4Reader(filePath),
             ".flv" => new FlvReader(filePath),
             ".avi" => new AviReader(filePath),
-            ".ts" or ".mts" => throw new NotSupportedException("TS 容器读取器尚未实现"),
-            ".mkv" or ".webm" => throw new NotSupportedException("MKV/WebM 容器读取器尚未实现"),
+            ".ts" or ".mts" => new TsReader(filePath),
+            ".mkv" or ".webm" => new MkvReader(filePath),
             _ => TryDetectByMagic(filePath),
         };
     }
