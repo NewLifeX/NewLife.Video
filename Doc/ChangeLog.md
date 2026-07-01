@@ -1,5 +1,40 @@
 # NewLife.Video 版本更新记录
 
+## v1.1.2026.0702 (2026-07-02)
+
+### AV1 编解码
+- **AV1 解码器 FFmpegAV1Decoder**：通过管道接收 AV1 裸流，输出 YUV420P 原始帧，IVF封装自动检测
+- **AV1 编码器 FFmpegAV1Encoder**：libsvtav1 优先回退 libaom-av1，支持 CRF 质量与编码速度预设
+- **VP8/VP9 编码器**：补全 VP8/VP9 编码器实现，与解码器形成完整编解码闭环
+
+### 容器格式增强
+- **MKV/WebM 写入器 MkvWriter**：EBML/Segment/Tracks/Cluster/SimpleBlock 完整写入，支持 H.264/H.265
+- **TS 写入器 TsWriter**：PAT/PMT 生成 + PES 打包，支持 H.264/H.265 双编码
+- **MP4 写入器完善**：avcC/hvcC 配置盒写入，仅关键帧 stss 优化
+- **FLV 写入器增强**：AVCDecoderConfigurationRecord 序列头自动写入
+- **MKV 读取器增强**：CodecPrivate 回退宽高 + 关键帧标志修正
+
+### 帧处理增强
+- **FFmpeg 滤镜链集成 FFmpegFilterProcessor**：支持所有 -vf 滤镜链，与纯托管 VideoPipeline 可互换
+- **快照输出 SnapshotEncoder**：帧快照支持 JPEG 纯托管/PNG/WebP/BMP 四格式输出
+- **帧序列编码增强**：支持 H.264/H.265/MJPEG 三种编码格式输出
+
+### 流媒体增强
+- **RTMP 推流增强**：完整 Amf0Encoder 实现、onMetaData 自动发送、序列头写入、Ping 保活
+- **FLV 元数据**：支持 ScriptTag (onMetaData) 写入
+
+### IoT 视频适配
+- **GB/T 28181 完整实现**：SIP REGISTER 注册 + 心跳 Keep-Alive + INVITE 实时点播
+- **ONVIF PTZ 控制**：绝对/连续移动 + 预置位 + 停止
+- **录像计划管理**：定时录像 + 事件触发录像
+
+### 代码质量
+- **[fix]** 统一视频数据包为 IPacket，全面适配 ArrayPacket
+- **[fix]** 修复 TimestampOverlay 死代码，补全时间默认值
+- **[fix]** 简化 MKV 写入流程，增强 FFmpeg 调用健壮性
+- **[fix]** 清理空 BasicTest、废弃 Test 项目、空 Speech/DSP 目录
+- **[perf]** 重构测试用例结构，分拆为独立模块文件，335 个测试全量通过
+
 ## v1.1.2026.0629 (2026-06-29)
 
 ### 编解码引擎

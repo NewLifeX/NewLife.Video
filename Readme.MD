@@ -6,6 +6,8 @@
 ![Nuget](https://img.shields.io/nuget/v/NewLife.Video?logo=nuget)
 ![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/NewLife.Video?label=dev%20nuget&logo=nuget)
 
+> **[English](README.en.md)** | 简体中文
+
 支持各种视频编解码、容器格式、帧处理、流媒体传输和IoT视频适配
 
 源码： https://github.com/NewLifeX/NewLife.Video  
@@ -73,10 +75,11 @@ await client.ConnectAsync();
 await client.ConnectStreamAsync();
 await client.CreateStreamAsync();
 await client.PublishAsync();
-await client.PushVideoAsync(avccData, 0);
+await client.PushVideoAsync(new VPacket { Data = new Packet(avccData), CodecType = VideoTypes.H264 });
 
 // 5. ONVIF 设备发现
-var devices = await OnvifDiscovery.DiscoverAsync();
+var discovery = new OnvifDiscovery();
+var devices = await discovery.DiscoverAsync();
 ```
 
 
