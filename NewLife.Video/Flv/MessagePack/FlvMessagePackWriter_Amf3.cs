@@ -1,8 +1,7 @@
 using NewLife.Video.Flv.Metadata;
 using System.Runtime.CompilerServices;
 
-namespace NewLife.Video.Flv.MessagePack
-{
+namespace NewLife.Video.Flv.MessagePack;
     public ref partial struct FlvMessagePackWriter
     {
         public void WriteAmf3(Amf3 amf3)
@@ -27,4 +26,3 @@ namespace NewLife.Video.Flv.MessagePack
             }
         }
     }
-}

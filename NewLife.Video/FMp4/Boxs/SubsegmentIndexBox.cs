@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>子分段索引 Box。定义子分段的范围信息</summary>
     public class SubsegmentIndexBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -15,7 +14,7 @@ namespace NewLife.Video.FMp4
 
         public class SubsegmentIndexInfo
         {
-            /// <summary></summary>
+            /// <summary>条目数</summary>
             public UInt32 RangesCount { get; set; }
 
             /// <summary>length:RangesCount</summary>
@@ -57,4 +56,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

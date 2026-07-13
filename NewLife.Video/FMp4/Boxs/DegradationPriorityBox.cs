@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>降解优先级 Box。每个样本的优先级值</summary>
     public class DegradationPriorityBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -23,4 +22,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

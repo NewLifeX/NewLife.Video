@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>填充位 Box。记录每个样本的填充位信息</summary>
     public class PaddingBitsBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -39,4 +38,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

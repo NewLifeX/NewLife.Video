@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>合成解码时间偏移 Box。记录合成时间与解码时间之间的偏移关系</summary>
     public class CompositionToDecodeBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -27,4 +26,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

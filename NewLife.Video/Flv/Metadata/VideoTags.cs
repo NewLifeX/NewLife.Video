@@ -1,7 +1,6 @@
 using NewLife.Video.Flv.Enums;
 
-namespace NewLife.Video.Flv.Metadata
-{
+namespace NewLife.Video.Flv.Metadata;
     public class VideoTags
     {
         /// <summary>
@@ -20,4 +19,3 @@ namespace NewLife.Video.Flv.Metadata
         /// <summary>视频数据</summary>
         public AvcVideoPacke VideoData { get; set; }
     }
-}

@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>
     /// Fmp4
     /// stream data 
@@ -29,7 +28,7 @@ namespace NewLife.Video.FMp4
         /// <summary>mfra</summary>
         public MovieFragmentRandomAccessBox MovieFragmentRandomAccessBox { get; set; }
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         /// <param name="writer"></param>
         public void ToBuffer(ref Fmp4MessagePackWriter writer)
         {
@@ -47,4 +46,3 @@ namespace NewLife.Video.FMp4
             MovieFragmentRandomAccessBox?.ToBuffer(ref writer);
         }
     }
-}

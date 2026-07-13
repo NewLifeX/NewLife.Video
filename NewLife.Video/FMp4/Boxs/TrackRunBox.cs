@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>
     /// trun
     /// </summary>
@@ -135,4 +134,3 @@ namespace NewLife.Video.FMp4
             public Int64 SampleCompositionTimeOffset { get; set; }
         }
     }
-}

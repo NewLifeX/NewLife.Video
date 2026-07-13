@@ -1,7 +1,6 @@
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4.Samples
-{
+namespace NewLife.Video.FMp4.Samples;
     /// <summary>avc1</summary>
     public class AVC1SampleEntry : VisualSampleEntry
     {
@@ -31,4 +30,3 @@ namespace NewLife.Video.FMp4.Samples
             End(ref writer);
         }
     }
-}

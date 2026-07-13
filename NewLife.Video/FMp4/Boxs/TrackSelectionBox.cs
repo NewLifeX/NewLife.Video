@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>轨道选择 Box。定义轨道切换组和选择属性</summary>
     public class TrackSelectionBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -22,4 +21,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

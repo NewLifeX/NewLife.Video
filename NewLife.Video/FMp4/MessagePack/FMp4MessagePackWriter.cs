@@ -2,8 +2,7 @@ using NewLife.Video.FMp4.Buffers;
 using System.Buffers.Binary;
 using System.Text;
 
-namespace NewLife.Video.FMp4.MessagePack
-{
+namespace NewLife.Video.FMp4.MessagePack;
     public ref struct Fmp4MessagePackWriter
     {
         private Fmp4BufferWriter writer;
@@ -142,4 +141,3 @@ namespace NewLife.Video.FMp4.MessagePack
             WriteUInt16((UInt16)bits);
         }
     }
-}

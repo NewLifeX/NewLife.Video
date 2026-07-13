@@ -1,7 +1,6 @@
 using NewLife.Video.Flv.Enums;
 
-namespace NewLife.Video.Flv.Metadata
-{
+namespace NewLife.Video.Flv.Metadata;
     public class AudioTags
     {
         public AudioTags(AACPacketType packetType = AACPacketType.AudioSpecificConfig, Byte[] aacFrameData = null) => AacPacke = new AacPacke(packetType, aacFrameData);
@@ -48,4 +47,3 @@ namespace NewLife.Video.Flv.Metadata
             return data.ToArray();
         }
     }
-}

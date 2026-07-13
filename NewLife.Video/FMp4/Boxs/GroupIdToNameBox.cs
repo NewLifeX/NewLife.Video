@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>组 ID 到名称映射 Box。将组 ID 映射为可读名称</summary>
     public class GroupIdToNameBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -36,4 +35,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

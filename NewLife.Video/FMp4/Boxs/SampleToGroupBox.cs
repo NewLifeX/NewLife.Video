@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>
     /// sbgp
     /// </summary>
@@ -54,4 +53,3 @@ namespace NewLife.Video.FMp4
             public UInt32 GroupDescriptionIndex { get; set; }
         }
     }
-}

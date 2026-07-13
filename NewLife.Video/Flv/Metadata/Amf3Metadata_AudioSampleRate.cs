@@ -2,8 +2,7 @@ using NewLife.Video.Flv.Extensions;
 using System.Buffers.Binary;
 using System.Text;
 
-namespace NewLife.Video.Flv.Metadata
-{
+namespace NewLife.Video.Flv.Metadata;
     public class Amf3Metadata_AudioSampleRate : IAmf3Metadata
     {
         public UInt16 FieldNameLength { get; set; }
@@ -22,4 +21,3 @@ namespace NewLife.Video.Flv.Metadata
             return tmp;
         }
     }
-}

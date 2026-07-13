@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
-    /// <summary></summary>
+namespace NewLife.Video.FMp4;
+    /// <summary>条目数</summary>
     public class DataEntryUrnBox : DataEntryBox
     {
         public DataEntryUrnBox(Byte version, UInt32 flags) : base("urn ", version, flags) { }
@@ -27,4 +26,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

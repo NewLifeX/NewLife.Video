@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>子轨道样本组 Box。将子轨道关联到样本组描述</summary>
     public class SubTrackSampleGroupBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -27,4 +26,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

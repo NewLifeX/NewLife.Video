@@ -1,7 +1,6 @@
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4.Samples
-{
+namespace NewLife.Video.FMp4.Samples;
     /// <summary>VisualSampleEntry</summary>
     public abstract class VisualSampleEntry : SampleEntry
     {
@@ -81,4 +80,3 @@ namespace NewLife.Video.FMp4.Samples
             writer.WriteUInt16(PreDefined3);
         }
     }
-}

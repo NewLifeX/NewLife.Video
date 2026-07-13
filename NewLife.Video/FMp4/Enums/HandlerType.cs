@@ -1,5 +1,4 @@
-namespace NewLife.Video.FMp4.Enums
-{
+namespace NewLife.Video.FMp4.Enums;
     public enum HandlerType
     {
         /// <summary>null</summary>
@@ -20,4 +19,3 @@ namespace NewLife.Video.FMp4.Enums
         /// <summary>Auxiliary Video track </summary>
         auxv
     }
-}

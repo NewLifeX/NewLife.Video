@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>FEC 储备 Box。包含前向纠错编码的储备信息</summary>
     public class FECReservoirBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -35,4 +34,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

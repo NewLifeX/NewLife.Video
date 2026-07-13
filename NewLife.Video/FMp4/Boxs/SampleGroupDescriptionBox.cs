@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Samples;
 
-namespace NewLife.Video.FMp4
-{
-    /// <summary></summary>
+namespace NewLife.Video.FMp4;
+    /// <summary>条目数</summary>
     public class SampleGroupDescriptionBox : FullBox
     {
         public SampleGroupDescriptionBox(String handlerType, Byte version, UInt32 flags = 0) : base("sgpd", version, flags) => HandlerType = handlerType;
@@ -25,4 +24,3 @@ namespace NewLife.Video.FMp4
             public SampleGroupDescriptionEntry SampleGroupDescriptionEntry { get; set; }
         }
     }
-}

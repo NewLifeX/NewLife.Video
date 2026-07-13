@@ -1,7 +1,6 @@
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     public class DataEntryUrlBox : DataEntryBox
     {
         public DataEntryUrlBox(Byte version, UInt32 flags) : base("url ", version, flags) { }
@@ -21,4 +20,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

@@ -1,7 +1,6 @@
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4.Samples
-{
+namespace NewLife.Video.FMp4.Samples;
     /// <summary>urim</summary>
     public class URIMetaSampleEntry : SampleEntry
     {
@@ -36,4 +35,3 @@ namespace NewLife.Video.FMp4.Samples
             End(ref writer);
         }
     }
-}

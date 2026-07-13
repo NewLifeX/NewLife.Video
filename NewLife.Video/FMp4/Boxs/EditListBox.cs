@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>编辑列表 Box。定义轨道的编辑分段列表</summary>
     public class EditListBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -37,4 +36,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>提示媒体头 Box。包含提示轨道的 PDU 大小和比特率信息</summary>
     public class HintMediaHeaderBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -26,4 +25,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

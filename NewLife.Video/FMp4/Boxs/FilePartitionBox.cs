@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>文件分区 Box。描述文件的分区信息</summary>
     public class FilePartitionBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -54,4 +53,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

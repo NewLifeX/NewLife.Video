@@ -1,7 +1,6 @@
 using NewLife.Video.Flv.Enums;
 
-namespace NewLife.Video.Flv.Metadata
-{
+namespace NewLife.Video.Flv.Metadata;
     public class AacPacke
     {
         public AacPacke(AACPacketType packetType, Byte[] data = null)
@@ -25,4 +24,3 @@ namespace NewLife.Video.Flv.Metadata
         /// <summary>元数据</summary>
         public Byte[] RawData => Data.ToArray();
     }
-}

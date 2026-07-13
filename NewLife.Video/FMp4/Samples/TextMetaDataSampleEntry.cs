@@ -1,7 +1,6 @@
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4.Samples
-{
+namespace NewLife.Video.FMp4.Samples;
     /// <summary>mett</summary>
     public class TextMetaDataSampleEntry : SampleEntry
     {
@@ -11,7 +10,7 @@ namespace NewLife.Video.FMp4.Samples
         /// <summary>optional</summary>
         public String ContentEncoding { get; set; }
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         public String MimeFormat { get; set; }
 
         /// <summary>
@@ -30,4 +29,3 @@ namespace NewLife.Video.FMp4.Samples
             BitRateBox?.ToBuffer(ref writer);
         }
     }
-}

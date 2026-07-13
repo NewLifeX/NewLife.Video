@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4.Samples
-{
-    /// <summary></summary>
+namespace NewLife.Video.FMp4.Samples;
+    /// <summary>条目数</summary>
     public abstract class AudioSampleEntry : SampleEntry
     {
         public AudioSampleEntry(String codingname) : base(codingname) { }
@@ -36,4 +35,3 @@ namespace NewLife.Video.FMp4.Samples
             writer.WriteUInt32(SampleRate << 16);
         }
     }
-}

@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>tfra</summary>
     public class TrackFragmentRandomAccessBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -11,7 +10,7 @@ namespace NewLife.Video.FMp4
         /// <param name="flags"></param>
         public TrackFragmentRandomAccessBox(Byte version, UInt32 flags = 0) : base("tfra", version, flags) { }
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         public UInt32 TrackID { get; set; }
 
         /// <summary>
@@ -110,4 +109,3 @@ namespace NewLife.Video.FMp4
             public UInt32 SampleNumber { get; set; }
         }
     }
-}

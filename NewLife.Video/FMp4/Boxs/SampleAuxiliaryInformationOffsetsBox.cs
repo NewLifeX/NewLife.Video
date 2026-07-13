@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>样本辅助信息偏移 Box。定义辅助信息的偏移位置</summary>
     public class SampleAuxiliaryInformationOffsetsBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -40,4 +39,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

@@ -22,7 +22,7 @@ namespace NewLife.Video.FMp4
     //}
     //} 
 
-    /// <summary></summary>
+    /// <summary>条目数</summary>
     public class AVCDecoderConfigurationRecord
     {
         public Byte ConfigurationVersion { get; set; } = 1;

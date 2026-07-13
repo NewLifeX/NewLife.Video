@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>轨道引用类型 Box。包含引用轨道 ID 列表</summary>
     public class TrackReferenceTypeBox : Mp4Box, IFmp4MessagePackFormatter
     {
@@ -20,4 +19,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

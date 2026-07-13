@@ -1,7 +1,6 @@
 using System;
 
-namespace NewLife.Video.Flv
-{
+namespace NewLife.Video.Flv;
     /// <summary>
     /// <see cref="System.Buffers.Writer"/>
     /// </summary>
@@ -22,4 +21,3 @@ namespace NewLife.Video.Flv
 
         public void Advance(Int32 count) => WrittenCount += count;
     }
-}

@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>avcC</summary>
     public class AVCConfigurationBox : Mp4Box, IFmp4MessagePackFormatter
     {
@@ -96,4 +95,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

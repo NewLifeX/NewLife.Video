@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>版权信息 Box。包含版权声明字符串</summary>
     public class CopyrightBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -28,4 +27,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

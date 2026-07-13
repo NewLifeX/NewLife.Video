@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>
     /// ftyp 盒子相当于就是该 mp4 的纲领性说明。即，告诉解码器它的基本解码版本，兼容格式。简而言之，就是用来告诉客户端，该 MP4 的使用的解码标准。通常，ftyp 都是放在 MP4 的开头。
     /// </summary>
@@ -46,4 +45,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

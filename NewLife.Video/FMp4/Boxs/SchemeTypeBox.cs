@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>方案类型 Box。标识保护方案的类型和版本</summary>
     public class SchemeTypeBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -28,4 +27,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

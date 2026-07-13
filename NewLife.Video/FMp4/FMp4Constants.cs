@@ -1,12 +1,11 @@
-namespace NewLife.Video.FMp4
-{
-    /// <summary></summary>
+namespace NewLife.Video.FMp4;
+    /// <summary>条目数</summary>
     public static class Fmp4Constants
     {
         /// <summary>日期限制于2000年</summary>
         public const Int32 DateLimitYear = 2000;
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         public static readonly DateTime UTCBaseTime = new DateTime(1904, 1, 1);
 
         /// <summary>Fmp4 FLAG_SEGMENT</summary>
@@ -75,4 +74,3 @@ namespace NewLife.Video.FMp4
         /// <summary>TRUN_FLAGS_CTS_OFFSET</summary>
         public const Int32 TRUN_FLAG_SAMPLE_COMPOSITION_TIME_OFFSET_PRESENT = 0x0800;
     }
-}

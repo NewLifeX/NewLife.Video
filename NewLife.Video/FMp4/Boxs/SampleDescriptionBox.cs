@@ -2,8 +2,7 @@ using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 using NewLife.Video.FMp4.Samples;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>stsd</summary>
     public class SampleDescriptionBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -35,4 +34,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

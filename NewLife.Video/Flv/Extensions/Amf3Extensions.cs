@@ -1,7 +1,6 @@
 using NewLife.Video.Flv.Metadata;
 
-namespace NewLife.Video.Flv.Extensions
-{
+namespace NewLife.Video.Flv.Extensions;
     public static class Amf3Extensions
     {
         public static void WriteDouble(this IAmf3Metadata metadata, Span<Byte> value)
@@ -17,4 +16,3 @@ namespace NewLife.Video.Flv.Extensions
             flvBuffer.CopyTo(value);
         }
     }
-}

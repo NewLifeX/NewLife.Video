@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4.Samples
-{
+namespace NewLife.Video.FMp4.Samples;
     /// <summary>SampleEntry</summary>
     public abstract class SampleEntry : Mp4Box, IFmp4MessagePackFormatter
     {
@@ -14,7 +13,7 @@ namespace NewLife.Video.FMp4.Samples
 
         public UInt16 DataReferenceIndex { get; set; }
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         /// <param name="writer"></param>
         protected void WriterSampleEntryToBuffer(ref Fmp4MessagePackWriter writer)
         {
@@ -27,4 +26,3 @@ namespace NewLife.Video.FMp4.Samples
 
         public abstract void ToBuffer(ref Fmp4MessagePackWriter writer);
     }
-}

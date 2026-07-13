@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>stco</summary>
     public class ChunkOffsetBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -11,7 +10,7 @@ namespace NewLife.Video.FMp4
         /// <param name="flags"></param>
         public ChunkOffsetBox(Byte version = 0, UInt32 flags = 0) : base("stco", version, flags) { }
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         public UInt32 EntryCount { get; set; }
 
         /// <summary>length:EntryCount</summary>
@@ -36,4 +35,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

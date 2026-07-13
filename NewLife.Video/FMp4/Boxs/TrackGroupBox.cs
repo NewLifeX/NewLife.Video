@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>轨道组 Box。包含轨道分组信息的容器</summary>
     public class TrackGroupBox : Mp4Box, IFmp4MessagePackFormatter
     {
@@ -14,4 +13,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

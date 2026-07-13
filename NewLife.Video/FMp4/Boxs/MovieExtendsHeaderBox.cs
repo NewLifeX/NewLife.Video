@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>mehd</summary>
     public class MovieExtendsHeaderBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -21,4 +20,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

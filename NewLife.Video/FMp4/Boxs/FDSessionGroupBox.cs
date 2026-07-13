@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>FD 会话组 Box。描述文件分发会话组</summary>
     public class FDSessionGroupBox : Mp4Box, IFmp4MessagePackFormatter
     {
@@ -24,4 +23,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

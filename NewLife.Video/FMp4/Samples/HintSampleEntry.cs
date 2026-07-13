@@ -1,7 +1,6 @@
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4.Samples
-{
+namespace NewLife.Video.FMp4.Samples;
     /// <summary>HintSampleEntry</summary>
     public class HintSampleEntry : SampleEntry
     {
@@ -25,4 +24,3 @@ namespace NewLife.Video.FMp4.Samples
             End(ref writer);
         }
     }
-}

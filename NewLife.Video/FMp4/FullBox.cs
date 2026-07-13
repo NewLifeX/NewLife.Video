@@ -1,7 +1,6 @@
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     public abstract class FullBox : Mp4Box
     {
         public FullBox(String boxType, Byte version, UInt32 flags) : base(boxType)
@@ -16,7 +15,7 @@ namespace NewLife.Video.FMp4
         /// <summary>bit(24)</summary>
         public UInt32 Flags { get; set; }
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         /// <param name="writer"></param>
         protected void WriterFullBoxToBuffer(ref Fmp4MessagePackWriter writer)
         {
@@ -24,4 +23,3 @@ namespace NewLife.Video.FMp4
             writer.WriteUInt24(Flags);
         }
     }
-}

@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>ctts</summary>
     public class CompositionOffsetBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -55,4 +54,3 @@ namespace NewLife.Video.FMp4
             public Int32 SignedSampleOffset { get; set; }
         }
     }
-}

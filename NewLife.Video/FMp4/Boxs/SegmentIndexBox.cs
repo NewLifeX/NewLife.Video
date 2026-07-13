@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>sidx</summary>
     public class SegmentIndexBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -11,10 +10,10 @@ namespace NewLife.Video.FMp4
         /// <param name="flags"></param>
         public SegmentIndexBox(Byte version, UInt32 flags = 0) : base("sidx", version, flags) => ReferencedSizePositions = new List<Int32>();
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         public UInt32 ReferenceID { get; set; } = 1;
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         public UInt32 Timescale { get; set; } = 1000;
 
         /// <summary>
@@ -25,12 +24,12 @@ namespace NewLife.Video.FMp4
         /// </summary>
         public UInt64 EarliestPresentationTime { get; set; }
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         public UInt64 FirstOffset { get; set; } = 0;
 
         private UInt16 Reserved { get; set; }
 
-        /// <summary></summary>
+        /// <summary>条目数</summary>
         public List<SegmentIndex> SegmentIndexs { get; set; } = new List<SegmentIndex>();
 
         public List<Int32> ReferencedSizePositions { get; set; }
@@ -125,4 +124,3 @@ namespace NewLife.Video.FMp4
             public UInt32 SAPDeltaTime { get; set; } = 0;
         }
     }
-}

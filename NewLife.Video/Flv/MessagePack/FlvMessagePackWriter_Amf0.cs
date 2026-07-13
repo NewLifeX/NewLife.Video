@@ -1,7 +1,6 @@
 using System;
 
-namespace NewLife.Video.Flv.MessagePack
-{
+namespace NewLife.Video.Flv.MessagePack;
     public ref partial struct FlvMessagePackWriter
     {
         private static readonly Byte[] FixedAmf0Data = new Byte[] { 0x6F, 0x6E, 0x4D, 0x65, 0x74, 0x61, 0x44, 0x61, 0x74, 0x61 };
@@ -15,4 +14,3 @@ namespace NewLife.Video.Flv.MessagePack
             writer.Advance(13);
         }
     }
-}

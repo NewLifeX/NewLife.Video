@@ -1,7 +1,6 @@
 using System;
 
-namespace NewLife.Video.Flv.Extensions
-{
+namespace NewLife.Video.Flv.Extensions;
     /// <summary>
     /// 
     /// ref:"www.codeproject.com/tips/447938/high-performance-csharp-byte-array-to-hex-string-t"
@@ -122,4 +121,3 @@ namespace NewLife.Video.Flv.Extensions
             return new String(buf);
         }
     }
-}

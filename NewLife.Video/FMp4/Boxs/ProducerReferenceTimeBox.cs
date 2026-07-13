@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>生产者参考时间 Box。记录媒体生产时间戳</summary>
     public class ProducerReferenceTimeBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -27,4 +26,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

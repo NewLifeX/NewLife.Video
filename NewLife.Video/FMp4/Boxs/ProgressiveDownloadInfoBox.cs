@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>渐进式下载信息 Box。包含下载速率和初始延迟信息</summary>
     public class ProgressiveDownloadInfoBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -31,4 +30,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

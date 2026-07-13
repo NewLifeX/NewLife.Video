@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>轨道组类型 Box。标识轨道所属的分组</summary>
     public class TrackGroupTypeBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -18,4 +17,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>FD 条目信息 Box。包含文件分发会话信息</summary>
     public class FDItemInformationBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -27,4 +26,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

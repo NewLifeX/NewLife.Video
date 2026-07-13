@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>紧凑样本大小 Box。使用 4/8/16 位存储样本大小</summary>
     public class CompactSampleSizeBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -39,4 +38,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>颜色信息 Box。描述媒体的颜色属性</summary>
     public class ColourInformationBox : Mp4Box, IFmp4MessagePackFormatter
     {
@@ -31,4 +30,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

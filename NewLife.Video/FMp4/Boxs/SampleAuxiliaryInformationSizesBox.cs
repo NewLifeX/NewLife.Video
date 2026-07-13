@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>样本辅助信息大小 Box。定义每个样本的辅助信息大小</summary>
     public class SampleAuxiliaryInformationSizesBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -37,4 +36,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

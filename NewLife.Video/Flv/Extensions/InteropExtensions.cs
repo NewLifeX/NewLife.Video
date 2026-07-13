@@ -1,8 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 
-namespace NewLife.Video.Flv.Extensions
-{
+namespace NewLife.Video.Flv.Extensions;
     public static class InteropExtensions
     {
         public static T BytesToStruct<T>(Byte[] bytes, Int32 startIndex, Int32 length)
@@ -29,7 +28,7 @@ namespace NewLife.Video.Flv.Extensions
                 }
                 catch (Exception exception)
                 {
-                    throw new Exception("Error in BytesToStruct ! " + exception.Message);
+                    throw new InvalidOperationException("Error in BytesToStruct ! " + exception.Message);
                 }
                 finally
                 {
@@ -75,7 +74,7 @@ namespace NewLife.Video.Flv.Extensions
             }
             catch (Exception exception)
             {
-                throw new Exception("Error in StructToBytes ! " + exception.Message);
+                throw new InvalidOperationException("Error in StructToBytes ! " + exception.Message);
             }
             finally
             {
@@ -84,4 +83,3 @@ namespace NewLife.Video.Flv.Extensions
             return buffer2;
         }
     }
-}

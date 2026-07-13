@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     public abstract class FreeSpaceBox : Mp4Box, IFmp4MessagePackFormatter
     {
         public FreeSpaceBox(String boxType) : base(boxType) { }
@@ -20,4 +19,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

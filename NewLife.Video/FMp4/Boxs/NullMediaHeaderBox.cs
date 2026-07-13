@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>空媒体头 Box。用于无明确媒体类型的轨道</summary>
     public class NullMediaHeaderBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -15,4 +14,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

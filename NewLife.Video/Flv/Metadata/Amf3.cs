@@ -8,7 +8,7 @@ namespace NewLife.Video.Flv.Metadata
         /// <summary>元素个数</summary>
         public UInt32 Count { get; set; }
 
-        /// <summary></summary>
+        /// <summary>AMF3 数据</summary>
         public List<IAmf3Metadata> Amf3Metadatas { get; set; }
     }
 }

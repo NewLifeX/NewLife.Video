@@ -1,8 +1,7 @@
 using System.Buffers.Binary;
 using System.Text;
 
-namespace NewLife.Video.FMp4.MessagePack
-{
+namespace NewLife.Video.FMp4.MessagePack;
     public ref struct Fmp4MessagePackReader
     {
         public ReadOnlySpan<Byte> Reader { get; private set; }
@@ -43,4 +42,3 @@ namespace NewLife.Video.FMp4.MessagePack
             return Reader.Slice(ReaderCount - count);
         }
     }
-}

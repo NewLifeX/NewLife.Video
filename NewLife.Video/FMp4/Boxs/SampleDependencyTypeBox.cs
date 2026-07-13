@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>
     /// sdtp
     /// </summary>
@@ -51,4 +50,3 @@ namespace NewLife.Video.FMp4
             //public byte PaddingValue { get; set; }
         }
     }
-}

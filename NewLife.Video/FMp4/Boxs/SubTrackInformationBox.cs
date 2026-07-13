@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>子轨道信息 Box。描述子轨道的属性和切换组</summary>
     public class SubTrackInformationBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -25,4 +24,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

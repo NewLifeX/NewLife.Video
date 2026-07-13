@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>mfra</summary>
     public class MovieFragmentRandomAccessBox : Mp4Box, IFmp4MessagePackFormatter
     {
@@ -34,4 +33,3 @@ namespace NewLife.Video.FMp4
             }
         }
     }
-}

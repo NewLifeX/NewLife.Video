@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>阴影同步样本 Box。定义非关键样本到同步样本的映射</summary>
     public class ShadowSyncSampleBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -36,4 +35,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}

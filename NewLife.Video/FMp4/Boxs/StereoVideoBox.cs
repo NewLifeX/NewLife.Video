@@ -1,8 +1,7 @@
 using NewLife.Video.FMp4.Interfaces;
 using NewLife.Video.FMp4.MessagePack;
 
-namespace NewLife.Video.FMp4
-{
+namespace NewLife.Video.FMp4;
     /// <summary>立体视频 Box。描述立体视频配置和指示类型</summary>
     public class StereoVideoBox : FullBox, IFmp4MessagePackFormatter
     {
@@ -28,4 +27,3 @@ namespace NewLife.Video.FMp4
             End(ref writer);
         }
     }
-}
