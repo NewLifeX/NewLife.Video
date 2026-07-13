@@ -1,9 +1,10 @@
 using NewLife.Data;
 using NewLife.Video;
+using NewLife.Video.Avi;
 using NewLife.Video.Containers;
 using Xunit;
 
-namespace XUnitTest.Containers;
+namespace XUnitTest.Avi;
 
 public class AviWriterTests
 {

@@ -1,8 +1,14 @@
 using NewLife.Video;
+using NewLife.Video.Avi;
 using NewLife.Video.Containers;
+using NewLife.Video.Flv;
+using NewLife.Video.FMp4;
+using NewLife.Video.Mkv;
+using NewLife.Video.Raw;
+using NewLife.Video.Ts;
 using Xunit;
 
-namespace XUnitTest;
+namespace XUnitTest.Containers;
 
 public class VideoContainerFactoryTests
 {
@@ -66,7 +72,7 @@ public class VideoContainerFactoryTests
 
             using var reader = VideoContainerFactory.CreateReader(path);
 
-            Assert.IsType<NewLife.Video.Containers.Mp4Reader>(reader);
+            Assert.IsType<Mp4Reader>(reader);
         }
         finally
         {

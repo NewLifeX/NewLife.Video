@@ -1,7 +1,8 @@
 using NewLife.Video.Containers;
+using NewLife.Video.FMp4;
 using Xunit;
 
-namespace XUnitTest.Containers;
+namespace XUnitTest.FMp4;
 
 public class Mp4ReaderTests
 {
@@ -43,7 +44,7 @@ public class Mp4ReaderTests
             var mp4Data = CreateMinimalMp4();
             File.WriteAllBytes(path, mp4Data);
 
-            using var reader = NewLife.Video.VideoContainerFactory.CreateReader(path);
+            using var reader = VideoContainerFactory.CreateReader(path);
             Assert.IsType<Mp4Reader>(reader);
         }
         finally

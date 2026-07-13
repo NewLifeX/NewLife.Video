@@ -1,7 +1,8 @@
 using NewLife.Video;
+using NewLife.Video.Codecs;
 using Xunit;
 
-namespace XUnitTest;
+namespace XUnitTest.Codecs;
 
 public class VideoFormatDetectorTests
 {

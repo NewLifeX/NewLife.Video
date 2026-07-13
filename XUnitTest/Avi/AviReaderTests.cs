@@ -1,7 +1,8 @@
+using NewLife.Video.Avi;
 using NewLife.Video.Containers;
 using Xunit;
 
-namespace XUnitTest.Containers;
+namespace XUnitTest.Avi;
 
 public class AviReaderTests
 {
@@ -27,7 +28,7 @@ public class AviReaderTests
             System.Text.Encoding.ASCII.GetBytes("movi").CopyTo(riff, 20);
 
             File.WriteAllBytes(path, riff);
-            using var reader = NewLife.Video.VideoContainerFactory.CreateReader(path);
+            using var reader = VideoContainerFactory.CreateReader(path);
             Assert.IsType<AviReader>(reader);
         }
         finally { try { if (File.Exists(path)) File.Delete(path); } catch { } }

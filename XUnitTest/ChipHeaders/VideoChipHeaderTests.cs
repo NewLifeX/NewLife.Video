@@ -1,7 +1,9 @@
 using NewLife.Data;
 using NewLife.Video;
 using NewLife.Video.ChipHeaders;
+using NewLife.Video.Codecs;
 using Xunit;
+using XUnitTest.Codecs;
 
 namespace XUnitTest.ChipHeaders;
 
@@ -103,7 +105,7 @@ public class VideoChipHeaderTests
         factory.RegisterChipHeader(new DahuaVideoHeader());
 
         // 注册一个测试编解码器
-        var codec = new XUnitTest.TestCodec();
+        var codec = new TestCodec();
         factory.Register(VideoTypes.MJPEG, codec);
 
         // 构造海思头数据

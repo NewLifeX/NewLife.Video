@@ -1,7 +1,8 @@
 using NewLife.Video.Containers;
+using NewLife.Video.Mkv;
 using Xunit;
 
-namespace XUnitTest.Containers;
+namespace XUnitTest.Mkv;
 
 public class MkvReaderTests
 {
@@ -20,7 +21,7 @@ public class MkvReaderTests
             // EBML 头: 0x1A 0x45 0xDF 0xA3
             var data = new Byte[] { 0x1A, 0x45, 0xDF, 0xA3, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x20 };
             File.WriteAllBytes(path, data);
-            using var r = NewLife.Video.VideoContainerFactory.CreateReader(path);
+            using var r = VideoContainerFactory.CreateReader(path);
             Assert.IsType<MkvReader>(r);
         }
         finally { try { if (File.Exists(path)) File.Delete(path); } catch { } }

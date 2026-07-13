@@ -1,8 +1,10 @@
 using NewLife.Data;
 using NewLife.Video;
+using NewLife.Video.Codecs;
 using Xunit;
+using XUnitTest.ChipHeaders;
 
-namespace XUnitTest;
+namespace XUnitTest.Codecs;
 
 public class VideoCodecFactoryTests
 {

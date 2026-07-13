@@ -1,8 +1,9 @@
 using System;
 using NewLife.Data;
 using NewLife.Video;
+using NewLife.Video.ChipHeaders;
 
-namespace XUnitTest;
+namespace XUnitTest.ChipHeaders;
 
 /// <summary>测试用芯片头处理器</summary>
 public class TestChipHeader : IVideoChipHeader

@@ -1,7 +1,8 @@
 using NewLife.Video.Containers;
+using NewLife.Video.Ts;
 using Xunit;
 
-namespace XUnitTest.Containers;
+namespace XUnitTest.Ts;
 
 public class TsReaderTests
 {
@@ -21,7 +22,7 @@ public class TsReaderTests
             var data = new Byte[188];
             data[0] = 0x47;
             File.WriteAllBytes(path, data);
-            using var r = NewLife.Video.VideoContainerFactory.CreateReader(path);
+            using var r = VideoContainerFactory.CreateReader(path);
             Assert.IsType<TsReader>(r);
         }
         finally { try { if (File.Exists(path)) File.Delete(path); } catch { } }

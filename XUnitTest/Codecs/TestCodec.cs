@@ -1,8 +1,9 @@
 using System;
 using NewLife.Data;
 using NewLife.Video;
+using NewLife.Video.Codecs;
 
-namespace XUnitTest;
+namespace XUnitTest.Codecs;
 
 /// <summary>测试用编解码器。实现 IVideoCodec 和 ICodecInfo</summary>
 public class TestCodec : IVideoCodec, ICodecInfo
