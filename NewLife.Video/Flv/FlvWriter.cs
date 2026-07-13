@@ -192,6 +192,14 @@ public class FlvWriter : IVideoContainerWriter
             // 计算 TagHeader 中的 DataSize（TagHeader 之后的数据大小）
             // FlvMessagePackWriter 已经写入了完整的 Tag，我们直接写入文件
             _stream.Write(tagData, 0, tagData.Length);
+
+            // 写入 PreviousTagSize（与 WriteVideoTag 保持一致）
+            var prevTagSize = (UInt32)(tagData.Length);
+            var ptsBuf = new Byte[4];
+            var pw = new SpanWriter(ptsBuf) { IsLittleEndian = false };
+            pw.Write(prevTagSize);
+            _stream.Write(ptsBuf, 0, 4);
+
             _scriptTagWritten = true;
         }
         finally

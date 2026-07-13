@@ -120,6 +120,7 @@ public class FlvReader : IVideoContainerReader
                 if (videoTagHeader < 0) break;
                 var frameTypeAndCodec = (Byte)videoTagHeader;
                 var payloadSize = dataSize - 1; // 减去 VideoTagHeader 字节
+                var consumed = 1; // 已读取 1 字节 Tag Data（videoTagHeader）
 
                 if (tagType == 9) // 视频标签
                 {
@@ -131,8 +132,10 @@ public class FlvReader : IVideoContainerReader
                         // 读取 AVCDecoderConfigurationRecord 或 HEVCDecoderConfigurationRecord
                         if (payloadSize > 4 && !_headerParsed)
                         {
-                            var configBytes = new Byte[Math.Min(payloadSize, 256)];
+                            var maxConfigSize = Math.Min(payloadSize - 1, 256);
+                            var configBytes = new Byte[maxConfigSize];
                             _stream.Read(configBytes, 0, configBytes.Length);
+                            consumed += configBytes.Length;
 
                             if (codecId == 7) // AVC (H.264)
                             {
@@ -153,10 +156,10 @@ public class FlvReader : IVideoContainerReader
                     estimatedFrameSize += dataSize;
                 }
 
-                // 跳到下一个标签：跳过剩余 payload
-                var bytesRead = Math.Min(payloadSize, 256);
-                if (payloadSize > bytesRead)
-                    _stream.Seek(payloadSize - bytesRead, SeekOrigin.Current);
+                // 跳到下一个标签：跳过 tag 数据中尚未读取的字节
+                var remaining = dataSize - consumed;
+                if (remaining > 0)
+                    _stream.Seek(remaining, SeekOrigin.Current);
             }
         }
         catch
