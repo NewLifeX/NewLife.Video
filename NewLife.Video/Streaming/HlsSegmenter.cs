@@ -64,7 +64,8 @@ public class HlsSegmenter
         var fileName = $"{_baseName}_{_sequenceNumber:D5}.ts";
         var filePath = Path.Combine(_outputDir, fileName);
 
-        File.WriteAllBytes(filePath, _currentSegment.ToArray());
+        using var fs = File.Create(filePath);
+        _currentSegment.WriteTo(fs);
         _currentSegment.Dispose();
         _currentSegment = null;
 

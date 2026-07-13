@@ -1,6 +1,6 @@
 using NewLife.Data;
 
-namespace NewLife.Video;
+namespace NewLife.Video.ChipHeaders;
 
 /// <summary>芯片视频头处理接口</summary>
 /// <remarks>

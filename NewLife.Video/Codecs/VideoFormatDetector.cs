@@ -1,6 +1,6 @@
 using NewLife.Buffers;
 
-namespace NewLife.Video;
+namespace NewLife.Video.Codecs;
 
 /// <summary>视频编码格式自动检测器。根据数据流起始字节识别编码类型</summary>
 public static class VideoFormatDetector

@@ -1,6 +1,6 @@
 using NewLife.Data;
 
-namespace NewLife.Video;
+namespace NewLife.Video.Codecs;
 
 /// <summary>视频编解码器接口</summary>
 public interface IVideoCodec

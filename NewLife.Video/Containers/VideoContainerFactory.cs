@@ -1,6 +1,11 @@
-using NewLife.Video.Containers;
+using NewLife.Video.Avi;
+using NewLife.Video.Flv;
+using NewLife.Video.FMp4;
+using NewLife.Video.Mkv;
+using NewLife.Video.Raw;
+using NewLife.Video.Ts;
 
-namespace NewLife.Video;
+namespace NewLife.Video.Containers;
 
 /// <summary>视频容器工厂。根据文件扩展名和魔术字节自动选择读取器</summary>
 /// <remarks>

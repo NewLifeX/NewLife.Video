@@ -27,7 +27,7 @@ public class FFmpegH265Decoder : IVideoCodec, ICodecInfo, IDisposable
     public VideoFrame[] Decode(VPacket packet)
     {
         if (packet?.Data == null) return [];
-        var data = packet.Data.ToArray();
+        var data = packet.Data.GetMemory();
         if (data.Length == 0) return [];
 
         var args = _width > 0

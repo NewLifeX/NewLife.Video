@@ -1,7 +1,8 @@
 using NewLife.Buffers;
 using NewLife.Data;
+using NewLife.Video.Containers;
 
-namespace NewLife.Video.Containers;
+namespace NewLife.Video.Avi;
 
 /// <summary>AVI (RIFF) 容器写入器。生成标准 AVI 文件结构</summary>
 /// <remarks>

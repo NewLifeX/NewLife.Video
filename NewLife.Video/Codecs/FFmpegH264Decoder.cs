@@ -50,7 +50,7 @@ public class FFmpegH264Decoder : IVideoCodec, ICodecInfo, IDisposable
     {
         if (packet?.Data == null) return [];
 
-        var data = packet.Data.ToArray();
+        var data = packet.Data.GetMemory();
         if (data.Length == 0) return [];
 
         // 构建 ffmpeg 参数
@@ -86,11 +86,9 @@ public class FFmpegH264Decoder : IVideoCodec, ICodecInfo, IDisposable
 
         for (var i = 0; i < frameCount; i++)
         {
-            var frameData = new Byte[frameSize];
-            Array.Copy(raw, i * frameSize, frameData, 0, frameSize);
-
             var frame = VideoFrame.Create(_width, _height, VideoTypes.YUV420P);
-            Array.Copy(frameData, frame.Data, Math.Min(frameData.Length, frame.Data.Length));
+            var copyLen = Math.Min(frameSize, raw.Length - i * frameSize);
+            Array.Copy(raw, i * frameSize, frame.Data, 0, copyLen);
 
             frame.Timestamp = packet.PTS + i * 40;
             frame.IsKeyFrame = packet.IsKeyFrame && i == 0;

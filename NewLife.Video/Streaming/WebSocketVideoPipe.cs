@@ -30,16 +30,22 @@ public class WebSocketVideoPipe
     {
         if (packet?.Data == null) return;
 
-        var data = packet.Data.ToArray();
         var lengthPrefix = new Byte[4];
         var lw = new SpanWriter(lengthPrefix) { IsLittleEndian = false };
-        lw.Write(data.Length);
 
-        // 发送长度前缀
-        await _socket.SendAsync(new ArraySegment<Byte>(lengthPrefix), WebSocketMessageType.Binary, false, CancellationToken.None);
-
-        // 发送数据
-        await _socket.SendAsync(new ArraySegment<Byte>(data), WebSocketMessageType.Binary, true, CancellationToken.None);
+        if (packet.Data.TryGetArray(out var seg))
+        {
+            lw.Write(seg.Count);
+            await _socket.SendAsync(new ArraySegment<Byte>(lengthPrefix), WebSocketMessageType.Binary, false, CancellationToken.None);
+            await _socket.SendAsync(new ArraySegment<Byte>(seg.Array, seg.Offset, seg.Count), WebSocketMessageType.Binary, true, CancellationToken.None);
+        }
+        else
+        {
+            var data = packet.Data.ToArray();
+            lw.Write(data.Length);
+            await _socket.SendAsync(new ArraySegment<Byte>(lengthPrefix), WebSocketMessageType.Binary, false, CancellationToken.None);
+            await _socket.SendAsync(new ArraySegment<Byte>(data), WebSocketMessageType.Binary, true, CancellationToken.None);
+        }
     }
 
     /// <summary>接收视频数据包</summary>

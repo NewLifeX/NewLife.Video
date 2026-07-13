@@ -210,13 +210,17 @@ public class RtmpClient : IDisposable
 
         if (!_sequenceHeaderSent && packet.IsKeyFrame)
         {
-            ExtractParameterSets(packet.Data.ToArray());
+            ExtractParameterSets(packet.Data.GetSpan());
             await SendSequenceHeaderAsync();
             _sequenceHeaderSent = true;
         }
 
-        var data = packet.Data.ToArray();
-        var flvTag = BuildFlvVideoTag(data, packet.IsKeyFrame);
+        Byte[] rawData;
+        if (packet.Data.TryGetArray(out var seg) && seg.Offset == 0 && seg.Count == seg.Array.Length)
+            rawData = seg.Array;
+        else
+            rawData = packet.Data.ToArray();
+        var flvTag = BuildFlvVideoTag(rawData, packet.IsKeyFrame);
         var ts = (UInt32)(packet.PTS > 0 ? packet.PTS : 0);
         await _chunkStream.WriteMessageAsync(4, ts, 9, _streamId, flvTag);
     }
@@ -304,12 +308,12 @@ public class RtmpClient : IDisposable
 
     #region 参数提取
 
-    private void ExtractParameterSets(Byte[] data)
+    private void ExtractParameterSets(ReadOnlySpan<Byte> data)
     {
         if (_codecType == VideoTypes.H265) ExtractHevcSets(data); else ExtractAvcSets(data);
     }
 
-    private void ExtractAvcSets(Byte[] data)
+    private void ExtractAvcSets(ReadOnlySpan<Byte> data)
     {
         var i = 0;
         while (i < data.Length - 4)
@@ -327,14 +331,14 @@ public class RtmpClient : IDisposable
             while (ne < data.Length - 3)
             { if (data[ne] == 0 && data[ne + 1] == 0 && (data[ne + 2] == 1 || (data[ne + 2] == 0 && ne + 3 < data.Length && data[ne + 3] == 1))) break; ne++; }
             if (ne > data.Length) ne = data.Length;
-            var nd = new Byte[ne - ns]; Array.Copy(data, ns, nd, 0, nd.Length);
+            var nd = new Byte[ne - ns]; data.Slice(ns, nd.Length).CopyTo(nd);
             if (nt == 7) _sps = nd; else if (nt == 8) _pps = nd;
             if (_sps != null && _pps != null) break;
             i = ne;
         }
     }
 
-    private void ExtractHevcSets(Byte[] data)
+    private void ExtractHevcSets(ReadOnlySpan<Byte> data)
     {
         var i = 0;
         while (i < data.Length - 4)
@@ -352,7 +356,7 @@ public class RtmpClient : IDisposable
             while (ne < data.Length - 3)
             { if (data[ne] == 0 && data[ne + 1] == 0 && (data[ne + 2] == 1 || (data[ne + 2] == 0 && ne + 3 < data.Length && data[ne + 3] == 1))) break; ne++; }
             if (ne > data.Length) ne = data.Length;
-            var nd = new Byte[ne - ns]; Array.Copy(data, ns, nd, 0, nd.Length);
+            var nd = new Byte[ne - ns]; data.Slice(ns, nd.Length).CopyTo(nd);
             if (nt == 32) _vps = nd; else if (nt == 33) _sps = nd; else if (nt == 34) _pps = nd;
             if (_vps != null && _sps != null && _pps != null) break;
             i = ne;

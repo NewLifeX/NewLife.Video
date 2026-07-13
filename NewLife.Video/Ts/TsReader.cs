@@ -1,7 +1,8 @@
 using NewLife.Buffers;
 using NewLife.Data;
+using NewLife.Video.Containers;
 
-namespace NewLife.Video.Containers;
+namespace NewLife.Video.Ts;
 
 /// <summary>MPEG-2 TS (Transport Stream) 容器读取器。解析 PAT/PMT/PES 结构</summary>
 /// <remarks>
@@ -363,14 +364,14 @@ public class TsReader : IVideoContainerReader
     public VPacket ReadFrame()
     {
         var packet = new Byte[188];
-        var frameData = new List<Byte>();
+        using var pesStream = new MemoryStream(4096);
         var pesStarted = false;
 
         while (_stream.Read(packet, 0, 188) == 188)
         {
             if (packet[0] != 0x47)
             {
-                if (frameData.Count > 0) break;
+                if (pesStream.Length > 0) break;
                 return null;
             }
 
@@ -385,7 +386,7 @@ public class TsReader : IVideoContainerReader
 
             if (payloadStart)
             {
-                if (pesStarted && frameData.Count > 0)
+                if (pesStarted && pesStream.Length > 0)
                 {
                     _stream.Seek(-188, SeekOrigin.Current);
                     break;
@@ -405,24 +406,18 @@ public class TsReader : IVideoContainerReader
                 {
                     var esLen = Math.Min(188 - esOffset, payloadLen - (esOffset - payloadOffset));
                     if (esLen > 0)
-                    {
-                        var esData = new Byte[esLen];
-                        Array.Copy(packet, esOffset, esData, 0, esLen);
-                        frameData.AddRange(esData);
-                    }
+                        pesStream.Write(packet, esOffset, esLen);
                 }
             }
             else if (pesStarted)
             {
-                var data = new Byte[payloadLen];
-                Array.Copy(packet, payloadOffset, data, 0, payloadLen);
-                frameData.AddRange(data);
+                pesStream.Write(packet, payloadOffset, payloadLen);
             }
         }
 
-        if (frameData.Count > 0)
+        if (pesStream.Length > 0)
         {
-            var data = frameData.ToArray();
+            var data = pesStream.ToArray();
             return new VPacket
             {
                 Data = new ArrayPacket(data),

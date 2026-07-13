@@ -1,4 +1,4 @@
-namespace NewLife.Video;
+namespace NewLife.Video.Codecs;
 
 /// <summary>编解码器元数据接口</summary>
 public interface ICodecInfo

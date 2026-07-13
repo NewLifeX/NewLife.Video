@@ -1,6 +1,7 @@
 using NewLife.Data;
+using NewLife.Video.ChipHeaders;
 
-namespace NewLife.Video;
+namespace NewLife.Video.Codecs;
 
 /// <summary>视频编解码工厂。管理编解码器注册表、芯片头处理链，提供统一的编解码入口</summary>
 /// <remarks>

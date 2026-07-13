@@ -29,7 +29,7 @@ public static class SnapshotEncoder
         var codec = new Codecs.MjpegCodec();
         var vpacket = codec.Encode([frame]);
         if (vpacket?.Data == null) return [];
-        return vpacket.Data.ToArray();
+        return vpacket.Data.TryGetArray(out var seg) && seg.Offset == 0 ? seg.Array : vpacket.Data.ToArray();
     }
 
     /// <summary>将 VideoFrame 编码为 PNG 字节数组</summary>

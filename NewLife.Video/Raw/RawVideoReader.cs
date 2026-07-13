@@ -1,6 +1,7 @@
 using NewLife.Data;
+using NewLife.Video.Containers;
 
-namespace NewLife.Video.Containers;
+namespace NewLife.Video.Raw;
 
 /// <summary>原始视频帧读取器。按帧读取无容器的原始像素数据（YUV420P/NV12/RGB24等）</summary>
 /// <remarks>

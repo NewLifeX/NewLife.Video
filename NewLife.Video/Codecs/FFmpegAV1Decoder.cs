@@ -1,3 +1,4 @@
+using NewLife.Buffers;
 using NewLife.Data;
 using NewLife.Video.FFmpeg;
 
@@ -51,18 +52,17 @@ public class FFmpegAV1Decoder : IVideoCodec, ICodecInfo, IDisposable
     {
         if (packet?.Data == null) return [];
 
-        var data = packet.Data.ToArray();
-        if (data.Length == 0) return [];
+        var span = packet.Data.GetSpan();
+        if (span.Length == 0) return [];
 
         // 如果数据不是 IVF 容器格式，尝试自动检测并包装
-        var inputData = IsIVFFormat(data) ? data : WrapAsIVF(data);
-
-        // 使用 IVF demuxer + AV1 解码
         var args = _width > 0 && _height > 0
             ? $"-f ivf -i pipe:0 -f rawvideo -pix_fmt yuv420p -s {_width}x{_height} pipe:1"
             : "-f ivf -i pipe:0 -f rawvideo -pix_fmt yuv420p pipe:1";
 
-        var raw = _invoker.ExecutePipeAsync(args, inputData).GetAwaiter().GetResult();
+        var raw = IsIVFFormat(span)
+            ? _invoker.ExecutePipeAsync(args, packet.Data.GetMemory()).GetAwaiter().GetResult()
+            : _invoker.ExecutePipeAsync(args, WrapAsIVF(span)).GetAwaiter().GetResult();
 
         if (raw == null || raw.Length == 0) return [];
 
@@ -105,55 +105,39 @@ public class FFmpegAV1Decoder : IVideoCodec, ICodecInfo, IDisposable
     #region 辅助
 
     /// <summary>检测数据是否为 IVF 容器格式（前4字节应为 DKIF）</summary>
-    private static Boolean IsIVFFormat(Byte[] data)
+    private static Boolean IsIVFFormat(ReadOnlySpan<Byte> data)
     {
         return data.Length >= 4 && data[0] == 0x44 && data[1] == 0x4B && data[2] == 0x49 && data[3] == 0x46; // "DKIF"
     }
 
     /// <summary>将裸 AV1 OBU 数据包装为 IVF 容器</summary>
     /// <remarks>生成最小 IVF 头：DKIF 签名 + 版本 + 头长度 + FourCC(AV01) + 宽高 + 帧率 + 帧数 + 数据</remarks>
-    private Byte[] WrapAsIVF(Byte[] data)
+    private Byte[] WrapAsIVF(ReadOnlySpan<Byte> data)
     {
-        using var ms = new System.IO.MemoryStream(data.Length + 32);
+        // IVF file header (32) + frame size (4) + timestamp (8) + frame data
+        var totalLen = 32 + 12 + data.Length;
+        var buf = new Byte[totalLen];
+        var w = new SpanWriter(buf) { IsLittleEndian = true };
 
         // IVF 文件头 (32 字节)
-        ms.Write(System.Text.Encoding.ASCII.GetBytes("DKIF"), 0, 4); // signature
-        ms.WriteByte(0); ms.WriteByte(0);                             // version = 0
-        ms.WriteByte(32); ms.WriteByte(0);                            // header length = 32
-        ms.Write(System.Text.Encoding.ASCII.GetBytes("AV01"), 0, 4);  // FourCC
-        WriteUInt16LE(ms, (UInt16)(_width > 0 ? _width : 1920));    // width
-        WriteUInt16LE(ms, (UInt16)(_height > 0 ? _height : 1080));  // height
-        WriteUInt32LE(ms, 30);                                       // framerate numerator
-        WriteUInt32LE(ms, 1);                                        // framerate denominator
-        WriteUInt32LE(ms, 1);                                        // frame count
-        WriteUInt32LE(ms, 0);                                        // unused
+        w.Write((Byte)0x44); w.Write((Byte)0x4B); w.Write((Byte)0x49); w.Write((Byte)0x46); // "DKIF"
+        w.Write((Int16)0);                             // version = 0
+        w.Write((Int16)32);                            // header length = 32
+        w.Write((Byte)0x41); w.Write((Byte)0x56); w.Write((Byte)0x30); w.Write((Byte)0x31); // "AV01"
+        w.Write((UInt16)(_width > 0 ? _width : 1920)); // width
+        w.Write((UInt16)(_height > 0 ? _height : 1080)); // height
+        w.Write(30U);                                   // framerate numerator
+        w.Write(1U);                                    // framerate denominator
+        w.Write(1U);                                    // frame count
+        w.Write(0U);                                    // unused
 
         // 帧数据（1 帧）
-        WriteUInt32LE(ms, (UInt32)data.Length); // frame size
-        WriteUInt64LE(ms, 0);                    // timestamp
-        ms.Write(data, 0, data.Length);
+        w.Write((UInt32)data.Length);                   // frame size
+        w.Write(0L);                                    // timestamp
 
-        return ms.ToArray();
-    }
+        data.CopyTo(w.GetSpan(data.Length));
 
-    private static void WriteUInt16LE(System.IO.Stream s, UInt16 v)
-    {
-        s.WriteByte((Byte)(v & 0xFF));
-        s.WriteByte((Byte)(v >> 8));
-    }
-
-    private static void WriteUInt32LE(System.IO.Stream s, UInt32 v)
-    {
-        s.WriteByte((Byte)(v & 0xFF));
-        s.WriteByte((Byte)((v >> 8) & 0xFF));
-        s.WriteByte((Byte)((v >> 16) & 0xFF));
-        s.WriteByte((Byte)(v >> 24));
-    }
-
-    private static void WriteUInt64LE(System.IO.Stream s, UInt64 v)
-    {
-        for (var i = 0; i < 8; i++)
-            s.WriteByte((Byte)((v >> (i * 8)) & 0xFF));
+        return buf;
     }
 
     private static (Int32, Int32) GuessResolution(Int32 rawSize)

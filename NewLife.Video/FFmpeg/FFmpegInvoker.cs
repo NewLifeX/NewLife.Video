@@ -1,4 +1,6 @@
+using System.Buffers;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace NewLife.Video.FFmpeg;
 
@@ -119,6 +121,18 @@ public class FFmpegInvoker
     /// <returns>标准输出数据</returns>
     public async Task<Byte[]> ExecutePipeAsync(String arguments, Byte[] inputData = null, CancellationToken cancellationToken = default)
     {
+        return await ExecutePipeAsync(arguments, inputData != null ? new ReadOnlyMemory<Byte>(inputData) : default, cancellationToken);
+    }
+
+    /// <summary>执行 FFmpeg 命令并通过管道获取输出数据（用于解码），接受 ReadOnlyMemory 零拷贝输入</summary>
+    /// <param name="arguments">命令行参数</param>
+    /// <param name="inputData">管道输入数据（ReadOnlyMemory 视图）</param>
+    /// <param name="cancellationToken">取消令牌</param>
+    /// <returns>标准输出数据</returns>
+    public async Task<Byte[]> ExecutePipeAsync(String arguments, ReadOnlyMemory<Byte> inputData, CancellationToken cancellationToken = default)
+    {
+        var hasInput = !inputData.IsEmpty;
+
         var psi = new ProcessStartInfo
         {
             FileName = FFmpegPath,
@@ -127,7 +141,7 @@ public class FFmpegInvoker
             CreateNoWindow = true,
             RedirectStandardOutput = true,
             RedirectStandardError = true,
-            RedirectStandardInput = inputData != null,
+            RedirectStandardInput = hasInput,
         };
 
         if (WorkingDirectory != null)
@@ -137,13 +151,18 @@ public class FFmpegInvoker
         process.Start();
 
         // 写入 stdin
-        if (inputData != null)
+        if (hasInput)
         {
-#if NET5_0_OR_GREATER
-            await process.StandardInput.BaseStream.WriteAsync(inputData, 0, inputData.Length, cancellationToken);
-#else
-            await process.StandardInput.BaseStream.WriteAsync(inputData, 0, inputData.Length);
-#endif
+            // 优先零拷贝：尝试获取底层 Byte[] 直接写入
+            if (MemoryMarshal.TryGetArray(inputData, out var segment) && segment.Array != null)
+            {
+                await process.StandardInput.BaseStream.WriteAsync(segment.Array, segment.Offset, segment.Count);
+            }
+            else
+            {
+                var data = inputData.ToArray();
+                await process.StandardInput.BaseStream.WriteAsync(data, 0, data.Length);
+            }
             process.StandardInput.Close();
         }
 

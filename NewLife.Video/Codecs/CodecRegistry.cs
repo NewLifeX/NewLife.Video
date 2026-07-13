@@ -1,4 +1,4 @@
-namespace NewLife.Video;
+namespace NewLife.Video.Codecs;
 
 /// <summary>编解码器注册表。管理所有编解码器实例，按 VideoTypes 路由到正确的编解码器</summary>
 /// <remarks>

@@ -1,6 +1,8 @@
 using NewLife.Data;
+using NewLife.Video.Containers;
+using System.Buffers;
 
-namespace NewLife.Video.Containers;
+namespace NewLife.Video.Ts;
 
 /// <summary>MPEG-TS 容器写入器。将 H.264/H.265 视频编码数据封装为标准 TS 流</summary>
 /// <remarks>
@@ -43,16 +45,18 @@ public class TsWriter : IVideoContainerWriter
         if (packet?.Data == null) return;
         if (!_headerWritten) WritePatPmt();
 
-        var data = packet.Data.ToArray();
+        // TryGetArray 零拷贝：底层 ArrayPacket 且 offset=0 时直接复用
+        if (!packet.Data.TryGetArray(out var seg) || seg.Offset != 0 || seg.Count != seg.Array.Length)
+            seg = new ArraySegment<Byte>(packet.Data.ToArray());
 
         // 计算 PTS（90kHz 时钟单位）
         var pts = (Int64)(_frameCount * 90000.0 / _frameRate);
 
         // 构建 PES 包头
-        var pesHeader = BuildPesHeader(data.Length, pts);
-        var fullData = new Byte[pesHeader.Length + data.Length];
+        var pesHeader = BuildPesHeader(seg.Count, pts);
+        var fullData = new Byte[pesHeader.Length + seg.Count];
         Array.Copy(pesHeader, 0, fullData, 0, pesHeader.Length);
-        Array.Copy(data, 0, fullData, pesHeader.Length, data.Length);
+        Array.Copy(seg.Array, 0, fullData, pesHeader.Length, seg.Count);
 
         // 将 PES 包分片写入 TS 包
         var offset = 0;
@@ -60,98 +64,105 @@ public class TsWriter : IVideoContainerWriter
 
         while (offset < fullData.Length)
         {
-            var tsPacket = new Byte[188];
-            tsPacket[0] = 0x47; // sync byte
-
-            // PID
-            tsPacket[1] = (Byte)(payloadStart ? 0x40 : 0x00); // PUSI
-            tsPacket[1] |= (Byte)((_videoPid >> 8) & 0x1F);
-            tsPacket[2] = (Byte)(_videoPid & 0xFF);
-
-            // 自适应域控制 + 连续性计数器
-            var needPcr = pts - _lastPcrPts >= PcrInterval;
-            var remainingSpace = 184; // TS 包有效载荷区
-            var hasAdaptation = false;
-
-            if (needPcr)
+            var tsPacket = ArrayPool<Byte>.Shared.Rent(188);
+            try
             {
-                hasAdaptation = true;
-                remainingSpace -= 8; // PCR 占 8 字节（含自适应域长度和标志）
-                _lastPcrPts = pts;
-            }
+                tsPacket[0] = 0x47; // sync byte
 
-            // 如果需要自适应域填充（最后一个分片不足 184 字节）
-            var payloadLen = Math.Min(remainingSpace, fullData.Length - offset);
-            if (payloadLen < remainingSpace)
-                hasAdaptation = true;
+                // PID
+                tsPacket[1] = (Byte)(payloadStart ? 0x40 : 0x00); // PUSI
+                tsPacket[1] |= (Byte)((_videoPid >> 8) & 0x1F);
+                tsPacket[2] = (Byte)(_videoPid & 0xFF);
 
-            // AFC: 01=仅有效载荷, 10=仅自适应域, 11=两者都有
-            tsPacket[3] = (Byte)((_continuityCounter & 0x0F) | (hasAdaptation ? 0x30 : 0x10));
-            _continuityCounter = (_continuityCounter + 1) & 0x0F;
-
-            var tsOffset = 4;
-            var adaptationLenPos = tsOffset;
-
-            if (hasAdaptation)
-            {
-                var adaptationLen = 0;
+                // 自适应域控制 + 连续性计数器
+                var needPcr = pts - _lastPcrPts >= PcrInterval;
+                var remainingSpace = 184; // TS 包有效载荷区
+                var hasAdaptation = false;
 
                 if (needPcr)
                 {
-                    adaptationLen = 7; // 1(flags) + 6(PCR)
-                    tsPacket[tsOffset++] = (Byte)adaptationLen;
-                    tsPacket[tsOffset++] = 0x10; // PCR_flag
-                    // PCR = PTS (简化，PCR ≈ PTS)
-                    var pcrBase = pts; // 90kHz 单位
-                    var pcrExt = 0u;
-                    tsPacket[tsOffset++] = (Byte)(pcrBase >> 25);
-                    tsPacket[tsOffset++] = (Byte)(pcrBase >> 17);
-                    tsPacket[tsOffset++] = (Byte)(pcrBase >> 9);
-                    tsPacket[tsOffset++] = (Byte)(pcrBase >> 1);
-                    tsPacket[tsOffset++] = (Byte)(((pcrBase & 1) << 7) | 0x7E | (Byte)(pcrExt >> 8));
-                    tsPacket[tsOffset++] = (Byte)(pcrExt & 0xFF);
+                    hasAdaptation = true;
+                    remainingSpace -= 8; // PCR 占 8 字节（含自适应域长度和标志）
+                    _lastPcrPts = pts;
                 }
 
-                // 自适应域填充（stuffing）
+                // 如果需要自适应域填充（最后一个分片不足 184 字节）
+                var payloadLen = Math.Min(remainingSpace, fullData.Length - offset);
                 if (payloadLen < remainingSpace)
+                    hasAdaptation = true;
+
+                // AFC: 01=仅有效载荷, 10=仅自适应域, 11=两者都有
+                tsPacket[3] = (Byte)((_continuityCounter & 0x0F) | (hasAdaptation ? 0x30 : 0x10));
+                _continuityCounter = (_continuityCounter + 1) & 0x0F;
+
+                var tsOffset = 4;
+                var adaptationLenPos = tsOffset;
+
+                if (hasAdaptation)
                 {
+                    var adaptationLen = 0;
+
                     if (needPcr)
                     {
-                        // PCR 已占 8 字节（1 length + 1 flags + 6 PCR），补充 stuffing 填充剩余
-                        var stuffLen = remainingSpace - payloadLen;
-                        if (stuffLen > 0)
-                        {
-                            tsPacket[adaptationLenPos] = (Byte)(adaptationLen + stuffLen);
-                            for (var i = 0; i < stuffLen && tsOffset < 188; i++)
-                                tsPacket[tsOffset++] = 0xFF;
-                        }
+                        adaptationLen = 7; // 1(flags) + 6(PCR)
+                        tsPacket[tsOffset++] = (Byte)adaptationLen;
+                        tsPacket[tsOffset++] = 0x10; // PCR_flag
+                        // PCR = PTS (简化，PCR ≈ PTS)
+                        var pcrBase = pts; // 90kHz 单位
+                        var pcrExt = 0u;
+                        tsPacket[tsOffset++] = (Byte)(pcrBase >> 25);
+                        tsPacket[tsOffset++] = (Byte)(pcrBase >> 17);
+                        tsPacket[tsOffset++] = (Byte)(pcrBase >> 9);
+                        tsPacket[tsOffset++] = (Byte)(pcrBase >> 1);
+                        tsPacket[tsOffset++] = (Byte)(((pcrBase & 1) << 7) | 0x7E | (Byte)(pcrExt >> 8));
+                        tsPacket[tsOffset++] = (Byte)(pcrExt & 0xFF);
                     }
-                    else
+
+                    // 自适应域填充（stuffing）
+                    if (payloadLen < remainingSpace)
                     {
-                        // 无 PCR，需 1 字节 adaptation_field_length + stuffing 字节
-                        var stuffLen = remainingSpace - payloadLen - 1;
-                        if (stuffLen > 0)
+                        if (needPcr)
                         {
-                            tsPacket[tsOffset++] = (Byte)stuffLen;
-                            for (var i = 0; i < stuffLen && tsOffset < 188; i++)
-                                tsPacket[tsOffset++] = 0xFF;
+                            // PCR 已占 8 字节（1 length + 1 flags + 6 PCR），补充 stuffing 填充剩余
+                            var stuffLen = remainingSpace - payloadLen;
+                            if (stuffLen > 0)
+                            {
+                                tsPacket[adaptationLenPos] = (Byte)(adaptationLen + stuffLen);
+                                for (var i = 0; i < stuffLen && tsOffset < 188; i++)
+                                    tsPacket[tsOffset++] = 0xFF;
+                            }
+                        }
+                        else
+                        {
+                            // 无 PCR，需 1 字节 adaptation_field_length + stuffing 字节
+                            var stuffLen = remainingSpace - payloadLen - 1;
+                            if (stuffLen > 0)
+                            {
+                                tsPacket[tsOffset++] = (Byte)stuffLen;
+                                for (var i = 0; i < stuffLen && tsOffset < 188; i++)
+                                    tsPacket[tsOffset++] = 0xFF;
+                            }
                         }
                     }
+                    else if (!needPcr)
+                    {
+                        // 无 PCR 且无 stuffing 需求时，写空自适应域
+                        tsPacket[adaptationLenPos] = 0;
+                        tsOffset = adaptationLenPos + 1;
+                    }
                 }
-                else if (!needPcr)
-                {
-                    // 无 PCR 且无 stuffing 需求时，写空自适应域
-                    tsPacket[adaptationLenPos] = 0;
-                    tsOffset = adaptationLenPos + 1;
-                }
+
+                // 有效载荷
+                Array.Copy(fullData, offset, tsPacket, tsOffset, payloadLen);
+                _stream.Write(tsPacket, 0, 188);
+
+                offset += payloadLen;
+                payloadStart = false;
             }
-
-            // 有效载荷
-            Array.Copy(fullData, offset, tsPacket, tsOffset, payloadLen);
-            _stream.Write(tsPacket, 0, 188);
-
-            offset += payloadLen;
-            payloadStart = false;
+            finally
+            {
+                ArrayPool<Byte>.Shared.Return(tsPacket);
+            }
         }
 
         _frameCount++;

@@ -1,8 +1,9 @@
 ﻿using System.Text;
 using NewLife.Buffers;
 using NewLife.Data;
+using NewLife.Video.Containers;
 
-namespace NewLife.Video.Containers;
+namespace NewLife.Video.Avi;
 
 /// <summary>AVI (Audio Video Interleave) 容器读取器。基于 RIFF 格式解析</summary>
 /// <remarks>

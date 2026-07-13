@@ -26,12 +26,13 @@ public class MjpegCodec : IVideoCodec, ICodecInfo
     public VideoFrame[] Decode(VPacket packet)
     {
         if (packet?.Data == null) return [];
-        var data = packet.Data.ToArray();
-        if (data.Length < 2 || data[0] != 0xFF || data[1] != 0xD8)
+        var span = packet.Data.GetSpan();
+        if (span.Length < 2 || span[0] != 0xFF || span[1] != 0xD8)
             throw new InvalidOperationException("无效 JPEG：缺少 SOI 标记");
 
         try
         {
+            var data = span.ToArray();
             var dec = new JpegDecoder(data);
             dec.Decode();
 
@@ -45,7 +46,7 @@ public class MjpegCodec : IVideoCodec, ICodecInfo
         catch
         {
             // 解码失败时回退：返回灰色占位帧
-            var (w, h) = ParseJpegDimensions(data);
+            var (w, h) = ParseJpegDimensions(span);
             var frame = VideoFrame.Create(w, h, VideoTypes.RGB24);
             for (var i = 0; i < frame.Data.Length; i++) frame.Data[i] = 128;
             frame.Timestamp = packet.PTS;
@@ -56,7 +57,7 @@ public class MjpegCodec : IVideoCodec, ICodecInfo
     }
 
     /// <summary>快速解析 JPEG 尺寸（不解码图像数据）</summary>
-    private static (Int32 Width, Int32 Height) ParseJpegDimensions(Byte[] data)
+    private static (Int32 Width, Int32 Height) ParseJpegDimensions(ReadOnlySpan<Byte> data)
     {
         var i = 2;
         while (i < data.Length - 1)

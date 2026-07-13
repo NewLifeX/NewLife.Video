@@ -1,6 +1,7 @@
 using NewLife.Data;
+using NewLife.Video.Containers;
 
-namespace NewLife.Video.Containers;
+namespace NewLife.Video.Raw;
 
 /// <summary>原始视频帧写入器。将原始像素数据（YUV/RGB）逐帧写入文件</summary>
 public class RawVideoWriter : IVideoContainerWriter
@@ -25,8 +26,13 @@ public class RawVideoWriter : IVideoContainerWriter
     public void WriteFrame(VPacket packet)
     {
         if (packet?.Data == null) return;
-        var data = packet.Data.ToArray();
-        _stream.Write(data, 0, data.Length);
+        if (packet.Data.TryGetArray(out var seg))
+            _stream.Write(seg.Array, seg.Offset, seg.Count);
+        else
+        {
+            var data = packet.Data.ToArray();
+            _stream.Write(data, 0, data.Length);
+        }
     }
 
     public void Flush() => _stream.Flush();

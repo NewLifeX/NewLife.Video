@@ -1,7 +1,8 @@
 using NewLife.Buffers;
 using NewLife.Data;
+using NewLife.Video.Containers;
 
-namespace NewLife.Video.Containers;
+namespace NewLife.Video.Mkv;
 
 /// <summary>MKV (Matroska/EBML) 容器写入器。生成标准 MKV/WebM 文件结构</summary>
 /// <remarks>
@@ -38,16 +39,18 @@ public class MkvWriter : IVideoContainerWriter
         if (packet?.Data == null) return;
         if (!_headerWritten) WriteHeader();
 
-        var data = packet.Data.ToArray();
+        // TryGetArray 零拷贝：底层 ArrayPacket 且 offset=0 时直接复用
+        if (!packet.Data.TryGetArray(out var seg) || seg.Offset != 0 || seg.Count != seg.Array.Length)
+            seg = new ArraySegment<Byte>(packet.Data.ToArray());
 
         // 从首个关键帧提取 CodecPrivate（avcC/hvcC）
         if (_codecPrivate == null && packet.IsKeyFrame)
-            _codecPrivate = ExtractCodecPrivate(data);
+            _codecPrivate = ExtractCodecPrivate(seg.Array);
 
         // SimpleBlock：track number(VInt) + timecode(2B relative to 0) + flags(1B) + data
         // 直接写入 Segment 内（Matroska 允许 SimpleBlock 出现在 Segment 层级）
         var timecode = (UInt16)(_frameCount * 1000.0 / _frameRate);
-        var blockLen = GetVIntSize(1) + 2 + 1 + data.Length;
+        var blockLen = GetVIntSize(1) + 2 + 1 + seg.Count;
 
         var blockContent = new Byte[blockLen];
         var offset = 0;
@@ -55,7 +58,7 @@ public class MkvWriter : IVideoContainerWriter
         blockContent[offset] = (Byte)(timecode >> 8); offset++;  // timecode hi
         blockContent[offset] = (Byte)(timecode & 0xFF); offset++; // timecode lo
         blockContent[offset] = packet.IsKeyFrame ? (Byte)0x80 : (Byte)0x00; offset++; // flags
-        Array.Copy(data, 0, blockContent, offset, data.Length);
+        Array.Copy(seg.Array, 0, blockContent, offset, seg.Count);
 
         WriteEbmlId(_stream, 0xA3); // SimpleBlock
         WriteEbmlSize(_stream, (UInt64)blockContent.Length);
