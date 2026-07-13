@@ -15,7 +15,6 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\Doc\newlife.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
@@ -44,10 +43,6 @@
     </PackageReference>
     <PackageReference Include="NewLife.Audio" Version="1.1.2026.713-beta0641" />
     <PackageReference Include="NewLife.Core" Version="11.17.2026.713-beta0213" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
-    <PackageReference Include="SkiaSharp" Version="3.116.1" />
-    <PackageReference Include="LibVLCSharp" Version="3.9.1" />
-    <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.21" />
   </ItemGroup>
 
   <ItemGroup>

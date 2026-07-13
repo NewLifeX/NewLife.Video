@@ -89,10 +89,10 @@ public class CameraStreamManager : IDisposable
     {
         try
         {
-            var client = new RtspClient(cam.RtspUri, cam.Username, cam.Password);
-            client.Connect();
-            client.Setup();
-            client.Play();
+            var client = new RtspClient(cam.RtspUri);
+            client.ConnectAsync().GetAwaiter().GetResult();
+            client.SetupAsync().GetAwaiter().GetResult();
+            client.PlayAsync().GetAwaiter().GetResult();
             cam.SetClient(client);
 
             // 启动帧接收循环
@@ -110,7 +110,7 @@ public class CameraStreamManager : IDisposable
         {
             try
             {
-                var packet = cam.Client?.ReadFrame();
+                var packet = await cam.Client.ReadFrameAsync();
                 if (packet != null)
                 {
                     cam.FrameCount++;
@@ -163,7 +163,7 @@ public class CameraStream
     public String Username { get; set; }
     public String Password { get; set; }
     public RtspClient Client { get; private set; }
-    public Boolean IsConnected => Client?.IsRunning ?? false;
+    public Boolean IsConnected => Client?.IsConnected ?? false;
     public Int64 FrameCount { get; set; }
     internal Int64 LastFrameCount { get; set; }
     public String LastError { get; set; }
@@ -172,7 +172,7 @@ public class CameraStream
 
     internal void Disconnect()
     {
-        Client?.Stop();
+        Client?.Dispose();
         Client = null;
     }
 }
