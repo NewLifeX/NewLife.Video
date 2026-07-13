@@ -86,7 +86,47 @@ public static class FrameBatchEncoder
 
     private static Byte[] BuildGridViaFFmpeg(List<VideoFrame> frames, Int32 columns, Int32 rows, Int32 gridW, Int32 gridH, Int32 thumbW, Int32 thumbH)
     {
-        return [];
+        var invoker = new FFmpeg.FFmpegInvoker();
+        if (!invoker.IsAvailable()) return [];
+
+        try
+        {
+            // 将每帧写入临时文件（或通过管道），使用 FFmpeg tile 滤镜合成网格
+            // 参考 FFmpeg 文档: filtergraph = [0:v]scale=160:120[s0];[1:v]scale=160:120[s1];[s0][s1]xstack=grid=2x1
+            var tempDir = Path.Combine(Path.GetTempPath(), "ff_grid_" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(tempDir);
+            try
+            {
+                var inputPaths = "";
+                for (var i = 0; i < frames.Count; i++)
+                {
+                    // 将每帧存为临时 JPEG（使用纯托管编码器）
+                    var jpeg = SnapshotEncoder.EncodeToJpeg(frames[i], 85);
+                    var tmpFile = Path.Combine(tempDir, $"f{i}.jpg");
+                    File.WriteAllBytes(tmpFile, jpeg);
+                    inputPaths += $"-i \"{tmpFile}\" ";
+                }
+
+                // 构建 tile 滤镜
+                var scaleFilters = String.Join(";\n",
+                    frames.Select((_, i) => $"[{i}:v]scale={thumbW}:{thumbH}[s{i}]"));
+                var inputs = String.Join("",
+                    frames.Select((_, i) => $"[s{i}]"));
+                var filter = $"\"{scaleFilters};\n{inputs}xstack=grid={columns}x{rows}:fill=black[v]\"";
+
+                var args = $"{inputPaths}-filter_complex {filter} -map \"[v]\" -frames:v 1 -f image2 pipe:1";
+                var result = invoker.ExecutePipeAsync(args, null).GetAwaiter().GetResult();
+                return result ?? [];
+            }
+            finally
+            {
+                try { Directory.Delete(tempDir, true); } catch { }
+            }
+        }
+        catch
+        {
+            return [];
+        }
     }
 
     private static String GetExtension(BatchFormat format) => format switch
