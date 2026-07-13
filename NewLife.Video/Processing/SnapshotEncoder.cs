@@ -5,7 +5,7 @@ namespace NewLife.Video.Processing;
 
 /// <summary>快照格式编码器。将 VideoFrame 编码为 JPEG/PNG/WebP/BMP/TIFF/GIF/AVIF 等图像格式</summary>
 /// <remarks>
-/// JPEG 使用内置纯托管 MjpegCodec 编码（零外部依赖）。PNG/WebP/BMP/TIFF/GIF/AVIF 通过 FFmpeg 管道编码。
+/// JPEG/BMP/TIFF/PNG/GIF/WebP 使用内置纯托管编码器（零外部依赖）。AVIF 通过 FFmpeg 管道编码。
 /// 支持将快照保存到文件或返回字节数组。
 /// <para>使用示例：
 /// <code>
@@ -32,23 +32,23 @@ public static class SnapshotEncoder
         return vpacket.Data.TryGetArray(out var seg) && seg.Offset == 0 ? seg.Array : vpacket.Data.ToArray();
     }
 
-    /// <summary>将 VideoFrame 编码为 PNG 字节数组</summary>
+    /// <summary>将 VideoFrame 编码为 PNG 字节数组（纯托管）</summary>
     /// <param name="frame">视频帧</param>
     /// <returns>PNG 字节数组</returns>
     public static Byte[] EncodeToPng(VideoFrame frame)
     {
         if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
-        return EncodeViaFFmpeg(frame, "png", "-c:v png -compression_level 6");
+        return PngEncoder.EncodeFrame(frame);
     }
 
-    /// <summary>将 VideoFrame 编码为 WebP 字节数组</summary>
+    /// <summary>将 VideoFrame 编码为 WebP 字节数组（纯托管 Lossless）</summary>
     /// <param name="frame">视频帧</param>
-    /// <param name="quality">WebP 质量 1-100（默认 80）</param>
+    /// <param name="quality">质量参数（无损模式下无效，保留兼容）</param>
     /// <returns>WebP 字节数组</returns>
     public static Byte[] EncodeToWebP(VideoFrame frame, Int32 quality = 80)
     {
         if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
-        return EncodeViaFFmpeg(frame, "webp", $"-c:v libwebp -quality {quality}");
+        return WebPEncoder.EncodeFrame(frame);
     }
 
     /// <summary>将 VideoFrame 编码为 BMP 字节数组</summary>
@@ -82,13 +82,13 @@ public static class SnapshotEncoder
         return EncodeViaFFmpeg(frame, "tiff", $"-c:v tiff -compression_algo {compression}");
     }
 
-    /// <summary>将 VideoFrame 编码为 GIF 字节数组（FFmpeg 管道，单帧）</summary>
+    /// <summary>将 VideoFrame 编码为 GIF 字节数组（纯托管）</summary>
     /// <param name="frame">视频帧</param>
     /// <returns>GIF 字节数组</returns>
     public static Byte[] EncodeToGif(VideoFrame frame)
     {
         if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
-        return EncodeViaFFmpeg(frame, "gif", "-c:v gif");
+        return GifEncoder.EncodeFrame(frame);
     }
 
     /// <summary>将 VideoFrame 编码为 AVIF 字节数组（FFmpeg 管道，需 libaom-av1）</summary>
