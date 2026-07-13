@@ -1,5 +1,6 @@
 using System.Diagnostics;
-using System.Net.Http;
+using NewLife.Log;
+using NewLife.Web;
 
 namespace NewLife.Video.FFmpeg;
 
@@ -19,33 +20,30 @@ public static class FFmpegSetup
 {
     #region 属性
 
-    /// <summary>FFmpeg 下载基础 URL。默认使用 GitHub Release，可替换为国内镜像</summary>
-    public static String DownloadBaseUrl { get; set; } = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest";
+    /// <summary>插件服务器地址。默认使用 NewLife.Setting.Current.PluginServer，从该页面上根据关键字分析链接并下载 FFmpeg</summary>
+    public static String DownloadBaseUrl { get; set; } = NewLife.Setting.Current.PluginServer;
 
-    /// <summary>本地缓存目录</summary>
-    public static String CacheDirectory { get; set; }
+    /// <summary>FFmpeg 目录。可指定自定义路径，默认使用插件目录下的 ffmpeg 子目录</summary>
+    public static String FFmpegDirectory
+    {
+        get => _ffmpegDirectory ?? Path.Combine(NewLife.Setting.Current.GetPluginPath(), "ffmpeg");
+        set => _ffmpegDirectory = value;
+    }
+    private static String _ffmpegDirectory;
 
-    /// <summary>自动下载开关（默认关闭，需调用 EnsureAsync 或设为 true）</summary>
-    public static Boolean AutoDownload { get; set; } = false;
+    /// <summary>本地缓存目录。默认指向 FFmpegDirectory</summary>
+    public static String CacheDirectory
+    {
+        get => _cacheDirectory ?? FFmpegDirectory;
+        set => _cacheDirectory = value;
+    }
+    private static String _cacheDirectory;
 
     /// <summary>已找到的 FFmpeg 路径缓存</summary>
     private static String _cachedPath;
 
     /// <summary>是否已执行过检测</summary>
     private static Boolean _checked;
-
-    #endregion
-
-    #region 构造
-
-    static FFmpegSetup()
-    {
-        CacheDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "NewLife",
-            "ffmpeg"
-        );
-    }
 
     #endregion
 
@@ -89,95 +87,61 @@ public static class FFmpegSetup
         return IsAvailable() ? _cachedPath : null;
     }
 
-    /// <summary>下载 FFmpeg 到本地缓存目录</summary>
+    /// <summary>从插件服务器下载 FFmpeg</summary>
     /// <param name="cancellationToken">取消令牌</param>
-    public static async Task DownloadAsync(CancellationToken cancellationToken = default)
+    public static Task DownloadAsync(CancellationToken cancellationToken = default)
     {
-        var isWindows = Environment.OSVersion.Platform == PlatformID.Win32NT;
-        var isLinux = Environment.OSVersion.Platform == PlatformID.Unix;
-        var isMac = Environment.OSVersion.Platform == PlatformID.MacOSX;
-
-        // 确定文件名模板
-        String archiveName;
-        if (isWindows)
-            archiveName = "ffmpeg-master-latest-win64-gpl.zip";
-        else if (isLinux)
-            archiveName = "ffmpeg-master-latest-linux64-gpl.tar.xz";
-        else if (isMac)
-            archiveName = "ffmpeg-master-latest-darwin64-gpl.zip";
-        else
+        var linkName = GetPlatformLinkName();
+        if (linkName == null)
             throw new PlatformNotSupportedException("不支持的操作系统");
 
-        var url = $"{DownloadBaseUrl}/{archiveName}";
-        var archivePath = Path.Combine(CacheDirectory, archiveName);
+        var dir = FFmpegDirectory;
+        Directory.CreateDirectory(dir);
 
-        // 创建缓存目录
-        Directory.CreateDirectory(CacheDirectory);
-
-        // 下载压缩包
-        using var http = new HttpClient { Timeout = TimeSpan.FromMinutes(5) };
-        var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
-        response.EnsureSuccessStatusCode();
-
-        using var fileStream = File.Create(archivePath);
-        await response.Content.CopyToAsync(fileStream).ConfigureAwait(false);
-        await fileStream.FlushAsync().ConfigureAwait(false);
-
-        // 解压（调用系统命令避免引入压缩库依赖）
-        var extractDir = Path.Combine(CacheDirectory, "extracted");
+        // 临时解压目录
+        var extractDir = Path.Combine(dir, "_tmp");
         if (Directory.Exists(extractDir)) Directory.Delete(extractDir, true);
         Directory.CreateDirectory(extractDir);
 
-        if (isWindows)
-        {
-            // Windows 使用 PowerShell Expand-Archive
-            var psi = new ProcessStartInfo
-            {
-                FileName = "powershell",
-                Arguments = $"-NoProfile -Command \"Expand-Archive -Path '{archivePath}' -DestinationPath '{extractDir}' -Force\"",
-                CreateNoWindow = true,
-                RedirectStandardError = true,
-            };
-            var proc = Process.Start(psi);
-            proc?.WaitForExit();
-        }
-        else
-        {
-            // Linux/macOS 使用 tar
-            var psi = new ProcessStartInfo
-            {
-                FileName = "tar",
-                Arguments = $"-xf \"{archivePath}\" -C \"{extractDir}\"",
-                CreateNoWindow = true,
-                RedirectStandardError = true,
-            };
-            var proc = Process.Start(psi);
-            proc?.WaitForExit();
-        }
+        XTrace.WriteLine("从插件服务器下载 {0} ...", linkName);
 
-        // 移动 ffmpeg 可执行文件到缓存根目录
-        if (Directory.Exists(extractDir))
+        using var client = new WebClientX { AuthKey = "NewLife", Log = XTrace.Log };
+        var file = client.DownloadLinkAndExtract(DownloadBaseUrl, linkName, extractDir, true);
+
+        // 在解压结果中搜索 ffmpeg 可执行文件并移动到目标目录
+        if (!file.IsNullOrEmpty() && Directory.Exists(extractDir))
         {
             var files = Directory.GetFiles(extractDir, "ffmpeg*", SearchOption.AllDirectories);
-            foreach (var file in files)
+            foreach (var fi in files)
             {
-                var name = Path.GetFileName(file);
-                if (name.Equals("ffmpeg", StringComparison.OrdinalIgnoreCase) ||
-                    name.Equals("ffmpeg.exe", StringComparison.OrdinalIgnoreCase))
+                var name = Path.GetFileName(fi);
+                if (name.EqualIgnoreCase("ffmpeg", "ffmpeg.exe"))
                 {
-                    var dest = Path.Combine(CacheDirectory, name);
+                    var dest = Path.Combine(dir, name);
                     if (File.Exists(dest)) File.Delete(dest);
-                    File.Move(file, dest);
+                    File.Move(fi, dest);
+                    XTrace.WriteLine("FFmpeg 下载完成: {0}", dest);
                     break;
                 }
             }
 
-            // 清理解压目录
+            // 清理临时目录
             try { Directory.Delete(extractDir, true); } catch { }
         }
 
-        // 清理压缩包
-        try { File.Delete(archivePath); } catch { }
+        // 清除缓存标记，下次检测重新查找
+        _checked = false;
+
+        return Task.CompletedTask;
+    }
+
+    /// <summary>获取当前平台的链接名称</summary>
+    private static String GetPlatformLinkName()
+    {
+        if (Runtime.Windows) return "ffmpeg-win64";
+        if (Runtime.Linux) return "ffmpeg-linux64";
+        if (Runtime.OSX) return "ffmpeg-darwin64";
+        return null;
     }
 
     /// <summary>清除缓存的 FFmpeg 路径，下次调用 IsAvailable 时重新检测</summary>
@@ -196,16 +160,15 @@ public static class FFmpegSetup
     {
         var name = "ffmpeg";
 
-        // 1. 检查缓存目录
-        var cacheDir = CacheDirectory;
-        if (Directory.Exists(cacheDir))
+        // 1. 检查 FFmpeg 目录
+        var dir = FFmpegDirectory;
+        if (Directory.Exists(dir))
         {
-            var files = Directory.GetFiles(cacheDir, "ffmpeg*", SearchOption.AllDirectories);
+            var files = Directory.GetFiles(dir, "ffmpeg*", SearchOption.AllDirectories);
             var found = files.FirstOrDefault(f =>
             {
                 var fn = Path.GetFileName(f);
-                return fn.Equals("ffmpeg", StringComparison.OrdinalIgnoreCase) ||
-                       fn.Equals("ffmpeg.exe", StringComparison.OrdinalIgnoreCase);
+                return fn.EqualIgnoreCase("ffmpeg", "ffmpeg.exe");
             });
             if (found != null) return found;
         }
