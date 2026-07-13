@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.DeviceManagerView"
+             x:DataType="vm:DeviceManagerViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- 工具栏 -->
+        <Border Grid.Row="0" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,*,Auto">
+                <Button Grid.Column="0" Content="刷新设备" Margin="0,0,8,0"
+                        Command="{Binding RefreshDevicesCommand}" />
+                <Button Grid.Column="1" Content="打开选中" Margin="0,0,8,0"
+                        Command="{Binding OpenSelectedCommand}"
+                        IsEnabled="{Binding HasDevice}" />
+                <Button Grid.Column="2" Content="开始预览" Margin="0,0,8,0"
+                        Command="{Binding StartPreviewCommand}"
+                        IsEnabled="{Binding IsCapturing, Converter={StaticResource BoolNegationConverter}}" />
+                <Button Grid.Column="3" Content="停止预览"
+                        Command="{Binding StopPreviewCommand}"
+                        IsEnabled="{Binding IsCapturing}" />
+                <TextBlock Grid.Column="4"
+                           Text="{Binding StatusText}"
+                           VerticalAlignment="Center"
+                           Margin="8,0" />
+            </Grid>
+        </Border>
+
+        <!-- 设备列表和预览 -->
+        <Grid Grid.Row="1" ColumnDefinitions="280,4,*">
+            <!-- 设备列表 -->
+            <Border Grid.Column="0" Padding="4">
+                <ListBox ItemsSource="{Binding Devices}"
+                         SelectedItem="{Binding SelectedDevice}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:DeviceItem">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                                <TextBlock Text="{Binding BackendType}" FontSize="11" Foreground="Gray" />
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Border>
+
+            <!-- 分隔线 -->
+            <Rectangle Grid.Column="1" Width="1"
+                       Fill="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+
+            <!-- 预览区域 -->
+            <Border Grid.Column="2" Background="Black" Padding="0">
+                <Grid>
+                    <Image Source="{Binding PreviewBitmap}"
+                           Stretch="Uniform"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
+                    <TextBlock Text="选择设备后点击开始预览"
+                               Foreground="Gray"
+                               FontSize="16"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               IsVisible="{Binding HasPreview, Converter={StaticResource BoolNegationConverter}}" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- 状态栏 -->
+        <Border Grid.Row="2" Padding="8,2" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="Gray" />
+        </Border>
+    </Grid>
+</UserControl>

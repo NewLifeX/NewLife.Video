@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.ExportView"
+             x:DataType="vm:ExportViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" ColumnDefinitions="*,*" ColumnSpacing="8" RowSpacing="8" Margin="8">
+        <!-- 文件选择 -->
+        <Border Grid.Row="0" Grid.ColumnSpan="2" Padding="8"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="源文件:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBox Grid.Column="1" PlaceholderText="选择视频文件..."
+                         Text="{Binding SourceFile}" />
+            </Grid>
+        </Border>
+
+        <!-- 快照 -->
+        <Border Grid.Row="1" Grid.Column="0" Padding="8">
+            <StackPanel Spacing="8">
+                <TextBlock Text="快照提取" FontWeight="Bold" />
+                <Grid ColumnDefinitions="Auto,*">
+                    <TextBlock Text="格式:" VerticalAlignment="Center" />
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding SnapshotFormats}"
+                              SelectedItem="{Binding SelectedSnapshotFormat}" Margin="4,0,0,0" />
+                </Grid>
+                <Grid ColumnDefinitions="Auto,*">
+                    <TextBlock Text="质量:" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" Text="{Binding SnapshotQuality}" Margin="4,0,0,0" />
+                </Grid>
+                <Button Content="保存快照" Command="{Binding SaveSnapshotCommand}" />
+            </StackPanel>
+        </Border>
+
+        <!-- 缩略图 -->
+        <Border Grid.Row="1" Grid.Column="1" Padding="8">
+            <StackPanel Spacing="8">
+                <TextBlock Text="缩略图生成" FontWeight="Bold" />
+                <Grid ColumnDefinitions="Auto,*">
+                    <TextBlock Text="列数:" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" Text="{Binding ThumbnailCols}" Margin="4,0,0,0" />
+                </Grid>
+                <Grid ColumnDefinitions="Auto,*">
+                    <TextBlock Text="行数:" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" Text="{Binding ThumbnailRows}" Margin="4,0,0,0" />
+                </Grid>
+                <Button Content="生成缩略图" Command="{Binding GenerateThumbnailsCommand}" />
+            </StackPanel>
+        </Border>
+
+        <!-- 输出路径与状态 -->
+        <Border Grid.Row="2" Grid.ColumnSpan="2" Padding="8"
+                Background="{DynamicResource SystemControlBackgroundChromeLowBrush}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <TextBlock Text="输出:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBox Grid.Column="1" PlaceholderText="输出文件路径..."
+                         Text="{Binding OutputPath}" />
+                <Button Grid.Column="2" Content="选择..." Margin="8,0,0,0"
+                        Command="{Binding SelectSourceFileCommand}" />
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="3" Grid.ColumnSpan="2"
+                   Text="{Binding StatusText}" VerticalAlignment="Center" />
+    </Grid>
+</UserControl>

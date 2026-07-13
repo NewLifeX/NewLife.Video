@@ -1,0 +1,60 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.MediaInfoView"
+             x:DataType="vm:MediaInfoViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+        <!-- 文件选择栏 -->
+        <Border Grid.Row="0" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0" Content="浏览..." Margin="0,0,8,0"
+                        Command="{Binding BrowseFileCommand}" />
+                <TextBox Grid.Column="1" PlaceholderText="选择视频文件..."
+                         Text="{Binding FilePath}"
+                         Padding="4" />
+                <Button Grid.Column="2" Content="分析" Margin="8,0,0,0"
+                        Command="{Binding AnalyzeCommand}"
+                        IsEnabled="{Binding IsLoading, Converter={StaticResource BoolNegationConverter}}" />
+            </Grid>
+        </Border>
+
+        <!-- 加载提示 -->
+        <Border Grid.Row="1" IsVisible="{Binding IsLoading}" Padding="8">
+            <TextBlock Text="正在分析，请稍候..." HorizontalAlignment="Center" />
+        </Border>
+
+        <!-- 信息列表 -->
+        <ScrollViewer Grid.Row="2" Padding="16">
+            <ItemsControl ItemsSource="{Binding Properties}"
+                          IsVisible="{Binding HasInfo}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:PropertyItem">
+                        <Grid ColumnDefinitions="180,*" Margin="0,2">
+                            <TextBlock Grid.Column="0"
+                                       Text="{Binding Key}"
+                                       FontWeight="Bold"
+                                       Foreground="Gray"
+                                       VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1"
+                                       Text="{Binding Value}"
+                                       VerticalAlignment="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- 空状态 -->
+        <TextBlock Grid.Row="2"
+                   Text="选择文件后点击'分析'查看媒体信息"
+                   Foreground="Gray"
+                   FontSize="16"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
+                   IsVisible="{Binding HasInfo, Converter={StaticResource BoolNegationConverter}}" />
+    </Grid>
+</UserControl>

@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.MotionDetectView"
+             x:DataType="vm:MotionDetectViewModel">
+
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="200,*">
+        <!-- 控制面板 -->
+        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2" Padding="8"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <StackPanel Spacing="8">
+                <Button Content="加载测试图像" Command="{Binding LoadTestImageCommand}" />
+
+                <TextBlock Text="{Binding Threshold, StringFormat='阈值: {0}'}" />
+                <Slider Minimum="0" Maximum="100" Value="{Binding Threshold}" />
+
+                <TextBlock Text="{Binding MinArea, StringFormat='最小面积: {0}px'}" />
+                <TextBox Text="{Binding MinArea}" />
+
+                <Button Content="检测运动" Command="{Binding DetectCommand}"
+                        HorizontalAlignment="Stretch" />
+
+                <TextBlock Text="{Binding MotionCount, StringFormat='运动区域: {0}'}" />
+                <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <!-- 结果预览 -->
+        <Border Grid.Row="0" Grid.Column="1" Background="Black" Padding="0">
+            <Grid>
+                <Image Source="{Binding SourceBitmap}" Stretch="Uniform" />
+                <TextBlock Text="源图像" Foreground="Gray" FontSize="16"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding SourceBitmap, Converter={StaticResource BoolNegationConverter}}" />
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="1" Grid.Column="1" Background="Black" Padding="0">
+            <Grid>
+                <Image Source="{Binding ResultBitmap}" Stretch="Uniform" />
+                <TextBlock Text="检测结果" Foreground="Gray" FontSize="16"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding HasResult, Converter={StaticResource BoolNegationConverter}}" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

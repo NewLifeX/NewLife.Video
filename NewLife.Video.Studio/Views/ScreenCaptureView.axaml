@@ -1,0 +1,56 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.ScreenCaptureView"
+             x:DataType="vm:ScreenCaptureViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- 控制栏 -->
+        <Border Grid.Row="0" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ComboBox ItemsSource="{Binding ResolutionOptions}"
+                          SelectedIndex="1"
+                          Width="140" />
+                <ComboBox ItemsSource="{Binding FrameRateOptions}"
+                          SelectedItem="{Binding CaptureFrameRate}"
+                          Width="80" />
+                <CheckBox IsChecked="{Binding CaptureCursor}"
+                          Content="捕获光标"
+                          VerticalAlignment="Center" />
+                <Button Content="开始捕获"
+                        Command="{Binding StartCaptureCommand}"
+                        IsEnabled="{Binding IsCapturing, Converter={StaticResource BoolNegationConverter}}" />
+                <Button Content="停止"
+                        Command="{Binding StopCaptureCommand}"
+                        IsEnabled="{Binding IsCapturing}" />
+                <TextBlock Text="{Binding StatusText}"
+                           VerticalAlignment="Center"
+                           Margin="8,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- 预览区域 -->
+        <Border Grid.Row="1" Background="Black" Padding="0">
+            <Grid>
+                <Image Source="{Binding PreviewBitmap}"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+                <TextBlock Text="点击【开始捕获】预览屏幕"
+                           Foreground="Gray"
+                           FontSize="16"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding HasPreview, Converter={StaticResource BoolNegationConverter}}" />
+            </Grid>
+        </Border>
+
+        <!-- 状态栏 -->
+        <Border Grid.Row="2" Padding="8,2" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="Gray" />
+        </Border>
+    </Grid>
+</UserControl>

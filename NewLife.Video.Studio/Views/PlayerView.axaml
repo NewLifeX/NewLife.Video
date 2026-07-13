@@ -1,0 +1,74 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.PlayerView"
+             x:DataType="vm:PlayerViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+        <!-- 工具栏 -->
+        <Border Grid.Row="0" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0" Content="打开文件" Margin="0,0,8,0"
+                        Command="{Binding OpenFileCommand}" />
+                <TextBox Grid.Column="1" PlaceholderText="输入 RTSP/RTMP/HTTP URL 或本地文件路径..."
+                         Text="{Binding SourceUrl}"
+                         Padding="4" />
+                <Button Grid.Column="2" Content="打开" Margin="8,0,0,0"
+                        IsEnabled="{Binding IsPlaying, Converter={StaticResource BoolNegationConverter}}"
+                        Command="{Binding OpenUrlCommand}" />
+            </Grid>
+        </Border>
+
+        <!-- 视频显示区域 -->
+        <Border Grid.Row="1" Background="Black" Padding="0">
+            <Grid>
+                <Image Source="{Binding VideoBitmap}"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center">
+                    <Image.Styles>
+                        <Style Selector="Image">
+                            <Setter Property="Opacity" Value="1" />
+                        </Style>
+                    </Image.Styles>
+                </Image>
+                <!-- 无视频时的提示 -->
+                <TextBlock Text="打开视频文件或流媒体地址开始播放"
+                           Foreground="Gray"
+                           FontSize="16"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding HasVideo, Converter={StaticResource BoolNegationConverter}}" />
+            </Grid>
+        </Border>
+
+        <!-- 控制栏 -->
+        <Border Grid.Row="2" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                <Button Grid.Column="0" Margin="0,0,4,0" MinWidth="60"
+                        Command="{Binding TogglePlayPauseCommand}"
+                        Content="{Binding PlayPauseText}" />
+                <Button Grid.Column="1" MinWidth="60"
+                        Command="{Binding StopCommand}"
+                        Content="停止" />
+                <TextBlock Grid.Column="3"
+                           Text="{Binding StatusText}"
+                           VerticalAlignment="Center"
+                           Margin="8,0" />
+                <TextBlock Grid.Column="4"
+                           Text="{Binding FrameRateText}"
+                           VerticalAlignment="Center"
+                           Margin="8,0"
+                           Foreground="Gray" />
+            </Grid>
+        </Border>
+
+        <!-- 状态栏 -->
+        <Border Grid.Row="3" Padding="8,2" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="Gray" />
+        </Border>
+    </Grid>
+</UserControl>

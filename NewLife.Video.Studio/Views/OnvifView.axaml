@@ -1,0 +1,45 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:iot="using:NewLife.Video.IoT"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.OnvifView"
+             x:DataType="vm:OnvifViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- 工具栏 -->
+        <Border Grid.Row="0" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="发现设备"
+                        Command="{Binding DiscoverCommand}"
+                        IsEnabled="{Binding IsSearching, Converter={StaticResource BoolNegationConverter}}" />
+                <ProgressBar IsVisible="{Binding IsSearching}" IsIndeterminate="True" Width="120" />
+                <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <!-- 设备列表 -->
+        <Border Grid.Row="1" Padding="8">
+            <ListBox ItemsSource="{Binding Devices}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="iot:OnvifDeviceInfo">
+                        <StackPanel>
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" />
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <TextBlock Text="{Binding Address, StringFormat='IP: {0}'}" FontSize="11" Foreground="Gray" />
+                                <TextBlock Text="{Binding XAddrs, StringFormat='服务: {0}'}" FontSize="11" Foreground="Gray" />
+                            </StackPanel>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+        <!-- 状态栏 -->
+        <Border Grid.Row="2" Padding="8,2" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="Gray" />
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,106 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.ProcessingView"
+             x:DataType="vm:ProcessingViewModel">
+
+    <Grid RowDefinitions="Auto,*" ColumnDefinitions="240,*">
+        <!-- 控制面板 -->
+        <Border Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
+                Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <ScrollViewer>
+                <StackPanel Spacing="8">
+                    <Button Content="加载图像" Command="{Binding LoadImageCommand}" />
+
+                    <Expander Header="缩放" IsExpanded="True">
+                        <StackPanel Spacing="4">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Text="宽度:" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding ResizeWidth}" Margin="4,0,0,0" />
+                            </Grid>
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Text="高度:" VerticalAlignment="Center" />
+                                <TextBox Grid.Column="1" Text="{Binding ResizeHeight}" Margin="4,0,0,0" />
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="旋转/翻转" IsExpanded="True">
+                        <StackPanel Spacing="4">
+                            <ComboBox ItemsSource="{Binding RotationOptions}"
+                                      SelectedItem="{Binding Rotation}" />
+                            <CheckBox IsChecked="{Binding FlipHorizontal}" Content="水平翻转" />
+                            <CheckBox IsChecked="{Binding FlipVertical}" Content="垂直翻转" />
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="色彩调整" IsExpanded="False">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="{Binding Brightness, StringFormat='亮度: {0:F2}'}" />
+                            <Slider Minimum="-1" Maximum="1" Value="{Binding Brightness}" />
+                            <TextBlock Text="{Binding Contrast, StringFormat='对比度: {0:F2}'}" />
+                            <Slider Minimum="-1" Maximum="1" Value="{Binding Contrast}" />
+                            <TextBlock Text="{Binding Saturation, StringFormat='饱和度: {0:F2}'}" />
+                            <Slider Minimum="-1" Maximum="1" Value="{Binding Saturation}" />
+                        </StackPanel>
+                    </Expander>
+
+                    <Expander Header="水印" IsExpanded="False">
+                        <TextBox PlaceholderText="水印文字..."
+                                 Text="{Binding WatermarkText}" />
+                    </Expander>
+
+                    <Button Content="应用处理" Command="{Binding ApplyProcessingCommand}"
+                            HorizontalAlignment="Stretch" />
+                    <Button Content="重置" Command="{Binding ResetProcessingCommand}"
+                            HorizontalAlignment="Stretch" />
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- 预览区域 -->
+        <Border Grid.Row="0" Grid.Column="1" Padding="0">
+            <Grid RowDefinitions="Auto,*">
+                <TextBlock Grid.Row="0" Text="源图像" FontWeight="Bold" Padding="8" />
+                <Border Grid.Row="1" Background="Black" Padding="0">
+                    <Grid>
+                        <Image Source="{Binding SourceBitmap}"
+                               Stretch="Uniform"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                        <TextBlock Text="点击加载图像"
+                                   Foreground="Gray"
+                                   FontSize="16"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding HasSource, Converter={StaticResource BoolNegationConverter}}" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+
+        <!-- 结果区域 -->
+        <Border Grid.Row="1" Grid.Column="1" Padding="0">
+            <Grid RowDefinitions="Auto,*">
+                <TextBlock Grid.Row="0" Text="处理结果" FontWeight="Bold" Padding="8" />
+                <Border Grid.Row="1" Background="Black" Padding="0">
+                    <Grid>
+                        <Image Source="{Binding ResultBitmap}"
+                               Stretch="Uniform"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center" />
+                        <TextBlock Text="点击应用处理"
+                                   Foreground="Gray"
+                                   FontSize="16"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsVisible="{Binding HasResult, Converter={StaticResource BoolNegationConverter}}" />
+                    </Grid>
+                </Border>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

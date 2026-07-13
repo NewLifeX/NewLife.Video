@@ -1,0 +1,62 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.CameraCaptureView"
+             x:DataType="vm:CameraCaptureViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- 控制栏 -->
+        <Border Grid.Row="0" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <Button Content="刷新设备" Command="{Binding RefreshDevicesCommand}" />
+                <ComboBox ItemsSource="{Binding Devices}"
+                          SelectedItem="{Binding SelectedDevice}"
+                          DisplayMemberBinding="{Binding Name}"
+                          Width="160" />
+                <ComboBox ItemsSource="{Binding ResolutionOptions}"
+                          SelectedItem="{Binding SelectedResolution}"
+                          Width="100" />
+                <ComboBox ItemsSource="{Binding FrameRateOptions}"
+                          SelectedItem="{Binding CaptureFrameRate}"
+                          Width="60" />
+                <Button Content="开始捕获"
+                        Command="{Binding StartCaptureCommand}"
+                        IsEnabled="{Binding IsCapturing, Converter={StaticResource BoolNegationConverter}}" />
+                <Button Content="停止"
+                        Command="{Binding StopCaptureCommand}"
+                        IsEnabled="{Binding IsCapturing}" />
+                <Button Content="拍照"
+                        Command="{Binding TakeSnapshotCommand}"
+                        IsEnabled="{Binding HasPreview}" />
+                <TextBlock Text="{Binding StatusText}"
+                           VerticalAlignment="Center" Margin="4,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- 预览区域 -->
+        <Border Grid.Row="1" Background="Black" Padding="0">
+            <Grid>
+                <Image Source="{Binding PreviewBitmap}"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center" />
+                <TextBlock Text="选择摄像头后点击开始捕获"
+                           Foreground="Gray" FontSize="16"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding HasPreview, Converter={StaticResource BoolNegationConverter}}" />
+            </Grid>
+        </Border>
+
+        <!-- 状态栏 -->
+        <Border Grid.Row="2" Padding="8,2" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                    <TextBlock FontSize="12" />
+                <TextBlock Text="{Binding CaptureFrameRate, StringFormat='帧率: {0} fps'}" FontSize="12" />
+                <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="Gray" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

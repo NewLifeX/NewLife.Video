@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.FrameBrowserView"
+             x:DataType="vm:FrameBrowserViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+        <!-- 工具栏 -->
+        <Border Grid.Row="0" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="打开" Command="{Binding OpenFileCommand}" />
+                <Button Content="上一帧" Command="{Binding PreviousFrameCommand}" />
+                <Button Content="下一帧" Command="{Binding NextFrameCommand}" />
+                <TextBlock Text="{Binding CurrentFrame, StringFormat='帧 {0}'}"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="{Binding TotalFrames, StringFormat='/ {0}'}"
+                           VerticalAlignment="Center" />
+                <TextBlock Text="{Binding FrameType}"
+                           VerticalAlignment="Center" Foreground="Gray" />
+                <TextBlock Text="{Binding StatusText}"
+                           VerticalAlignment="Center" Margin="8,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- 帧显示 -->
+        <Border Grid.Row="1" Background="Black" Padding="0">
+            <Grid>
+                <Image Source="{Binding FrameBitmap}" Stretch="Uniform" />
+                <TextBlock Text="打开视频文件查看帧"
+                           Foreground="Gray" FontSize="16"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           IsVisible="{Binding HasVideo, Converter={StaticResource BoolNegationConverter}}" />
+            </Grid>
+        </Border>
+
+        <!-- 状态信息 -->
+        <Border Grid.Row="2" Padding="8,2" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="Gray" />
+        </Border>
+    </Grid>
+</UserControl>

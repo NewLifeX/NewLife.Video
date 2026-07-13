@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.HlsView"
+             x:DataType="vm:HlsViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8" Margin="8">
+        <!-- 参数设置 -->
+        <Border Grid.Row="0" Padding="8"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <StackPanel Spacing="8">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                    <TextBlock Text="输入文件:" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" PlaceholderText="选择视频文件..."
+                             Text="{Binding InputFile}" />
+                    <Button Grid.Column="2" Content="浏览..."
+                            Command="{Binding SelectInputFileCommand}" />
+                </Grid>
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                    <TextBlock Text="输出目录:" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" PlaceholderText="选择输出目录..."
+                             Text="{Binding OutputDir}" />
+                    <Button Grid.Column="2" Content="选择..."
+                            Command="{Binding SelectOutputDirCommand}" />
+                </Grid>
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                    <TextBlock Text="分段时长(ms):" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" Text="{Binding SegmentDuration}" />
+                    <Button Grid.Column="2" Content="开始分段"
+                            Command="{Binding SegmentFileCommand}" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- 分段信息 -->
+        <Border Grid.Row="1" Padding="8"
+                IsVisible="{Binding HasResult}">
+            <TextBlock Text="{Binding SegmentCount, StringFormat='分片数: {0} 个'}"
+                       FontWeight="Bold" />
+        </Border>
+
+        <!-- M3U8 内容 -->
+        <Border Grid.Row="2" Background="#1E1E1E" Padding="8">
+            <ScrollViewer>
+                <TextBlock Text="{Binding PlaylistContent}"
+                           FontFamily="Consolas" Foreground="#D4D4D4" />
+            </ScrollViewer>
+        </Border>
+
+        <!-- 状态栏 -->
+        <Border Grid.Row="3" Padding="8,2"
+                Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="Gray" />
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,54 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.BatchView"
+             x:DataType="vm:BatchViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
+        <!-- 工具栏 -->
+        <Border Grid.Row="0" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Content="添加文件" Command="{Binding AddFilesCommand}" />
+                <Button Content="移除选中" Command="{Binding RemoveSelectedCommand}" />
+                <Button Content="清空列表" Command="{Binding ClearAllCommand}" />
+                <ComboBox ItemsSource="{Binding OutputFormats}"
+                          SelectedItem="{Binding OutputFormat}" Width="80" />
+                <Button Content="开始批量处理"
+                        Command="{Binding StartBatchCommand}"
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource BoolNegationConverter}}" />
+            </StackPanel>
+        </Border>
+
+        <!-- 任务列表 -->
+        <Border Grid.Row="1" Padding="4">
+            <ListBox ItemsSource="{Binding Tasks}"
+                     SelectedItem="{Binding SelectedTask}">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:BatchTaskItem">
+                        <Grid ColumnDefinitions="*,Auto,Auto" Margin="2,4">
+                            <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                            <TextBlock Grid.Column="1" Text="{Binding Status}"
+                                       Foreground="Gray" Margin="8,0" />
+                            <TextBlock Grid.Column="2" Text="{Binding IsCompleted, Converter={StaticResource BoolNegationConverter}}"
+                                       FontWeight="Bold" />
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+        <!-- 进度条 -->
+        <Border Grid.Row="2" Padding="8"
+                IsVisible="{Binding IsRunning}">
+            <ProgressBar Value="{Binding TotalProgress}" Minimum="0" Maximum="100" Height="20" />
+        </Border>
+
+        <!-- 状态栏 -->
+        <Border Grid.Row="3" Padding="8,2" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <TextBlock Text="{Binding StatusText}" FontSize="12" Foreground="Gray" />
+        </Border>
+    </Grid>
+</UserControl>

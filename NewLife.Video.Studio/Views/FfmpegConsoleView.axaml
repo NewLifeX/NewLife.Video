@@ -1,0 +1,69 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NewLife.Video.Studio.ViewModels"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:Class="NewLife.Video.Studio.Views.FfmpegConsoleView"
+             x:DataType="vm:FfmpegConsoleViewModel">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <!-- 状态信息 -->
+        <Border Grid.Row="0" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="16">
+                <TextBlock>
+                    <Run Text="FFmpeg 版本: " />
+                    <Run Text="{Binding FfmpegVersion}" FontWeight="Bold" />
+                </TextBlock>
+                <TextBlock Text="{Binding StatusText}" Foreground="Gray" />
+            </StackPanel>
+        </Border>
+
+        <!-- 预设命令 -->
+        <Border Grid.Row="1" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeLowBrush}">
+            <StackPanel Orientation="Horizontal" Spacing="4">
+                <TextBlock Text="预设: " VerticalAlignment="Center" />
+                <ItemsControl ItemsSource="{Binding PresetCommands}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="4" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <Button Content="{Binding}"
+                                    Command="{Binding $parent[ItemsControl].DataContext.UsePresetCommand}"
+                                    CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- 输出区域 -->
+        <Border Grid.Row="2" Background="#1E1E1E" Padding="8" Margin="0">
+            <ScrollViewer>
+                <TextBlock Text="{Binding Output}"
+                           FontFamily="Consolas"
+                           FontSize="13"
+                           Foreground="#D4D4D4"
+                           TextWrapping="Wrap" />
+            </ScrollViewer>
+        </Border>
+
+        <!-- 命令输入栏 -->
+        <Border Grid.Row="3" Padding="8" Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <TextBox Grid.Column="0"
+                         PlaceholderText="输入 ffmpeg 命令参数..."
+                         Text="{Binding Command}"
+                         Padding="4" />
+                <Button Grid.Column="1" Content="执行" Margin="8,0,4,0" MinWidth="60"
+                        Command="{Binding ExecuteCommand}"
+                        IsEnabled="{Binding IsRunning, Converter={StaticResource BoolNegationConverter}}" />
+                <Button Grid.Column="2" Content="清除" MinWidth="60"
+                        Command="{Binding ClearCommand}" />
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -1,0 +1,6 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="NewLife.Video.Studio.Controls.VideoView"
+             Background="Black">
+    <!-- 视频渲染控件 - 通过代码更新内部 WriteableBitmap -->
+</UserControl>
