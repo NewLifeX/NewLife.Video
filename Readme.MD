@@ -16,11 +16,14 @@ Nuget：NewLife.Video
 ## 功能特性
 
 ### 编解码引擎
-- H.264/H.265 解码与编码（FFmpeg 管道封装）
+- H.264/H.265 解码与编码（FFmpeg 管道封装，支持硬件编码器透传）
 - MJPEG 纯托管编解码
-- VP8/VP9 解码与编码（FFmpeg 管道封装）
+- VP8/VP9/AV1 解码与编码（FFmpeg 管道封装）
+- AVIF/HEIF/JPEG XL 编码（SkiaSharp 互操作）
 - 颜色空间转换：YUV420P/NV12 ↔ RGB24/BGRA32 (BT.601)
 - 芯片头适配：海思/大华/宇视
+- FFmpeg 运行时自动检测/下载/缓存
+- 一键转码 API：VideoTranscoder
 
 ### 容器格式
 | 格式 | 读取 | 写入 | 备注 |
@@ -31,9 +34,16 @@ Nuget：NewLife.Video
 | TS (MPEG-TS) | ✅ | ✅ | PAT/PMT + 188字节 TS 包 |
 | MKV/WebM (Matroska) | ✅ | ✅ | EBML/Segment/Tracks/Cluster/SimpleBlock |
 | 原始视频帧 | ✅ | ✅ | YUV420P/NV12/RGB24 |
+| fMP4/CMAF (分段) | ❌ | ✅ | Fmp4SegmentWriter 直播场景 |
 
 ### 帧处理
 尺寸缩放、区域裁剪、旋转翻转、色彩调整、文字水印、时间戳叠加、缩略图生成、移动侦测、帧率转换
+
+### 图像格式
+- 快照输出：JPEG（纯托管）/PNG/WebP/BMP/TIFF/GIF/AVIF（FFmpeg 管道）
+- ImageSharp 互操作：12 种图像格式读写
+- SkiaSharp 互操作：AVIF/HEIF/JPEG XL 编码
+- 批量帧编码管线：多帧批量输出 + 网格缩略图
 
 ### 流媒体
 - RTP 封包/解包：H.264 (RFC 6184)、H.265 (RFC 7798)
@@ -42,14 +52,20 @@ Nuget：NewLife.Video
 - HLS 分段：m3u8 生成 + TS 分段 + 自动清理
 - JitterBuffer、WebSocket 视频通道
 
+### 流式播放
+- LibVLCSharp 集成：VlcPlayer 统一播放 API，支持 RTSP/RTMP/HLS/DASH
+- fMP4 over WebSocket：浏览器实时播放，延迟 1-3 秒
+- 多路摄像头管理：CameraStreamManager 连接池/自动重连/健康监测
+
 ### IoT 视频适配
-- ONVIF：WS-Discovery 设备发现、Media 获取流地址、PTZ 云台控制
+- ONVIF：WS-Discovery 设备发现、Media 获取流地址、PTZ 云台控制、Profile G 边缘存储
 - GB/T 28181：SIP 注册/心跳、实时点播（INVITE+SDP+RTP）
 - 录像调度：定时 + 事件触发
+- 芯片视频头：海思/大华/宇视
 
 ### 设备采集
 - ScreenCapture：Windows 下 Graphics.CopyFromScreen 真实截屏（net461）
-- DirectShow / V4L2 后端骨架（待平台适配）
+- DirectShow / V4L2 后端骨架
 
 ## 快速开始
 

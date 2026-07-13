@@ -1,5 +1,32 @@
 # NewLife.Video 版本更新记录
 
+## v1.1.2026.0713 (2026-07-13)
+
+### 硬件编码器参数透传
+- **M1-16 硬件编码器参数透传**：H.264/H.265 编码器新增 `encoderName` 和 `extraArgs` 参数，支持指定 h264_nvenc/hevc_nvenc/h264_qsv 等硬件编码器及自定义编码参数
+- **FFmpegSetup**：FFmpeg 运行时自动检测/下载/缓存工具类，降低入门门槛
+- **VideoTranscoder**：一键转码高级 API，支持格式转换/分辨率缩放/编码器切换/码率控制/进度回调
+
+### 图像格式扩展
+- **M4-6 快照格式扩展**：新增 TIFF/GIF/AVIF 三格式快照输出，基于 FFmpeg 管道编码
+- **M4-7 ImageSharp 互操作**：VideoFrame ↔ Image&lt;Rgba32&gt; 双向转换
+- **M4-8 SkiaSharp 互操作**：VideoFrame ↔ SKBitmap 双向转换，支持 AVIF/HEIF/JPEG XL 编码
+- **M4-9 批量帧编码管线**：FrameBatchEncoder 帧序列批量编码 + 网格缩略图生成
+
+### fMP4 分段写入器
+- **M2-15 Fmp4SegmentWriter**：基于 ISO BMFF Box 模型的 fMP4/CMAF 分段写入器，支持直播录制和 DASH 兼容流
+- 修复 FlvReader PreScanFrames skip 逻辑 Bug
+- 修复 FlvWriter ScriptTag 缺失 PreviousTagSize
+
+### 流式播放模块
+- **M9-1 VlcPlayer**：LibVLCSharp 集成封装，支持 RTSP/RTMP/HLS/DASH 一键播放及 WPF/WinForms/MAUI 控件
+- **M9-2 Fmp4WebSocketStreamer**：fMP4 over WebSocket 实时播放服务端，低延迟 1-3 秒
+- **M9-4 CameraStreamManager**：多路摄像头 RTSP 连接池管理，支持自动重连和健康监测
+
+### IoT 增强
+- **M7-2 ONVIF Profile G**：OnvifRecordingClient 边缘存储客户端，支持 GetRecordings/CreateRecording/DeleteRecording
+- 修复跨目标平台兼容性（net461/netstandard2.0/netstandard2.1）
+
 ## v1.1.2026.0702 (2026-07-02)
 
 ### AV1 编解码
