@@ -14,7 +14,7 @@ namespace NewLife.Video.Flv.Metadata;
             else
             {
                 Data.Add(1);
-                Data.AddRange(data ?? throw new NullReferenceException("data cannot be null"));
+                Data.AddRange(data ?? throw new ArgumentNullException(nameof(data)));
             }
         }
         public AACPacketType AACPacketType { get; private set; }

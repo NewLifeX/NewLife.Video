@@ -1,50 +1,31 @@
-namespace NewLife.Video.Flv.Metadata
+using NewLife.Audio.Codecs;
+
+namespace NewLife.Video.Flv.Metadata;
+
+/// <summary>AAC AudioSpecificConfig (ISO 14496-3)。委托到 NewLife.Audio 完整实现</summary>
+public class AudioSpecificConfig
 {
-    public class AudioSpecificConfig
+    /// <summary>AAC 音频对象类型（1=Main, 2=LC, 5=SBR）</summary>
+    public Int32 AudioType { get; set; } = 2;
+
+    /// <summary>采样率索引（0-12, 15=逃逸）</summary>
+    public Int32 SamplingFrequencyIndex { get; set; } = 11;
+
+    /// <summary>声道配置（1=单声道, 2=立体声）</summary>
+    public Int32 ChannelConfiguration { get; set; } = 1;
+
+    /// <summary>序列化为字节数组</summary>
+    public Byte[] ToArray()
     {
-        public AudioObjectType AudioType { get; set; } = AudioObjectType.AAC_LC;
-
-        public SamplingFrequency SamplingFrequencyIndex { get; set; } = SamplingFrequency.Index_8000;
-
-        /// <summary>其实有很多，这里就固定为立体声</summary>
-        public Int32 ChannelConfiguration { get; set; } = 1;
-
-        public Byte[] ToArray()
-        {
-            var value = Convert.ToInt16($"{Convert.ToString((Int32)AudioType, 2).PadLeft(5, '0')}{Convert.ToString((Int32)SamplingFrequencyIndex, 2).PadLeft(4, '0')}{Convert.ToString(ChannelConfiguration, 2).PadLeft(4, '0')}000", 2);
-            return new Byte[] { (Byte)(value >> 8), (Byte)value, 0x56, 0xe5, 0x00 };
-        }
-
-        /// <summary>
-        /// 音频类型
-        /// 其实有很多，这里就列几个，如有需要再加
-        /// </summary>
-        public enum AudioObjectType
-        {
-            AAC_MAIN = 1,
-            AAC_LC = 2,
-            AAC_SSR = 3,
-            AAC_LTP = 4,
-            SBR = 5,
-            AAC_SCALABLE
-        }
-
-        public enum SamplingFrequency
-        {
-            Index_96000 = 0x00,
-            Index_88200 = 0x01,
-            Index_64000 = 0x02,
-            Index_48000 = 0x03,
-            Index_44100 = 0x04,
-            Index_32000 = 0x05,
-            Index_24000 = 0x06,
-            Index_22050 = 0x07,
-            Index_16000 = 0x08,
-            Index_12000 = 0x09,
-            Index_11025 = 0x0a,
-            Index_8000 = 0x0b,
-            Index_7350 = 0x0c,
-            ESCAPE = 0x0f
-        }
+        var inner = NewLife.Audio.Codecs.AudioSpecificConfig.FromParameters(AudioType, GetSampleRate(), ChannelConfiguration);
+        return inner.ToByteArray();
     }
+
+    private Int32 GetSampleRate() => SamplingFrequencyIndex switch
+    {
+        0 => 96000, 1 => 88200, 2 => 64000, 3 => 48000,
+        4 => 44100, 5 => 32000, 6 => 24000, 7 => 22050,
+        8 => 16000, 9 => 12000, 10 => 11025, 11 => 8000,
+        12 => 7350, _ => 8000,
+    };
 }
