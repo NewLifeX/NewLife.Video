@@ -63,13 +63,22 @@ public static class SnapshotEncoder
         return BuildBmpFile(rgbData, frame.Width, frame.Height);
     }
 
-    /// <summary>将 VideoFrame 编码为 TIFF 字节数组（FFmpeg 管道）</summary>
+    /// <summary>将 VideoFrame 编码为 TIFF 字节数组</summary>
     /// <param name="frame">视频帧</param>
-    /// <param name="compression">压缩算法（默认 lzw，可选 none/lzw/zip/jpeg）</param>
+    /// <param name="compression">压缩算法（默认 none，可选 none/lzw/zip/jpeg，none 为纯托管编码）</param>
     /// <returns>TIFF 字节数组</returns>
-    public static Byte[] EncodeToTiff(VideoFrame frame, String compression = "lzw")
+    public static Byte[] EncodeToTiff(VideoFrame frame, String compression = "none")
     {
         if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
+
+        // 无压缩时使用纯托管编码
+        if (compression == "none" || compression.IsNullOrEmpty())
+        {
+            var rgbData = EnsureRgb24(frame);
+            return BuildTiffFile(rgbData, frame.Width, frame.Height);
+        }
+
+        // LZW/ZIP/JPEG 压缩通过 FFmpeg 管道
         return EncodeViaFFmpeg(frame, "tiff", $"-c:v tiff -compression_algo {compression}");
     }
 
@@ -266,6 +275,88 @@ public static class SnapshotEncoder
         }
 
         return bmp;
+    }
+
+    /// <summary>构建 TIFF 文件（纯托管，无压缩 baseline RGB）</summary>
+    private static Byte[] BuildTiffFile(Byte[] rgbData, Int32 width, Int32 height)
+    {
+        // TIFF 结构：8 字节头 + IFD(2+tagCount*12+4) + 像素数据 + BitsPerSample 值
+        // Baseline TIFF 4.0，RGB 24bit，无压缩
+
+        var tagCount = 9;
+        var ifdSize = 2 + tagCount * 12 + 4; // 2(数量) + 12*9(条目) + 4(下一个IFD偏移)
+        var ifdOffset = 8;
+        var stripOffset = ifdOffset + ifdSize;
+        var rowSize = width * 3;
+        var imageSize = rowSize * height;
+
+        // BitsPerSample 值放在像素数据之后
+        var valueOffset = stripOffset + imageSize;
+        var totalSize = valueOffset + 6; // +6 for 3 SHORT values
+
+        var tiff = new Byte[totalSize];
+
+        // TIFF 头 (8 字节)
+        tiff[0] = 0x49; tiff[1] = 0x49; // Intel byte order (little-endian)
+        tiff[2] = 42;                    // TIFF magic number
+        tiff[3] = 0;
+        WriteTiffLong(tiff, 4, ifdOffset);
+
+        // IFD 条目数
+        WriteTiffShort(tiff, ifdOffset, (Int16)tagCount);
+        var idx = ifdOffset + 2;
+
+        // Tag 列表 (每个 12 字节: 2(tag) + 2(type) + 4(count) + 4(value/offset))
+        WriteTiffTag(tiff, ref idx, 256, 4, 1, width);           // ImageWidth
+        WriteTiffTag(tiff, ref idx, 257, 4, 1, height);          // ImageLength
+        WriteTiffTag(tiff, ref idx, 258, 3, 3, valueOffset);     // BitsPerSample (指向值数组)
+        WriteTiffTag(tiff, ref idx, 259, 3, 1, 1);               // Compression (1=无压缩)
+        WriteTiffTag(tiff, ref idx, 262, 3, 1, 2);               // PhotometricInterpretation (2=RGB)
+        WriteTiffTag(tiff, ref idx, 273, 4, 1, stripOffset);     // StripOffsets
+        WriteTiffTag(tiff, ref idx, 277, 3, 1, 3);               // SamplesPerPixel
+        WriteTiffTag(tiff, ref idx, 278, 4, 1, height);          // RowsPerStrip
+        WriteTiffTag(tiff, ref idx, 279, 4, 1, imageSize);       // StripByteCounts
+
+        // Next IFD offset (0 = 无后续 IFD)
+        WriteTiffLong(tiff, idx, 0);
+
+        // 像素数据（RGB 顺序，从上到下）
+        Array.Copy(rgbData, 0, tiff, stripOffset, imageSize);
+
+        // BitsPerSample 值 (8, 8, 8)
+        WriteTiffShort(tiff, valueOffset, 8);
+        WriteTiffShort(tiff, valueOffset + 2, 8);
+        WriteTiffShort(tiff, valueOffset + 4, 8);
+
+        return tiff;
+    }
+
+    private static void WriteTiffShort(Byte[] buffer, Int32 offset, Int16 value)
+    {
+        buffer[offset] = (Byte)(value & 0xFF);
+        buffer[offset + 1] = (Byte)((value >> 8) & 0xFF);
+    }
+
+    private static void WriteTiffLong(Byte[] buffer, Int32 offset, Int32 value)
+    {
+        buffer[offset] = (Byte)(value & 0xFF);
+        buffer[offset + 1] = (Byte)((value >> 8) & 0xFF);
+        buffer[offset + 2] = (Byte)((value >> 16) & 0xFF);
+        buffer[offset + 3] = (Byte)((value >> 24) & 0xFF);
+    }
+
+    private static void WriteTiffTag(Byte[] buffer, Int32 offset, Int16 tag, Int16 type, Int32 count, Int32 value)
+    {
+        WriteTiffShort(buffer, offset, tag);
+        WriteTiffShort(buffer, offset + 2, type);
+        WriteTiffLong(buffer, offset + 4, count);
+        WriteTiffLong(buffer, offset + 8, value);
+    }
+
+    private static void WriteTiffTag(Byte[] buffer, ref Int32 offset, Int16 tag, Int16 type, Int32 count, Int32 value)
+    {
+        WriteTiffTag(buffer, offset, tag, type, count, value);
+        offset += 12;
     }
 
     /// <summary>根据文件路径推断快照格式</summary>

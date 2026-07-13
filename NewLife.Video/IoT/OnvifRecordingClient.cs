@@ -72,15 +72,51 @@ public class OnvifRecordingClient : IDisposable
         return ParseRecordingOptions(response);
     }
 
+    /// <summary>获取录像任务列表</summary>
+    public async Task<OnvifRecordingJob[]> GetRecordingJobsAsync()
+    {
+        var soap = BuildGetRecordingJobsSoap();
+        var response = await SendSoapAsync(soap);
+        return ParseRecordingJobs(response);
+    }
+
+    /// <summary>创建录像任务（关联录像源和存储）</summary>
+    /// <param name="recordingToken">录像 Token</param>
+    /// <param name="sourceToken">视频源 Profile Token</param>
+    /// <returns>录像任务</returns>
+    public async Task<OnvifRecordingJob> CreateRecordingJobAsync(String recordingToken, String sourceToken)
+    {
+        var soap = BuildCreateRecordingJobSoap(recordingToken, sourceToken);
+        var response = await SendSoapAsync(soap);
+        return ParseRecordingJob(response, recordingToken);
+    }
+
+    /// <summary>删除录像任务</summary>
+    public async Task<Boolean> DeleteRecordingJobAsync(String jobToken)
+    {
+        var soap = BuildDeleteRecordingJobSoap(jobToken);
+        await SendSoapAsync(soap);
+        return true;
+    }
+
+    /// <summary>获取回放 URI（Profile G 回放）</summary>
+    /// <param name="recordingToken">录像 Token</param>
+    /// <returns>RTSP 回放地址</returns>
+    public async Task<String> GetReplayUriAsync(String recordingToken)
+    {
+        var soap = BuildGetReplayUriSoap(recordingToken);
+        var response = await SendSoapAsync(soap);
+        return ParseReplayUri(response);
+    }
+
     // 同步包装
-    /// <summary>获取所有录像列表（同步）</summary>
     public OnvifRecording[] GetRecordings() => GetRecordingsAsync().GetAwaiter().GetResult();
-
-    /// <summary>创建新录像（同步）</summary>
     public OnvifRecording CreateRecording(String name, String sourceRtspUri) => CreateRecordingAsync(name, sourceRtspUri).GetAwaiter().GetResult();
-
-    /// <summary>删除录像（同步）</summary>
     public Boolean DeleteRecording(String recordingToken) => DeleteRecordingAsync(recordingToken).GetAwaiter().GetResult();
+    public OnvifRecordingJob[] GetRecordingJobs() => GetRecordingJobsAsync().GetAwaiter().GetResult();
+    public OnvifRecordingJob CreateRecordingJob(String recordingToken, String sourceToken) => CreateRecordingJobAsync(recordingToken, sourceToken).GetAwaiter().GetResult();
+    public Boolean DeleteRecordingJob(String jobToken) => DeleteRecordingJobAsync(jobToken).GetAwaiter().GetResult();
+    public String GetReplayUri(String recordingToken) => GetReplayUriAsync(recordingToken).GetAwaiter().GetResult();
 
     #region SOAP 构建
 
@@ -119,6 +155,49 @@ public class OnvifRecordingClient : IDisposable
     private String BuildGetRecordingOptionsSoap() => $@"<s:Envelope xmlns:s=""http://www.w3.org/2003/05/soap-envelope"">
   <s:Body>
     <GetRecordingOptions xmlns=""http://www.onvif.org/ver10/recording/wsdl""/>
+  </s:Body>
+</s:Envelope>";
+
+    private String BuildGetRecordingJobsSoap() => $@"<s:Envelope xmlns:s=""http://www.w3.org/2003/05/soap-envelope"">
+  <s:Body>
+    <GetRecordingJobs xmlns=""http://www.onvif.org/ver10/recording/wsdl""/>
+  </s:Body>
+</s:Envelope>";
+
+    private String BuildCreateRecordingJobSoap(String recordingToken, String sourceToken) => $@"<s:Envelope xmlns:s=""http://www.w3.org/2003/05/soap-envelope"">
+  <s:Body>
+    <CreateRecordingJob xmlns=""http://www.onvif.org/ver10/recording/wsdl"">
+      <JobConfiguration>
+        <RecordingToken>{EscapeXml(recordingToken)}</RecordingToken>
+        <Mode>Active</Mode>
+        <Priority>Medium</Priority>
+        <Source>
+          <SourceToken>{EscapeXml(sourceToken)}</SourceToken>
+          <Type>VideoSource</Type>
+        </Source>
+        <FixedDuration>PT1H</FixedDuration>
+      </JobConfiguration>
+    </CreateRecordingJob>
+  </s:Body>
+</s:Envelope>";
+
+    private String BuildDeleteRecordingJobSoap(String jobToken) => $@"<s:Envelope xmlns:s=""http://www.w3.org/2003/05/soap-envelope"">
+  <s:Body>
+    <DeleteRecordingJob xmlns=""http://www.onvif.org/ver10/recording/wsdl"">
+      <JobToken>{EscapeXml(jobToken)}</JobToken>
+    </DeleteRecordingJob>
+  </s:Body>
+</s:Envelope>";
+
+    private String BuildGetReplayUriSoap(String recordingToken) => $@"<s:Envelope xmlns:s=""http://www.w3.org/2003/05/soap-envelope"">
+  <s:Body>
+    <GetReplayUri xmlns=""http://www.onvif.org/ver10/replay/wsdl"">
+      <RecordingToken>{EscapeXml(recordingToken)}</RecordingToken>
+      <StreamSetup>
+        <Stream>RTP-Unicast</Stream>
+        <Transport><Protocol>RTSP</Protocol></Transport>
+      </StreamSetup>
+    </GetReplayUri>
   </s:Body>
 </s:Envelope>";
 
@@ -180,6 +259,42 @@ public class OnvifRecordingClient : IDisposable
         };
     }
 
+    private static OnvifRecordingJob[] ParseRecordingJobs(String xml)
+    {
+        var list = new List<OnvifRecordingJob>();
+        var doc = XDocument.Parse(xml);
+        var ns = doc.Root.GetDefaultNamespace();
+
+        foreach (var el in doc.Descendants(ns + "RecordingJob"))
+        {
+            var token = el.Element(ns + "JobToken")?.Value;
+            var status = el.Element(ns + "JobState")?.Value;
+            var config = el.Element(ns + "Configuration");
+            list.Add(new OnvifRecordingJob
+            {
+                Token = token,
+                Status = status,
+                RecordingToken = config?.Element(ns + "RecordingToken")?.Value,
+            });
+        }
+        return list.ToArray();
+    }
+
+    private static OnvifRecordingJob ParseRecordingJob(String xml, String recToken)
+    {
+        var doc = XDocument.Parse(xml);
+        var ns = doc.Root.GetDefaultNamespace();
+        var token = doc.Descendants(ns + "JobToken").FirstOrDefault()?.Value;
+        return new OnvifRecordingJob { Token = token, RecordingToken = recToken, Status = "Active" };
+    }
+
+    private static String ParseReplayUri(String xml)
+    {
+        var doc = XDocument.Parse(xml);
+        var ns = doc.Root.GetDefaultNamespace();
+        return doc.Descendants(ns + "Uri").FirstOrDefault()?.Value;
+    }
+
     private static String EscapeXml(String s) => s?.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
     private static Int32 ParseInt(String s) => Int32.TryParse(s, out var v) ? v : 0;
 
@@ -213,4 +328,17 @@ public class OnvifRecordingOptions
 
     /// <summary>最大保留时间</summary>
     public String MaxRetentionTime { get; set; }
+}
+
+/// <summary>ONVIF 录像任务</summary>
+public class OnvifRecordingJob
+{
+    /// <summary>任务 Token</summary>
+    public String Token { get; set; }
+
+    /// <summary>关联的录像 Token</summary>
+    public String RecordingToken { get; set; }
+
+    /// <summary>任务状态（Active/Inactive/Error）</summary>
+    public String Status { get; set; }
 }
