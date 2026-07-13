@@ -63,17 +63,22 @@ public class CameraStreamManager : IDisposable
     }
 
     /// <summary>连接所有摄像头</summary>
-    public void ConnectAll()
+    public async Task ConnectAllAsync()
     {
+        var tasks = new List<Task>();
         lock (_lock)
         {
             foreach (var cam in _cameras.Values)
             {
                 if (!cam.IsConnected)
-                    ConnectCamera(cam);
+                    tasks.Add(ConnectCamera(cam));
             }
         }
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
+
+    /// <summary>连接所有摄像头（同步包装）</summary>
+    public void ConnectAll() => ConnectAllAsync().GetAwaiter().GetResult();
 
     /// <summary>断开所有摄像头</summary>
     public void DisconnectAll()
@@ -85,18 +90,34 @@ public class CameraStreamManager : IDisposable
         }
     }
 
-    private void ConnectCamera(CameraStream cam)
+    private async Task ConnectCamera(CameraStream cam)
     {
         try
         {
             var client = new RtspClient(cam.RtspUri);
-            client.ConnectAsync().GetAwaiter().GetResult();
-            client.SetupAsync().GetAwaiter().GetResult();
-            client.PlayAsync().GetAwaiter().GetResult();
+            await client.ConnectAsync().ConfigureAwait(false);
+            await client.SetupAsync().ConfigureAwait(false);
+            await client.PlayAsync().ConfigureAwait(false);
             cam.SetClient(client);
 
             // 启动帧接收循环
-            _ = Task.Run(() => ReceiveLoop(cam));
+            _ = ReceiveLoop(cam);
+        }
+        catch (Exception ex)
+        {
+            cam.LastError = ex.Message;
+        }
+    }
+
+    private async Task ConnectCameraSync(CameraStream cam)
+    {
+        try
+        {
+            var client = new RtspClient(cam.RtspUri);
+            await client.ConnectAsync();
+            await client.SetupAsync();
+            await client.PlayAsync();
+            cam.SetClient(client);
         }
         catch (Exception ex)
         {
