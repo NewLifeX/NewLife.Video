@@ -3,9 +3,9 @@ using NewLife.Video.FFmpeg;
 
 namespace NewLife.Video.Processing;
 
-/// <summary>快照格式编码器。将 VideoFrame 编码为 JPEG/PNG/WebP/BMP 等图像格式</summary>
+/// <summary>快照格式编码器。将 VideoFrame 编码为 JPEG/PNG/WebP/BMP/TIFF/GIF/AVIF 等图像格式</summary>
 /// <remarks>
-/// JPEG 使用内置纯托管 MjpegCodec 编码（零外部依赖）。PNG/WebP/BMP 通过 FFmpeg 管道编码。
+/// JPEG 使用内置纯托管 MjpegCodec 编码（零外部依赖）。PNG/WebP/BMP/TIFF/GIF/AVIF 通过 FFmpeg 管道编码。
 /// 支持将快照保存到文件或返回字节数组。
 /// <para>使用示例：
 /// <code>
@@ -63,6 +63,37 @@ public static class SnapshotEncoder
         return BuildBmpFile(rgbData, frame.Width, frame.Height);
     }
 
+    /// <summary>将 VideoFrame 编码为 TIFF 字节数组（FFmpeg 管道）</summary>
+    /// <param name="frame">视频帧</param>
+    /// <param name="compression">压缩算法（默认 lzw，可选 none/lzw/zip/jpeg）</param>
+    /// <returns>TIFF 字节数组</returns>
+    public static Byte[] EncodeToTiff(VideoFrame frame, String compression = "lzw")
+    {
+        if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
+        return EncodeViaFFmpeg(frame, "tiff", $"-c:v tiff -compression_algo {compression}");
+    }
+
+    /// <summary>将 VideoFrame 编码为 GIF 字节数组（FFmpeg 管道，单帧）</summary>
+    /// <param name="frame">视频帧</param>
+    /// <returns>GIF 字节数组</returns>
+    public static Byte[] EncodeToGif(VideoFrame frame)
+    {
+        if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
+        return EncodeViaFFmpeg(frame, "gif", "-c:v gif");
+    }
+
+    /// <summary>将 VideoFrame 编码为 AVIF 字节数组（FFmpeg 管道，需 libaom-av1）</summary>
+    /// <param name="frame">视频帧</param>
+    /// <param name="quality">质量 1-100（默认 50，越高越好）</param>
+    /// <returns>AVIF 字节数组</returns>
+    public static Byte[] EncodeToAvif(VideoFrame frame, Int32 quality = 50)
+    {
+        if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
+        var crf = 63 - (Int32)(quality / 100.0 * 51); // 映射质量到 CRF 范围（12-63）
+        crf = Math.Clamp(crf, 12, 63);
+        return EncodeViaFFmpeg(frame, "avif", $"-c:v libaom-av1 -crf {crf} -still-picture 1 -cpu-used 4");
+    }
+
     /// <summary>保存视频帧为图像文件</summary>
     /// <param name="frame">视频帧</param>
     /// <param name="filePath">输出文件路径</param>
@@ -80,6 +111,9 @@ public static class SnapshotEncoder
             SnapshotFormat.Png => EncodeToPng(frame),
             SnapshotFormat.WebP => EncodeToWebP(frame, quality),
             SnapshotFormat.Bmp => EncodeToBmp(frame),
+            SnapshotFormat.Tiff => EncodeToTiff(frame),
+            SnapshotFormat.Gif => EncodeToGif(frame),
+            SnapshotFormat.Avif => EncodeToAvif(frame, quality),
             _ => throw new NotSupportedException($"不支持的快照格式：{fmt}"),
         };
 
@@ -243,6 +277,9 @@ public static class SnapshotEncoder
             ".png" => SnapshotFormat.Png,
             ".webp" => SnapshotFormat.WebP,
             ".bmp" => SnapshotFormat.Bmp,
+            ".tif" or ".tiff" => SnapshotFormat.Tiff,
+            ".gif" => SnapshotFormat.Gif,
+            ".avif" => SnapshotFormat.Avif,
             _ => SnapshotFormat.Jpeg,
         };
     }
@@ -264,4 +301,13 @@ public enum SnapshotFormat
 
     /// <summary>BMP 格式（纯托管编码）</summary>
     Bmp,
+
+    /// <summary>TIFF 格式（FFmpeg 管道编码）</summary>
+    Tiff,
+
+    /// <summary>GIF 格式（FFmpeg 管道编码，单帧）</summary>
+    Gif,
+
+    /// <summary>AVIF 格式（FFmpeg 管道编码，需 libaom-av1）</summary>
+    Avif,
 }
