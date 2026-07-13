@@ -90,7 +90,8 @@ public static class SnapshotEncoder
     {
         if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
         var crf = 63 - (Int32)(quality / 100.0 * 51); // 映射质量到 CRF 范围（12-63）
-        crf = Math.Clamp(crf, 12, 63);
+        if (crf < 12) crf = 12;
+        if (crf > 63) crf = 63;
         return EncodeViaFFmpeg(frame, "avif", $"-c:v libaom-av1 -crf {crf} -still-picture 1 -cpu-used 4");
     }
 

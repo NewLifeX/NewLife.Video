@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net.Http;
 
 namespace NewLife.Video.FFmpeg;
 
@@ -118,9 +119,9 @@ public static class FFmpegSetup
         var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
-        await using var fileStream = File.Create(archivePath);
+        using var fileStream = File.Create(archivePath);
         await response.Content.CopyToAsync(fileStream).ConfigureAwait(false);
-        await fileStream.FlushAsync(cancellationToken).ConfigureAwait(false);
+        await fileStream.FlushAsync().ConfigureAwait(false);
 
         // 解压（调用系统命令避免引入压缩库依赖）
         var extractDir = Path.Combine(CacheDirectory, "extracted");
