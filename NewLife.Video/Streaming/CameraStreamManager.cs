@@ -185,9 +185,11 @@ public class CameraStream
     public String Password { get; set; }
     public RtspClient Client { get; private set; }
     public Boolean IsConnected => Client?.IsConnected ?? false;
+    /// <summary>最近错误信息</summary>
+    public String LastError { get; set; }
+    /// <summary>已接收帧数</summary>
     public Int64 FrameCount { get; set; }
     internal Int64 LastFrameCount { get; set; }
-    public String LastError { get; set; }
 
     internal void SetClient(RtspClient client) => Client = client;
 

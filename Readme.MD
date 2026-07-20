@@ -19,8 +19,7 @@ Nuget：NewLife.Video
 - H.264/H.265 解码与编码（FFmpeg 管道封装，支持硬件编码器透传）
 - MJPEG 纯托管编解码
 - VP8/VP9/AV1 解码与编码（FFmpeg 管道封装）
-- AVIF/HEIF/JPEG XL 编码（SkiaSharp 互操作）
-- 颜色空间转换：YUV420P/NV12 ↔ RGB24/BGRA32 (BT.601)
+- 颜色空间转换：YUV420P/NV12 ↔ RGB24/BGRA32 (BT.601，SIMD 加速)
 - 芯片头适配：海思/大华/宇视
 - FFmpeg 运行时自动检测/下载/缓存
 - 一键转码 API：VideoTranscoder
@@ -40,9 +39,8 @@ Nuget：NewLife.Video
 尺寸缩放、区域裁剪、旋转翻转、色彩调整、文字水印、时间戳叠加、缩略图生成、移动侦测、帧率转换
 
 ### 图像格式
-- 快照输出：JPEG（纯托管）/PNG/WebP/BMP/TIFF/GIF/AVIF（FFmpeg 管道）
-- ImageSharp 互操作：12 种图像格式读写
-- SkiaSharp 互操作：AVIF/HEIF/JPEG XL 编码
+- 快照输出：JPEG/BMP/TIFF/PNG/WebP/GIF 纯托管编码，AVIF FFmpeg 管道编码
+- 动画 GIF 纯托管编码（GIF 89a，自研 LZW 压缩）
 - 批量帧编码管线：多帧批量输出 + 网格缩略图
 
 ### 流媒体
@@ -53,9 +51,11 @@ Nuget：NewLife.Video
 - JitterBuffer、WebSocket 视频通道
 
 ### 流式播放
-- LibVLCSharp 集成：VlcPlayer 统一播放 API，支持 RTSP/RTMP/HLS/DASH
-- fMP4 over WebSocket：浏览器实时播放，延迟 1-3 秒
-- 多路摄像头管理：CameraStreamManager 连接池/自动重连/健康监测
+- FfmpegPlayer 播放引擎：支持 RTSP/RTMP/HLS/本地文件，FrameDecoded 事件输出原始帧
+- fMP4 over WebSocket：Fmp4WebSocketStreamer 浏览器实时播放，延迟 1-3 秒
+- RTSP→WebSocket 桥接：摄像头 RTSP 流转浏览器播放
+- 多路摄像头管理：CameraStreamManager 连接池/自动重连/健康监测（单进程 16+ 路 1080p）
+- 纯托管帧渲染器：VideoFrameRenderer 输出 BGRA32 内存缓冲区
 
 ### IoT 视频适配
 - ONVIF：WS-Discovery 设备发现、Media 获取流地址、PTZ 云台控制、Profile G 边缘存储
@@ -64,8 +64,18 @@ Nuget：NewLife.Video
 - 芯片视频头：海思/大华/宇视
 
 ### 设备采集
-- ScreenCapture：Windows 下 Graphics.CopyFromScreen 真实截屏（net461）
-- DirectShow / V4L2 后端骨架
+- ScreenCapture：Windows DXGI 桌面捕获 / 跨平台兼容方案
+- DirectShow / V4L2 / macOS AVFoundation 多后端支持
+
+## 文档
+
+| 文档 | 说明 |
+|------|------|
+| [需求文档](Doc/需求文档.md) | 项目愿景、核心目标与模块划分 |
+| [功能清单](Doc/功能模块清单.md) | 82 项功能的实现/测试/注释三维状态追踪 |
+| [架构设计](Doc/架构设计.md) | 分层架构、组件交互与关键设计决策 |
+| [竞品分析](Doc/竞品分析报告.md) | .NET 视频处理领域竞品对比与差异化定位 |
+| [更新日志](Doc/ChangeLog.md) | 版本发布历史 |
 
 ## 快速开始
 
