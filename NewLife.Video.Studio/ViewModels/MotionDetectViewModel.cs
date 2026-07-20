@@ -7,7 +7,7 @@ using NewLife.Video.Processing;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>运动检测视图模型（M4-2）</summary>
+/// <summary>运动检测视图模型（FRAM-2）</summary>
 public partial class MotionDetectViewModel : ViewModelBase
 {
     private readonly MotionDetector _detector = new();

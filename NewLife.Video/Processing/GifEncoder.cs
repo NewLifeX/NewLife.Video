@@ -6,7 +6,7 @@ namespace NewLife.Video.Processing;
 /// <summary>纯托管 GIF 编码器。将 RGB24 帧数据编码为 GIF 87a 格式，零外部依赖</summary>
 /// <remarks>
 /// 自研 LZW 压缩实现 + 自适应调色板（256 色中位切割量化）。
-/// 支持单帧编码（M4-8）和多帧动画编码（M4-11）。
+/// 支持单帧编码（IMG-8）和多帧动画编码（IMG-11）。
 /// </remarks>
 public static class GifEncoder
 {

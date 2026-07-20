@@ -2,7 +2,7 @@ using NewLife.Video.Processing;
 
 namespace NewLife.Video.Studio.Services;
 
-/// <summary>导出服务接口（M6-1/2）</summary>
+/// <summary>导出服务接口（EXP-1/2）</summary>
 public interface IExportService
 {
     /// <summary>保存快照</summary>

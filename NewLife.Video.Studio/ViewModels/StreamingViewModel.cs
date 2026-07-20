@@ -4,7 +4,7 @@ using NewLife.Video.Streaming;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>流媒体视图模型（M5-1 RTSP/RTMP）</summary>
+/// <summary>流媒体视图模型（SMIOT-1 RTSP/RTMP）</summary>
 public partial class StreamingViewModel : ViewModelBase
 {
     [ObservableProperty]

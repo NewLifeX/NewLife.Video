@@ -7,7 +7,7 @@ using NewLife.Video.Studio.Services;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>批量处理视图模型（M3-3）</summary>
+/// <summary>批量处理视图模型（CONV-3）</summary>
 public partial class BatchViewModel : ViewModelBase
 {
     private readonly IConverterService _converterService;

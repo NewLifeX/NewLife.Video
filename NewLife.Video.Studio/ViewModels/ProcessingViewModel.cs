@@ -11,7 +11,7 @@ using NewLife.Video.Studio.Services;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>帧处理管线视图模型（M4-1）</summary>
+/// <summary>帧处理管线视图模型（FRAM-1）</summary>
 public partial class ProcessingViewModel : ViewModelBase
 {
     private readonly IProcessingService _processingService;

@@ -1,4 +1,4 @@
-# M3-视频处理与转换
+# PROC-视频处理与转换
 
 > 版本：v1.0 | 日期：2026-06-29
 > 需求对应：[需求文档](需求文档.md) 第 4 章 | 功能清单：[功能模块清单](功能模块清单.md)
@@ -26,7 +26,7 @@
 | `FrameResizer` | 帧缩放：最近邻/双线性/双三次插值 |
 | `FrameCropper` | 帧裁剪 |
 | `FrameRotator` | 帧旋转与翻转 |
-| `ColorSpaceProcessor` | 色彩空间转换处理器（封装 M1-5 的 ColorSpaceConverter） |
+| `ColorSpaceProcessor` | 色彩空间转换处理器（封装 CODEC-5 的 ColorSpaceConverter） |
 | `FrameRateConverter` | 帧率转换器 |
 | `ColorAdjuster` | 色彩调整：亮度/对比度/饱和度 |
 | `WatermarkOverlay` | 水印叠加 |

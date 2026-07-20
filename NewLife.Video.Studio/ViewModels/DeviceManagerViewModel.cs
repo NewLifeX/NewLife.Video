@@ -9,7 +9,7 @@ using NewLife.Video.Studio.Services;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>设备管理器视图模型（M2-1）</summary>
+/// <summary>设备管理器视图模型（CAPT-1）</summary>
 public partial class DeviceManagerViewModel : ViewModelBase
 {
     private readonly IDeviceService _deviceService;

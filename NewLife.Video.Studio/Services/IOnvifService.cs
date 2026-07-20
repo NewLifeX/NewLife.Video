@@ -2,7 +2,7 @@ using NewLife.Video.IoT;
 
 namespace NewLife.Video.Studio.Services;
 
-/// <summary>ONVIF 设备服务接口（M5-2）</summary>
+/// <summary>ONVIF 设备服务接口（SMIOT-2）</summary>
 public interface IOnvifService
 {
     /// <summary>发现 ONVIF 设备</summary>

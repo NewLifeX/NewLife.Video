@@ -10,7 +10,7 @@ using NewLife.Video.Studio.Services;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>摄像头捕获增强版视图模型（M2-2）</summary>
+/// <summary>摄像头捕获增强版视图模型（CAPT-2）</summary>
 public partial class CameraCaptureViewModel : ViewModelBase
 {
     private readonly IDeviceService _deviceService;

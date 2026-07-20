@@ -3,7 +3,7 @@ using NewLife.Video.Studio.Models;
 
 namespace NewLife.Video.Studio.Services;
 
-/// <summary>帧处理管线服务接口（M4-1）</summary>
+/// <summary>帧处理管线服务接口（FRAM-1）</summary>
 public interface IProcessingService
 {
     /// <summary>处理单帧图像</summary>

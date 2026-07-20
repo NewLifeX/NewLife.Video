@@ -4,7 +4,7 @@ using NewLife.Video.Streaming;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>HLS 分段查看视图模型（M5-3）</summary>
+/// <summary>HLS 分段查看视图模型（SMIOT-3）</summary>
 public partial class HlsViewModel : ViewModelBase
 {
     [ObservableProperty]

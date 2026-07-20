@@ -9,7 +9,7 @@ using NewLife.Video.Processing;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>屏幕捕获视图模型（M2-3）</summary>
+/// <summary>屏幕捕获视图模型（CAPT-3）</summary>
 public partial class ScreenCaptureViewModel : ViewModelBase
 {
     private IScreenCaptureService? _screenCapture;

@@ -5,7 +5,7 @@ using NewLife.Video.Studio.Services;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>导出视图模型（M6-1/2）</summary>
+/// <summary>导出视图模型（EXP-1/2）</summary>
 public partial class ExportViewModel : ViewModelBase
 {
     private readonly IExportService _exportService;

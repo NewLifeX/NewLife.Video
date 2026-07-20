@@ -9,7 +9,7 @@ using NewLife.Video.Processing;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>帧级浏览器视图模型（M4-3）</summary>
+/// <summary>帧级浏览器视图模型（FRAM-3）</summary>
 public partial class FrameBrowserViewModel : ViewModelBase
 {
     private IVideoContainerReader? _reader;

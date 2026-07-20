@@ -6,7 +6,7 @@ using NewLife.Video.Studio.Services;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>格式转换视图模型（M3-1/2）</summary>
+/// <summary>格式转换视图模型（CONV-1/2）</summary>
 public partial class ConverterViewModel : ViewModelBase
 {
     private readonly IConverterService _converterService;

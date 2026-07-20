@@ -6,7 +6,7 @@ using NewLife.Video.Studio.Services;
 
 namespace NewLife.Video.Studio.ViewModels;
 
-/// <summary>ONVIF 设备管理视图模型（M5-2）</summary>
+/// <summary>ONVIF 设备管理视图模型（SMIOT-2）</summary>
 public partial class OnvifViewModel : ViewModelBase
 {
     private readonly IOnvifService _onvifService;

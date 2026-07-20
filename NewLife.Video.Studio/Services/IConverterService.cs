@@ -2,7 +2,7 @@ using NewLife.Video.Studio.Models;
 
 namespace NewLife.Video.Studio.Services;
 
-/// <summary>格式转换服务接口（M3-1/2）</summary>
+/// <summary>格式转换服务接口（CONV-1/2）</summary>
 public interface IConverterService
 {
     /// <summary>转换视频文件</summary>
