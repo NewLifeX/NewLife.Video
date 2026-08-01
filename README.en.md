@@ -54,6 +54,11 @@ Resize, crop, rotate & flip, color adjustment, text watermark, timestamp overlay
 - **ScreenCapture**: Windows GDI screen capture (net461)
 - **DirectShow / V4L2** backends (scaffold, platform-specific)
 
+### Desktop Client (NewLife.Video.Studio)
+- Full-featured video processing desktop app built on Avalonia, covering capture, playback, processing, transcoding and streaming
+- Camera/screen/device capture, media info viewer, frame browser
+- Batch processing, format conversion, FFmpeg console, HLS live streaming, ONVIF PTZ control
+
 ---
 
 ## Quick Start

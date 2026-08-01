@@ -67,6 +67,11 @@ Nuget：NewLife.Video
 - ScreenCapture：Windows DXGI 桌面捕获 / 跨平台兼容方案
 - DirectShow / V4L2 / macOS AVFoundation 多后端支持
 
+### 桌面客户端（NewLife.Video.Studio）
+- 基于 Avalonia 的全功能视频处理桌面应用，覆盖采集、播放、处理、转码、流媒体全流程
+- 摄像头/屏幕/设备采集、媒体信息查看、帧浏览器
+- 批量处理、格式转换、FFmpeg 控制台、HLS 直播、ONVIF 云台控制
+
 ## 文档
 
 | 文档 | 说明 |

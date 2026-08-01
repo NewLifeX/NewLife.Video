@@ -1,5 +1,46 @@
 # NewLife.Video 版本更新记录
 
+## v1.2.2026.0802 (2026-08-02)
+
+### 客户端应用
+- **NewLife.Video.Studio 桌面客户端**：基于 Avalonia 的全套视频处理应用，覆盖采集、处理、转码、流媒体等可视化操作
+
+### 编解码增强
+- **纯托管动画 GIF 编码器**：零外部依赖实现 GIF 动画编码
+- **纯托管编码器大规模替换外部依赖**：移除 ImageSharp/SkiaSharp/LibVLCSharp 依赖，以纯托管 + FFmpeg 实现替代，显著降低部署复杂度
+- **硬件编码器参数透传**：支持向硬件编码器透传自定义参数
+- **AAC 音频支持**：引入 NewLife.Audio 统一 AAC 音频编解码能力
+
+### 容器格式增强
+- **fMP4 分段写入器 Fmp4SegmentWriter**：fMP4 分段写入，优化 HLS 直播场景
+- **fMP4 盒子结构**：完整 fMP4 盒子序列化与读写支持
+- **FLV 读写修复**：修复 FlvReader PreScanFrames skip 逻辑、FlvWriter ScriptTag 缺失 PreviousTagSize
+- **H264 解析辅助**：重构容器目录结构，新增 H264 解析辅助与零拷贝支持
+
+### 快照与转码
+- **快照格式扩展**：新增 TIFF/GIF/AVIF 快照输出格式
+- **VideoTranscoder 转码高级 API**：解码器/编码器分离架构，跨平台兼容
+
+### 流媒体播放
+- **播放器增强**：FfmpegPlayer 自动分辨率探测、RTSP TCP 传输、暂停控制与帧率统计
+- **摄像头流管理异步化**：CameraStreamManager 异步化重构
+
+### IoT 视频适配
+- **ONVIF RecordingClient Profile G**：ONVIF 边缘存储录像能力
+
+### 性能优化
+- **PixelFormatConverter SIMD 加速**：NV12/NV21 原生支持 + BT.709 色彩空间转换
+- **FrameBatchEncoder 网格缩略图**：批量编码输出网格缩略图
+
+### 工具与部署
+- **FFmpegSetup 自动下载**：支持从插件服务器下载 FFmpeg 运行时，新增预下载脚本
+
+### 代码质量
+- **[fix]** 修复 VideoTranscoder 解码器/编码器分离与跨平台兼容问题
+- **[docs]** 模块编码方案统一重构，需求文档更新至 v1.3
+
+---
+
 ## v1.1.2026.0702 (2026-07-02)
 
 ### AV1 编解码
