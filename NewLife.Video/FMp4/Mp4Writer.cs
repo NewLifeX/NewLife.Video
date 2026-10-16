@@ -31,6 +31,8 @@ public class Mp4Writer : IVideoContainerWriter
     private Byte[] _vps;
     private Boolean _paramsExtracted;
 
+    private readonly List<Int64> _stcoPositions = [];
+
     public Mp4Writer(String filePath) => _filePath = filePath;
 
     public void WriteMetadata(Int32 width, Int32 height, VideoTypes codecType, Double frameRate)
@@ -54,8 +56,11 @@ public class Mp4Writer : IVideoContainerWriter
             _paramsExtracted = true;
         }
 
-        _frames.Add(data);
-        _frameSizes.Add((UInt32)data.Length);
+        // Annex-B 转长度前缀样本；参数集已完整进入 avcC/hvcC 时从样本中剔除
+        var sample = BuildAvccSample(data);
+
+        _frames.Add(sample);
+        _frameSizes.Add((UInt32)sample.Length);
 
         if (packet.IsKeyFrame)
             _keyFrameIndices.Add(_count + 1); // MP4 stss 使用 1-based index
@@ -176,6 +181,108 @@ public class Mp4Writer : IVideoContainerWriter
             if (_vps != null && _sps != null && _pps != null) break;
             i = nalEnd;
         }
+    }
+
+    /// <summary>参数集是否已完整写入配置盒（此时样本内参数集可安全剔除）</summary>
+    private Boolean HasConfigParameterSets()
+    {
+        if (!_paramsExtracted) return false;
+        if (_codecType == VideoTypes.H265) return _vps != null && _sps != null && _pps != null;
+        return _sps != null && _pps != null;
+    }
+
+    /// <summary>将 Annex-B 数据转换为长度前缀样本（AVCC/HEVC 格式），参数集已入配置盒时从样本中剔除</summary>
+    private Byte[] BuildAvccSample(Byte[] data)
+    {
+        var nals = SplitAnnexBNals(data);
+        if (nals.Count == 0)
+        {
+            // 无起始码：按单个 NAL 处理
+            var single = new Byte[4 + data.Length];
+            WriteBe32(single, 0, data.Length);
+            Array.Copy(data, 0, single, 4, data.Length);
+            return single;
+        }
+
+        var strip = HasConfigParameterSets();
+
+        var total = 0;
+        foreach (var (start, len) in nals)
+        {
+            if (strip && IsParameterSet(data, start, len)) continue;
+            total += 4 + len;
+        }
+        // 整帧仅含参数集时保留，避免空样本
+        if (total == 0)
+        {
+            foreach (var (_, len) in nals)
+                total += 4 + len;
+            strip = false;
+        }
+
+        var sample = new Byte[total];
+        var offset = 0;
+        foreach (var (start, len) in nals)
+        {
+            if (strip && IsParameterSet(data, start, len)) continue;
+            WriteBe32(sample, offset, len);
+            Array.Copy(data, start, sample, offset + 4, len);
+            offset += 4 + len;
+        }
+
+        return sample;
+    }
+
+    /// <summary>按 Annex-B 起始码切分 NAL 单元，返回各 NAL 在源数据中的偏移与长度</summary>
+    private static List<(Int32 Start, Int32 Length)> SplitAnnexBNals(Byte[] data)
+    {
+        var nals = new List<(Int32, Int32)>();
+        var n = data.Length;
+        var i = 0;
+        var lastStart = -1;
+
+        while (i < n)
+        {
+            var scLen = 0;
+            if (i + 4 <= n && data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 0 && data[i + 3] == 1) scLen = 4;
+            else if (i + 3 <= n && data[i] == 0 && data[i + 1] == 0 && data[i + 2] == 1) scLen = 3;
+
+            if (scLen > 0)
+            {
+                if (lastStart >= 0 && i > lastStart) nals.Add((lastStart, i - lastStart));
+                lastStart = i + scLen;
+                i += scLen;
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        if (lastStart >= 0 && lastStart < n) nals.Add((lastStart, n - lastStart));
+        return nals;
+    }
+
+    /// <summary>判断 NAL 是否为参数集（H.264 SPS/PPS；H.265 VPS/SPS/PPS）</summary>
+    private Boolean IsParameterSet(Byte[] data, Int32 start, Int32 length)
+    {
+        if (length <= 0) return false;
+        var b = data[start];
+        if (_codecType == VideoTypes.H265)
+        {
+            var t = (b >> 1) & 0x3F;
+            return t is 32 or 33 or 34;
+        }
+        var nalType = b & 0x1F;
+        return nalType is 7 or 8;
+    }
+
+    private static void WriteBe32(Byte[] buffer, Int32 offset, Int32 value)
+    {
+        buffer[offset] = (Byte)(value >> 24);
+        buffer[offset + 1] = (Byte)(value >> 16);
+        buffer[offset + 2] = (Byte)(value >> 8);
+        buffer[offset + 3] = (Byte)value;
     }
 
     /// <summary>构建 AVCDecoderConfigurationRecord 或 HEVCDecoderConfigurationRecord</summary>
@@ -376,7 +483,8 @@ public class Mp4Writer : IVideoContainerWriter
         // stsd — 写入 VisualSampleEntry + avcC/hvcC 配置盒
         var configRecord = BuildDecoderConfigurationRecord();
         var configBoxSize = configRecord != null ? 8 + configRecord.Length : 0; // 4(size)+4(type)+data
-        var codecFourCc = _codecType == VideoTypes.H265 ? "hvc1" : "avc1";
+        // H.265 仅当参数集完整进入 hvcC 时使用 hvc1；否则用 hev1（允许样本内带参数集）
+        var codecFourCc = _codecType == VideoTypes.H265 ? (HasConfigParameterSets() ? "hvc1" : "hev1") : "avc1";
         var configBoxFourCc = _codecType == VideoTypes.H265 ? "hvcC" : "avcC";
         var entrySize = 86 + configBoxSize; // VisualSampleEntry(86) + config box
 
@@ -412,10 +520,10 @@ public class Mp4Writer : IVideoContainerWriter
         foreach (var s in _frameSizes) U4(fs, s);
         E(fs);
 
-        // stco
+        // stco — 先写占位偏移，mdat 写入后回填绝对文件偏移
+        _stcoPositions.Clear();
         B(fs, "stco"); U4(fs, 0); U4(fs, (UInt32)_frameSizes.Count);
-        UInt32 off = 0;
-        foreach (var s in _frameSizes) { U4(fs, off); off += s; }
+        foreach (var s in _frameSizes) { _stcoPositions.Add(fs.Position); U4(fs, 0); }
         E(fs);
 
         // stsc
@@ -433,8 +541,18 @@ public class Mp4Writer : IVideoContainerWriter
     private void WriteMdat(FileStream fs)
     {
         B(fs, "mdat");
+        var dataStart = fs.Position; // 样本数据起点：stco 绝对偏移回填基准
         foreach (var f in _frames) fs.Write(f, 0, f.Length);
         E(fs);
+
+        // 回填 stco：绝对偏移 = mdat 样本数据起点 + 各帧累计长度
+        var offset = dataStart;
+        for (var i = 0; i < _stcoPositions.Count; i++)
+        {
+            fs.Seek(_stcoPositions[i], SeekOrigin.Begin);
+            U4(fs, (UInt32)offset);
+            offset += _frameSizes[i];
+        }
     }
 
     private List<(UInt32 C, UInt32 D)> BuildStts()

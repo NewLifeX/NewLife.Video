@@ -265,11 +265,18 @@ Check("MP4 写入→读取往返", () =>
         {
             w.WriteMetadata(320, 240, VideoTypes.H264, 25);
             w.WriteFrame(new VPacket { Data = new ArrayPacket(MakeAnnexBKeyFrame()), CodecType = VideoTypes.H264, IsKeyFrame = true, PTS = 0 });
+            w.WriteFrame(new VPacket { Data = new ArrayPacket(new Byte[] { 0x00, 0x00, 0x00, 0x01, 0x41, 0x9A, 0x80 }), CodecType = VideoTypes.H264, PTS = 40 });
         }
 
         using var r = new Mp4Reader(path);
         Ensure(r.VideoCodecType == VideoTypes.H264, "编码类型错误");
         Ensure(r.VideoWidth == 320 && r.VideoHeight == 240, $"宽高错误: {r.VideoWidth}x{r.VideoHeight}");
+
+        // 帧数据帧级往返：stco 绝对偏移 + 长度前缀样本
+        var f1 = r.ReadFrame();
+        Ensure(f1?.Data != null && f1.Data.Total > 0 && f1.IsKeyFrame, "首帧读取失败");
+        var f2 = r.ReadFrame();
+        Ensure(f2?.Data != null && f2.Data.Total > 0, "次帧读取失败");
     }
     finally { try { File.Delete(path); } catch { } }
 });
