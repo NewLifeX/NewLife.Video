@@ -4,7 +4,9 @@ name: test
 # 覆盖 win-x64 / linux-x64 / linux-arm64 / linux-la64 四个 RID：
 #   - linux-x64 为阻断基线（build-test，全量编译 + 多目标 net8.0/net10.0 测试）；
 #   - test 矩阵使用原生 runner 跑 win-x64 / linux-x64 / linux-arm64；
-#   - linux-la64（龙芯）官方无托管 runner，经 QEMU 用户态仿真（binfmt）+ 龙芯 .NET SDK 运行。
+#   - linux-la64（龙芯）官方无托管 runner，经 QEMU 用户态仿真 + 龙芯 .NET SDK，
+#     载体为 ghcr.io/loong64/debian:trixie 容器（提供 LA64 glibc 动态加载器）；
+#     VSTest 不支持 LoongArch64，改用 xunit 控制台运行器执行测试。
 # 矩阵平台先观察期（continue-on-error），稳定全绿后逐项转阻断。
 # 本库单元测试为自包含测试（无 MySQL/Redis/RocketMQ 等外部服务依赖），无需预装服务；
 # FFmpeg 相关用例在无 FFmpeg 环境下自动降级，GitHub 托管 runner 已预装 FFmpeg。
@@ -69,7 +71,7 @@ jobs:
           8.x
           10.x
     - name: Install FFmpeg (Linux)
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && matrix.rid != 'linux-la64'
       run: |
         sudo apt-get update -qq
         sudo apt-get install -y -qq ffmpeg
@@ -77,7 +79,7 @@ jobs:
       if: matrix.rid != 'linux-la64'
       run: dotnet test -c Release
 
-    # ===== linux-la64（龙芯）：QEMU 用户态仿真路径 =====
+    # ===== linux-la64（龙芯）：QEMU + loong64 容器 =====
     - name: Setup dotNET (host，用于构建与预热 NuGet 缓存)
       if: matrix.rid == 'linux-la64'
       uses: actions/setup-dotnet@v4
@@ -85,42 +87,52 @@ jobs:
         dotnet-version: |
           8.x
           10.x
-    - name: Build XUnitTest (host，QEMU 内不跑编译)
+    - name: Build XUnitTest (host，QEMU 内不跑 MSBuild)
       if: matrix.rid == 'linux-la64'
       run: dotnet build XUnitTest/XUnitTest.csproj -c Release
-    - name: Install QEMU (loong64 binfmt)
+    - name: Download xunit console runner (host，VSTest 不支持 LoongArch64)
       if: matrix.rid == 'linux-la64'
       run: |
-        sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
-        sudo update-binfmts --enable qemu-loongarch64 || true
-        ls -l /usr/bin/qemu-loongarch64* || true
+        curl -fsSL -o "$RUNNER_TEMP/xrc.nupkg" https://api.nuget.org/v3-flatcontainer/xunit.runner.console/2.9.3/xunit.runner.console.2.9.3.nupkg
+        mkdir -p "$HOME/xrc"
+        unzip -oj "$RUNNER_TEMP/xrc.nupkg" "tools/net6.0/*" -d "$HOME/xrc"
+        ls "$HOME/xrc"
     - name: Download Loongson .NET SDK (linux-loongarch64)
       if: matrix.rid == 'linux-la64'
       run: |
-        curl -fL -o "$HOME/la64-sdk.tar.gz" \
+        curl -fL --retry 3 -o "$RUNNER_TEMP/la64-sdk.tar.gz" \
           https://github.com/loongson/dotnet/releases/download/v10.0.113-loongarch64/dotnet-sdk-10.0.113-linux-loongarch64.tar.gz
-        mkdir -p "$HOME/la64" && tar -xzf "$HOME/la64-sdk.tar.gz" -C "$HOME/la64"
-        "$HOME/la64/dotnet" --info
-      env:
-        # 仿真下 --info 会真实执行 LA64 版 dotnet，是 QEMU 通路的第一道验证
-        DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
-        DOTNET_CLI_TELEMETRY_OPTOUT: 1
-    - name: Test（linux-la64，QEMU 仿真，net10.0）
+        mkdir -p "$HOME/la64" && tar -xzf "$RUNNER_TEMP/la64-sdk.tar.gz" -C "$HOME/la64"
+        ls "$HOME/la64" | head -20
+    - name: Install QEMU loong64 binfmt
       if: matrix.rid == 'linux-la64'
-      env:
-        # 宿主 x64 无 LA64 原生 ICU，仿真进程无法加载；以 invariant 模式运行
-        DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
-        DOTNET_CLI_TELEMETRY_OPTOUT: 1
-        DOTNET_ROOT: /home/runner/la64
+      run: docker run --privileged --rm ghcr.io/loong64/binfmt --install all
+    - name: Test（linux-la64，loong64 容器 + QEMU）
+      if: matrix.rid == 'linux-la64'
       run: |
-        export PATH="$HOME/la64:$PATH"
-        dotnet nuget add source https://lnuget.loongnix.cn/v3/index.json -n loongnuget || true
-        timeout 150m dotnet test XUnitTest/XUnitTest.csproj -c Release -f net10.0 --no-build --nologo \
-          --logger "trx;LogFileName=linux-la64.trx" --results-directory TestResults
+        docker run --rm --platform linux/loong64 -w /src \
+          -v "$PWD:/src" -v "$HOME/la64:/opt/dotnet:ro" -v "$HOME/.nuget:/home/runner/.nuget" -v "$HOME/xrc:/opt/xunit:ro" \
+          -e HOME=/home/runner -e DOTNET_CLI_HOME=/home/runner -e NUGET_PACKAGES=/home/runner/.nuget/packages \
+          -e DOTNET_ROOT=/opt/dotnet -e PATH=/opt/dotnet:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+          -e DOTNET_CLI_TELEMETRY_OPTOUT=1 -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+          -e DOTNET_ROLL_FORWARD=LatestMajor -e DOTNET_EnableWriteXorExecute=0 \
+          ghcr.io/loong64/debian:trixie bash -c '
+            set -e
+            apt-get update -qq || true
+            apt-get install -y -qq ca-certificates libstdc++6 zlib1g libunwind8 || true
+            apt-get install -y -qq libssl3t64 || apt-get install -y -qq libssl3 || true
+            LIBDIR=$(ls -d /usr/lib/*-linux-gnu* 2>/dev/null | head -1)
+            export LD_LIBRARY_PATH="$LIBDIR:$LD_LIBRARY_PATH"
+            dotnet --info
+            cp /opt/xunit/* /src/Bin/UnitTest/net10.0/
+            mkdir -p /src/TestResults
+            cd /src/Bin/UnitTest/net10.0
+            timeout 150m dotnet xunit.console.dll XUnitTest.dll -parallel none -xml /src/TestResults/test-linux-la64.xml
+          '
     - name: Upload Test Results
       if: always() && matrix.rid == 'linux-la64'
       uses: actions/upload-artifact@v4
       with:
         name: test-results-linux-la64
-        path: TestResults/*.trx
+        path: TestResults/*
         if-no-files-found: ignore

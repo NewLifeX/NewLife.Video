@@ -5,7 +5,8 @@ name: aot
 #   - aot-analyzer：库侧 AOT/裁剪分析器 0 告警硬约束（net8.0/net10.0，与 RID 无关）；
 #   - aot 矩阵：NativeAOT 官方不支持跨 OS 编译，每个 RID 用原生 runner 发布运行冒烟（linux-x64 为阻断基线）；
 #   - aot-linux-la64：龙芯无 NativeAOT 后端（ILCompiler 未提供 LA64 支持），
-#     以龙芯 .NET SDK + QEMU 用户态仿真运行 JIT 冒烟，覆盖运行期兼容性。
+#     以龙芯 .NET SDK + QEMU 用户态仿真运行 JIT 冒烟，载体为 ghcr.io/loong64/debian:trixie 容器
+#     （提供 LA64 glibc 动态加载器，宿主机直接执行 LA64 二进制会因缺失加载器失败）。
 # 新增平台先观察期（continue-on-error），稳定全绿后逐项转阻断。
 
 on:
@@ -87,7 +88,7 @@ jobs:
       shell: bash
       run: ./AotSmoke/bin/aot-out/${{ matrix.bin }}
 
-  # linux-la64（龙芯，必选覆盖）：QEMU 用户态仿真 + 龙芯 SDK，以 JIT 冒烟覆盖运行期兼容性。
+  # linux-la64（龙芯，必选覆盖）：QEMU 用户态仿真 + 龙芯 SDK + loong64 容器，以 JIT 冒烟覆盖运行期兼容性。
   # 分析器告警防线由 aot-analyzer 任务承担；NativeAOT 发布尝试对 LA64 不可用（无 ILCompiler 后端），
   # 待龙芯生态提供 NativeAOT 支持后再评估。
   aot-linux-la64:
@@ -105,28 +106,29 @@ jobs:
           10.x
     - name: Build AotSmoke (host，QEMU 内不跑编译)
       run: dotnet build AotSmoke/AotSmoke.csproj -c Release
-    - name: Install QEMU (loong64 binfmt)
-      run: |
-        sudo apt-get update && sudo apt-get install -y qemu-user-static binfmt-support
-        sudo update-binfmts --enable qemu-loongarch64 || true
-        ls -l /usr/bin/qemu-loongarch64* || true
     - name: Download Loongson .NET SDK (linux-loongarch64)
       run: |
-        curl -fL -o "$HOME/la64-sdk.tar.gz" \
+        curl -fL --retry 3 -o "$RUNNER_TEMP/la64-sdk.tar.gz" \
           https://github.com/loongson/dotnet/releases/download/v10.0.113-loongarch64/dotnet-sdk-10.0.113-linux-loongarch64.tar.gz
-        mkdir -p "$HOME/la64" && tar -xzf "$HOME/la64-sdk.tar.gz" -C "$HOME/la64"
-        "$HOME/la64/dotnet" --info
-      env:
-        # 仿真下 --info 会真实执行 LA64 版 dotnet，是 QEMU 通路的第一道验证
-        DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
-        DOTNET_CLI_TELEMETRY_OPTOUT: 1
-    - name: JIT 冒烟（linux-la64，QEMU 仿真）
-      env:
-        # 宿主 x64 无 LA64 原生 ICU，仿真进程无法加载；冒烟工程已固化 InvariantGlobalization
-        DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: 1
-        DOTNET_CLI_TELEMETRY_OPTOUT: 1
-        DOTNET_ROOT: /home/runner/la64
+        mkdir -p "$HOME/la64" && tar -xzf "$RUNNER_TEMP/la64-sdk.tar.gz" -C "$HOME/la64"
+        ls "$HOME/la64" | head -20
+    - name: Install QEMU loong64 binfmt
+      run: docker run --privileged --rm ghcr.io/loong64/binfmt --install all
+    - name: JIT 冒烟（linux-la64，loong64 容器 + QEMU）
       run: |
-        export PATH="$HOME/la64:$PATH"
-        dotnet nuget add source https://lnuget.loongnix.cn/v3/index.json -n loongnuget || true
-        timeout 120m dotnet AotSmoke/bin/Release/net10.0/AotSmoke.dll
+        docker run --rm --platform linux/loong64 -w /src \
+          -v "$PWD:/src" -v "$HOME/la64:/opt/dotnet:ro" -v "$HOME/.nuget:/home/runner/.nuget" \
+          -e HOME=/home/runner -e DOTNET_CLI_HOME=/home/runner -e NUGET_PACKAGES=/home/runner/.nuget/packages \
+          -e DOTNET_ROOT=/opt/dotnet -e PATH=/opt/dotnet:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+          -e DOTNET_CLI_TELEMETRY_OPTOUT=1 -e DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+          -e DOTNET_ROLL_FORWARD=LatestMajor -e DOTNET_EnableWriteXorExecute=0 \
+          ghcr.io/loong64/debian:trixie bash -c '
+            set -e
+            apt-get update -qq || true
+            apt-get install -y -qq ca-certificates libstdc++6 zlib1g libunwind8 || true
+            apt-get install -y -qq libssl3t64 || apt-get install -y -qq libssl3 || true
+            LIBDIR=$(ls -d /usr/lib/*-linux-gnu* 2>/dev/null | head -1)
+            export LD_LIBRARY_PATH="$LIBDIR:$LD_LIBRARY_PATH"
+            dotnet --info
+            timeout 120m dotnet /src/AotSmoke/bin/Release/net10.0/AotSmoke.dll
+          '
