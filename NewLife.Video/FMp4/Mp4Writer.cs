@@ -383,7 +383,7 @@ public class Mp4Writer : IVideoContainerWriter
         B(fs, "stsd"); U4(fs, 0); U4(fs, 1);
         U4(fs, (UInt32)entrySize);
         A(fs, codecFourCc);
-        Z(fs, 6); U2(fs, 1); U2(fs, 0); U2(fs, 0); Z(fs, 4); U4(fs, 0);
+        Z(fs, 6); U2(fs, 1); U2(fs, 0); U2(fs, 0); Z(fs, 12);
         U2(fs, (UInt16)_width); U2(fs, (UInt16)_height);
         U4(fs, 0x00480000); U4(fs, 0x00480000); U4(fs, 0); U2(fs, 1);
         Z(fs, 32); U2(fs, 0x0018); U2(fs, 0xFFFF);
