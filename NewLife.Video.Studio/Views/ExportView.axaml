@@ -11,10 +11,12 @@
         <!-- 文件选择 -->
         <Border Grid.Row="0" Grid.ColumnSpan="2" Padding="8"
                 Background="{DynamicResource SystemControlBackgroundChromeMediumBrush}">
-            <Grid ColumnDefinitions="Auto,*">
+            <Grid ColumnDefinitions="Auto,*,Auto">
                 <TextBlock Text="源文件:" VerticalAlignment="Center" Margin="0,0,8,0" />
                 <TextBox Grid.Column="1" PlaceholderText="选择视频文件..."
                          Text="{Binding SourceFile}" />
+                <Button Grid.Column="2" Content="浏览..." Margin="8,0,0,0"
+                        Command="{Binding SelectSourceFileCommand}" />
             </Grid>
         </Border>
 
@@ -59,7 +61,7 @@
                 <TextBox Grid.Column="1" PlaceholderText="输出文件路径..."
                          Text="{Binding OutputPath}" />
                 <Button Grid.Column="2" Content="选择..." Margin="8,0,0,0"
-                        Command="{Binding SelectSourceFileCommand}" />
+                        Command="{Binding SelectOutputFileCommand}" />
             </Grid>
         </Border>
 

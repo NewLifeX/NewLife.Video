@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NewLife.Video.Processing;
+using NewLife.Video.Studio.Helpers;
 using NewLife.Video.Studio.Models;
 using NewLife.Video.Studio.Services;
 
@@ -40,10 +41,23 @@ public partial class BatchViewModel : ViewModelBase
 
     /// <summary>添加文件到队列</summary>
     [RelayCommand]
-    private void AddFiles()
+    private async Task AddFiles()
     {
-        // TODO: 多文件选择对话框
-        StatusText = "请使用文件对话框添加文件";
+        var files = await FileDialogHelper.PickFilesAsync("添加视频文件", FileDialogHelper.VideoFileType);
+        if (files.Length == 0) return;
+
+        foreach (var file in files)
+        {
+            var name = Path.GetFileNameWithoutExtension(file);
+            var dir = Path.GetDirectoryName(file) ?? "";
+            Tasks.Add(new BatchTaskItem
+            {
+                InputPath = file,
+                OutputPath = Path.Combine(dir, $"{name}_converted{OutputFormat}"),
+            });
+        }
+
+        StatusText = $"已添加 {files.Length} 个文件，共 {Tasks.Count} 个任务";
     }
 
     /// <summary>移除选中任务</summary>

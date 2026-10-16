@@ -3,6 +3,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NewLife.Video.Studio.Helpers;
 using NewLife.Video.Studio.Services;
 
 namespace NewLife.Video.Studio.ViewModels;
@@ -57,8 +58,11 @@ public partial class PlayerViewModel : ViewModelBase
     [RelayCommand]
     private async Task OpenFile()
     {
-        // TODO: 使用 Avalonia 的 OpenFileDialog
-        await Task.CompletedTask;
+        var path = await FileDialogHelper.PickFileAsync("打开视频文件", FileDialogHelper.VideoFileType);
+        if (String.IsNullOrEmpty(path)) return;
+
+        SourceUrl = path;
+        OpenUrl();
     }
 
     /// <summary>打开 URL 命令</summary>

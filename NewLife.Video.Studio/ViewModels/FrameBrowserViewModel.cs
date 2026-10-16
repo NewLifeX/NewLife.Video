@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using NewLife.Video.Codecs;
 using NewLife.Video.Containers;
 using NewLife.Video.Processing;
+using NewLife.Video.Studio.Helpers;
 
 namespace NewLife.Video.Studio.ViewModels;
 
@@ -44,9 +45,12 @@ public partial class FrameBrowserViewModel : ViewModelBase
 
     /// <summary>打开文件</summary>
     [RelayCommand]
-    private void OpenFile()
+    private async Task OpenFile()
     {
-        // TODO: 文件对话框
+        var path = await FileDialogHelper.PickFileAsync("打开视频文件", FileDialogHelper.VideoFileType);
+        if (String.IsNullOrEmpty(path)) return;
+
+        LoadVideo(path);
     }
 
     /// <summary>加载视频</summary>

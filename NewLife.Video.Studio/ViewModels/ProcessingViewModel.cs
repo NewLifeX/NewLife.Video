@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NewLife.Video.Devices;
 using NewLife.Video.Processing;
+using NewLife.Video.Studio.Helpers;
 using NewLife.Video.Studio.Models;
 using NewLife.Video.Studio.Services;
 
@@ -74,8 +75,58 @@ public partial class ProcessingViewModel : ViewModelBase
     [RelayCommand]
     private async Task LoadImage()
     {
-        // TODO: 文件对话框
-        await Task.CompletedTask;
+        var path = await FileDialogHelper.PickFileAsync("选择图像文件", FileDialogHelper.ImageFileType);
+        if (String.IsNullOrEmpty(path)) return;
+
+        try
+        {
+            using var stream = File.OpenRead(path);
+            using var decoded = WriteableBitmap.Decode(stream);
+            SourceBitmap = EnsureBgra32(decoded);
+            HasSource = true;
+            StatusText = $"已加载: {Path.GetFileName(path)} ({decoded.PixelSize.Width}x{decoded.PixelSize.Height})";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"加载失败: {ex.Message}";
+        }
+    }
+
+    /// <summary>将解码位图复制到 BGRA32 目标位图，供处理管线读取；已是 BGRA32 时直接复用</summary>
+    private static WriteableBitmap EnsureBgra32(WriteableBitmap source)
+    {
+        using var srcLock = source.Lock();
+        if (srcLock.Format == PixelFormat.Bgra8888) return source;
+
+        var width = srcLock.Size.Width;
+        var height = srcLock.Size.Height;
+        var target = new WriteableBitmap(
+            new PixelSize(width, height),
+            new Vector(96, 96),
+            PixelFormat.Bgra8888,
+            AlphaFormat.Opaque);
+
+        unsafe
+        {
+            var src = (Byte*)srcLock.Address;
+            using var dstLock = target.Lock();
+            var dst = (Byte*)dstLock.Address;
+            for (var y = 0; y < height; y++)
+            {
+                var s = src + y * srcLock.RowBytes;
+                var d = dst + y * dstLock.RowBytes;
+                for (var x = 0; x < width; x++)
+                {
+                    // 源格式为 RGBA，交换 R/B 通道
+                    d[x * 4 + 0] = s[x * 4 + 2];
+                    d[x * 4 + 1] = s[x * 4 + 1];
+                    d[x * 4 + 2] = s[x * 4 + 0];
+                    d[x * 4 + 3] = 0xFF;
+                }
+            }
+        }
+
+        return target;
     }
 
     /// <summary>应用处理</summary>

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NewLife.Video.Streaming;
+using NewLife.Video.Studio.Helpers;
 
 namespace NewLife.Video.Studio.ViewModels;
 
@@ -76,9 +77,23 @@ public partial class HlsViewModel : ViewModelBase
         }
     }
 
+    /// <summary>选择输入文件</summary>
     [RelayCommand]
-    private void SelectInputFile() { /* TODO */ }
+    private async Task SelectInputFile()
+    {
+        var path = await FileDialogHelper.PickFileAsync("选择输入视频文件", FileDialogHelper.VideoFileType);
+        if (String.IsNullOrEmpty(path)) return;
 
+        InputFile = path;
+    }
+
+    /// <summary>选择输出目录</summary>
     [RelayCommand]
-    private void SelectOutputDir() { /* TODO */ }
+    private async Task SelectOutputDir()
+    {
+        var path = await FileDialogHelper.PickFolderAsync("选择 HLS 输出目录");
+        if (String.IsNullOrEmpty(path)) return;
+
+        OutputDir = path;
+    }
 }

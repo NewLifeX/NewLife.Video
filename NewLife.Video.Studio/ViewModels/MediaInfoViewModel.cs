@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NewLife.Video.Studio.Helpers;
 using NewLife.Video.Studio.Models;
 using NewLife.Video.Studio.Services;
 
@@ -45,8 +46,11 @@ public partial class MediaInfoViewModel : ViewModelBase
     [RelayCommand]
     private async Task BrowseFile()
     {
-        // TODO: 使用 Avalonia OpenFileDialog
-        await Task.CompletedTask;
+        var path = await FileDialogHelper.PickFileAsync("选择视频文件", FileDialogHelper.VideoFileType);
+        if (String.IsNullOrEmpty(path)) return;
+
+        FilePath = path;
+        await Analyze();
     }
 
     /// <summary>分析文件</summary>

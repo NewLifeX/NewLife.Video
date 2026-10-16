@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NewLife.Video.Studio.Helpers;
 using NewLife.Video.Studio.Models;
 using NewLife.Video.Studio.Services;
 
@@ -118,7 +119,13 @@ public partial class ConverterViewModel : ViewModelBase
 
     /// <summary>选择输入文件</summary>
     [RelayCommand]
-    private void BrowseInput() { /* TODO: 文件对话框 */ }
+    private async Task BrowseInput()
+    {
+        var path = await FileDialogHelper.PickFileAsync("选择源视频文件", FileDialogHelper.VideoFileType);
+        if (String.IsNullOrEmpty(path)) return;
+
+        InputPath = path;
+    }
 
     /// <summary>自动生成输出路径</summary>
     partial void OnInputPathChanged(String value)

@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NewLife.Video.Processing;
+using NewLife.Video.Studio.Helpers;
 using NewLife.Video.Studio.Services;
 
 namespace NewLife.Video.Studio.ViewModels;
@@ -101,5 +102,49 @@ public partial class ExportViewModel : ViewModelBase
     }
 
     [RelayCommand]
-    private void SelectSourceFile() { /* TODO: 文件对话框 */ }
+    private async Task SelectSourceFile()
+    {
+        var path = await FileDialogHelper.PickFileAsync("选择源视频文件", FileDialogHelper.VideoFileType);
+        if (String.IsNullOrEmpty(path)) return;
+
+        SourceFile = path;
+        StatusText = $"已选择: {Path.GetFileName(path)}";
+
+        // 未指定输出时按快照格式自动生成默认路径
+        if (String.IsNullOrWhiteSpace(OutputPath))
+        {
+            var dir = Path.GetDirectoryName(path) ?? "";
+            var name = Path.GetFileNameWithoutExtension(path);
+            OutputPath = Path.Combine(dir, $"{name}_snapshot{GetSnapshotExtension()}");
+        }
+    }
+
+    /// <summary>选择输出文件路径</summary>
+    [RelayCommand]
+    private async Task SelectOutputFile()
+    {
+        var ext = GetSnapshotExtension();
+        var type = new Avalonia.Platform.Storage.FilePickerFileType(SelectedSnapshotFormat.ToUpperInvariant())
+        {
+            Patterns = [$"*{ext}"],
+        };
+
+        var name = String.IsNullOrWhiteSpace(SourceFile)
+            ? $"snapshot{ext}"
+            : $"{Path.GetFileNameWithoutExtension(SourceFile)}_snapshot{ext}";
+
+        var path = await FileDialogHelper.PickSaveFileAsync("选择输出文件", name, type);
+        if (String.IsNullOrEmpty(path)) return;
+
+        OutputPath = path;
+    }
+
+    private String GetSnapshotExtension() => SelectedSnapshotFormat switch
+    {
+        "PNG" => ".png",
+        "WebP" => ".webp",
+        "BMP" => ".bmp",
+        "GIF" => ".gif",
+        _ => ".jpg",
+    };
 }
