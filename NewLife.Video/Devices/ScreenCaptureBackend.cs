@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace NewLife.Video.Devices;
@@ -78,6 +79,7 @@ public class ScreenCaptureBackend : IVideoBackend
         return null;
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "屏幕信息探测为现代框架下的可选回退路径，反射目标 System.Windows.Forms.Screen 由运行时按需加载；未加载时回退默认分辨率，不参与 AOT 关键链路")]
     private ScreenInfo[] GetScreenInfos()
     {
         try
@@ -224,6 +226,7 @@ internal class ScreenCaptureDevice : IVideoCaptureDevice
     }
 
 #if !NETFRAMEWORK
+    [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = "屏幕捕获反射路径为 System.Drawing.Common 可选回退，未引用该包或 AOT 编译时返回 false，由原生/命令行路径或灰色帧兜底")]
     private Boolean TryReflectionCapture(VideoFrame frame)
     {
         try

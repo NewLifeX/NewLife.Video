@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;netstandard2.0;net461;net8.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.1;netstandard2.0;net461;net8.0;net10.0</TargetFrameworks>
     <AssemblyTitle>视频编解码</AssemblyTitle>
     <Description>支持各种视频编解码、容器格式、帧处理、流媒体传输和IoT视频适配</Description>
     <Company>新生命开发团队</Company>
@@ -17,6 +17,11 @@
     <LangVersion>latest</LangVersion>
     <SignAssembly>True</SignAssembly>
     <AssemblyOriginatorKeyFile>..\Doc\newlife.snk</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+
+  <!-- net8+ 对齐 NewLife.Core 策略：启用 AOT/裁剪分析器；SDK 会将目标程序集标记为 IsTrimmable -->
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <PropertyGroup>

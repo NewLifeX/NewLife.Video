@@ -1,9 +1,11 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace NewLife.Video.Flv.Extensions;
     public static class InteropExtensions
     {
+        [RequiresDynamicCode("基于 Marshal 反射封送的结构体转换需运行时生成编组代码，NativeAOT 下不可用")]
         public static T BytesToStruct<T>(Byte[] bytes, Int32 startIndex, Int32 length)
         {
             T local;
@@ -38,16 +40,19 @@ namespace NewLife.Video.Flv.Extensions;
             return local;
         }
 
+        [RequiresDynamicCode("基于 Marshal 反射封送的结构体转换需运行时生成编组代码，NativeAOT 下不可用")]
         public static void IntPtrSetValue(IntPtr intptr, Object structObj) => IntPtrSetValue(intptr, StructToBytes(structObj));
 
         public static void IntPtrSetValue(IntPtr intptr, Byte[] bytes) => Marshal.Copy(bytes, 0, intptr, bytes.Length);
 
+        [RequiresDynamicCode("基于 Marshal 反射封送的结构体转换需运行时生成编组代码，NativeAOT 下不可用")]
         public static T IntPtrToStruct<T>(IntPtr intptr)
         {
             var index = 0;
             return IntPtrToStruct<T>(intptr, index, Marshal.SizeOf(typeof(T)));
         }
 
+        [RequiresDynamicCode("基于 Marshal 反射封送的结构体转换需运行时生成编组代码，NativeAOT 下不可用")]
         public static T IntPtrToStruct<T>(IntPtr intptr, Int32 index, Int32 length)
         {
             var destination = new Byte[length];
@@ -55,12 +60,14 @@ namespace NewLife.Video.Flv.Extensions;
             return BytesToStruct<T>(destination, 0, destination.Length);
         }
 
+        [RequiresDynamicCode("基于 Marshal 反射封送的结构体转换需运行时生成编组代码，NativeAOT 下不可用")]
         public static Byte[] StructToBytes(Object structObj)
         {
             var size = Marshal.SizeOf(structObj);
             return StructToBytes(structObj, size);
         }
 
+        [RequiresDynamicCode("基于 Marshal 反射封送的结构体转换需运行时生成编组代码，NativeAOT 下不可用")]
         public static Byte[] StructToBytes(Object structObj, Int32 size)
         {
             Byte[] buffer2;
