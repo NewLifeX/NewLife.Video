@@ -8,8 +8,8 @@ namespace NewLife.Video.FMp4;
 /// <remarks>
 /// MP4 文件结构：ftyp → moov (含 trak → mdia → minf → stbl) → mdat
 /// 关键盒：ftyp(文件类型), moov(元数据), mdat(媒体数据), stsd(样本描述), stco/co64(块偏移), stsz(样本大小), stts(时间戳)
-/// 当前为骨架实现：解析 ftyp/moov 头、提取视频编码信息和关键参数。
-/// 完整 stbl 表解析在后续版本中完善。
+/// 已解析 stbl 样本表（stsd/stts/stco/co64/stsz），提取编码类型、宽高、帧率与块偏移；
+/// 读取时按块偏移逐块读取 NAL 长度前缀样本，未使用 stsc 样本-块映射，适用于单样本单块的常规 MP4。
 /// </remarks>
 public class Mp4Reader : IVideoContainerReader
 {
