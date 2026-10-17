@@ -11,7 +11,7 @@ public class FlvWriterTests
     [Fact(DisplayName = "FlvWriter 写入帧正确")]
     public void WriteFrame_Works()
     {
-        var path = Path.GetTempFileName() + ".flv";
+        var path = TestFile.GetTempPath(".flv");
         try
         {
             using var w = new FlvWriter(path);
@@ -89,7 +89,7 @@ public class FlvWriterTests
     [Fact(DisplayName = "FlvWriter H.265 序列头正确写入")]
     public void H265_SequenceHeader_Written()
     {
-        var path = Path.GetTempFileName() + ".flv";
+        var path = TestFile.GetTempPath(".flv");
         try
         {
             using var w = new FlvWriter(path);
@@ -125,7 +125,7 @@ public class FlvWriterTests
     [Fact(DisplayName = "FlvWriter 仅非关键帧不触发序列头（容错）")]
     public void NonKeyFrame_NoSequenceHeader()
     {
-        var path = Path.GetTempFileName() + ".flv";
+        var path = TestFile.GetTempPath(".flv");
         try
         {
             using var w = new FlvWriter(path);

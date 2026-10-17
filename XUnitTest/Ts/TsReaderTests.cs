@@ -15,7 +15,7 @@ public class TsReaderTests
     [Fact(DisplayName = "TsReader 工厂路由.ts")]
     public void Factory_Routes()
     {
-        var path = Path.GetTempFileName() + ".ts";
+        var path = TestFile.GetTempPath(".ts");
         try
         {
             // 最小 TS 文件（空同步字节序列）
@@ -31,7 +31,7 @@ public class TsReaderTests
     [Fact(DisplayName = "TsReader 读取空文件不抛异常")]
     public void EmptyFile_NoThrow()
     {
-        var path = Path.GetTempFileName() + ".ts";
+        var path = TestFile.GetTempPath(".ts");
         try
         {
             var data = new Byte[188];

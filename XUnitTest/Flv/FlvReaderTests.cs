@@ -8,7 +8,7 @@ public class FlvReaderTests
     [Fact(DisplayName = "FlvReader读取有效FLV文件")]
     public void ReadFrame_ValidFlv_ReadsTags()
     {
-        var path = Path.GetTempFileName() + ".flv";
+        var path = TestFile.GetTempPath(".flv");
         try
         {
             // 创建最小 FLV 文件（仅文件头 + 空数据）
@@ -36,7 +36,7 @@ public class FlvReaderTests
     [Fact(DisplayName = "FlvReader无效FLV文件抛异常")]
     public void Constructor_InvalidFlv_Throws()
     {
-        var path = Path.GetTempFileName() + ".flv";
+        var path = TestFile.GetTempPath(".flv");
         try
         {
             File.WriteAllBytes(path, new Byte[] { 0x00, 0x00, 0x00, 0x00 });

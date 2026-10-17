@@ -15,7 +15,7 @@ public class AviReaderTests
     [Fact(DisplayName = "AviReader工厂路由.avi")]
     public void Factory_RoutesAvi()
     {
-        var path = Path.GetTempFileName() + ".avi";
+        var path = TestFile.GetTempPath(".avi");
         try
         {
             // 创建包含 RIFF 魔术字节的最小文件
@@ -37,7 +37,7 @@ public class AviReaderTests
     [Fact(DisplayName = "AviReader无效RIFF抛异常")]
     public void Constructor_InvalidRiff_Throws()
     {
-        var path = Path.GetTempFileName() + ".avi";
+        var path = TestFile.GetTempPath(".avi");
         try
         {
             File.WriteAllBytes(path, new Byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });

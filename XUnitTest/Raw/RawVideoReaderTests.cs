@@ -13,7 +13,7 @@ public class RawVideoReaderTests
         var height = 240;
         var frameSize = VideoFrame.CalculateDataSize(width, height, VideoTypes.YUV420P);
         var totalFrames = 3;
-        var path = Path.GetTempFileName() + ".yuv";
+        var path = TestFile.GetTempPath(".yuv");
         try
         {
             // 创建 3 帧测试数据
@@ -64,7 +64,7 @@ public class RawVideoReaderTests
         var height = 48;
         var frameSize = VideoFrame.CalculateDataSize(width, height, VideoTypes.YUV420P);
         var totalFrames = 5;
-        var path = Path.GetTempFileName() + ".yuv";
+        var path = TestFile.GetTempPath(".yuv");
         try
         {
             var data = new Byte[frameSize * totalFrames];
@@ -97,7 +97,7 @@ public class RawVideoReaderTests
         var height = 96;
         var frameSize = VideoFrame.CalculateDataSize(width, height, VideoTypes.YUV420P);
         var totalFrames = 10;
-        var path = Path.GetTempFileName() + ".yuv";
+        var path = TestFile.GetTempPath(".yuv");
         try
         {
             var data = new Byte[frameSize * totalFrames];
@@ -120,7 +120,7 @@ public class RawVideoReaderTests
         var height = 48;
         var frameSize = VideoFrame.CalculateDataSize(width, height, VideoTypes.YUV420P);
         var totalFrames = 25; // 1 秒 @ 25fps
-        var path = Path.GetTempFileName() + ".yuv";
+        var path = TestFile.GetTempPath(".yuv");
         try
         {
             var data = new Byte[frameSize * totalFrames];
@@ -139,7 +139,7 @@ public class RawVideoReaderTests
     [Fact(DisplayName = "RawVideoReader释放后可安全Dispose")]
     public void Dispose_CanDisposeTwice()
     {
-        var path = Path.GetTempFileName() + ".yuv";
+        var path = TestFile.GetTempPath(".yuv");
         try
         {
             var data = new Byte[100];

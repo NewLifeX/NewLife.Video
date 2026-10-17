@@ -22,7 +22,7 @@ public class VideoContainerFactoryTests
     [Fact(DisplayName = "工厂按.yuv扩展名创建RawVideoReader")]
     public void CreateReader_YuvExtension_CreatesRawReader()
     {
-        var path = Path.GetTempFileName() + ".yuv";
+        var path = TestFile.GetTempPath(".yuv");
         try
         {
             // 创建一个小的测试文件
@@ -44,7 +44,7 @@ public class VideoContainerFactoryTests
     [Fact(DisplayName = "工厂按.nv12扩展名创建RawVideoReader")]
     public void CreateReader_Nv12Extension_CreatesRawReader()
     {
-        var path = Path.GetTempFileName() + ".nv12";
+        var path = TestFile.GetTempPath(".nv12");
         try
         {
             var data = new Byte[640 * 480 * 3 / 2];
@@ -63,7 +63,7 @@ public class VideoContainerFactoryTests
     [Fact(DisplayName = "工厂按.mp4扩展名创建Mp4Reader")]
     public void CreateReader_Mp4Extension_CreatesMp4Reader()
     {
-        var path = Path.GetTempFileName() + ".mp4";
+        var path = TestFile.GetTempPath(".mp4");
         try
         {
             // 创建最小 MP4
@@ -115,7 +115,7 @@ public class VideoContainerFactoryTests
     [Fact(DisplayName = "VideoContainerFactory 魔术字节检测FLV")]
     public void MagicBytes_DetectsFlv()
     {
-        var path = Path.GetTempFileName() + ".dat";
+        var path = TestFile.GetTempPath(".dat");
         try
         {
             // 最小合法 FLV: FLV(3) + version(1) + flags(1) + headerSize(4) = 9 bytes
@@ -137,7 +137,7 @@ public class VideoContainerFactoryTests
     [Fact(DisplayName = "VideoContainerFactory 魔术字节检测AVI")]
     public void MagicBytes_DetectsAvi()
     {
-        var path = Path.GetTempFileName() + ".dat";
+        var path = TestFile.GetTempPath(".dat");
         try
         {
             // 最小合法 RIFF AVI: RIFF + size + "AVI "

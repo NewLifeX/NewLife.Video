@@ -11,7 +11,7 @@ public class MkvWriterTests
     [Fact(DisplayName = "MkvWriter 写入帧生成有效文件")]
     public void WriteFrame_Works()
     {
-        var path = Path.GetTempFileName() + ".mkv";
+        var path = TestFile.GetTempPath(".mkv");
         try
         {
             using var w = new MkvWriter(path);
@@ -26,7 +26,7 @@ public class MkvWriterTests
     [Fact(DisplayName = "MkvWriter 空帧不崩溃")]
     public void Empty_NoCrash()
     {
-        var path = Path.GetTempFileName() + ".mkv";
+        var path = TestFile.GetTempPath(".mkv");
         try
         {
             var w = new MkvWriter(path);

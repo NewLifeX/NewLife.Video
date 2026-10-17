@@ -11,7 +11,7 @@ public class Mp4WriterTests
     [Fact(DisplayName = "Mp4Writer 写入帧正确")]
     public void WriteFrame_Works()
     {
-        var path = Path.GetTempFileName() + ".mp4";
+        var path = TestFile.GetTempPath(".mp4");
         try
         {
             using (var w = new Mp4Writer(path))
@@ -28,7 +28,7 @@ public class Mp4WriterTests
     [Fact(DisplayName = "Mp4Writer 写入多帧生成MP4结构")]
     public void MultiFrame_GeneratesStructure()
     {
-        var path = Path.GetTempFileName() + ".mp4";
+        var path = TestFile.GetTempPath(".mp4");
         try
         {
             var w = new Mp4Writer(path);
@@ -42,7 +42,7 @@ public class Mp4WriterTests
             // 验证文件以 ftyp 开头
             using var fs = new FileStream(path, FileMode.Open, FileAccess.Read);
             var buf = new Byte[4];
-            fs.Read(buf, 0, 4);
+            fs.ReadExactly(buf, 0, 4);
             var ftypOffset = BitConverter.ToInt32(new[] { buf[0], buf[1], buf[2], buf[3] }, 0);
             Assert.True(ftypOffset > 0);
         }
@@ -52,7 +52,7 @@ public class Mp4WriterTests
     [Fact(DisplayName = "Mp4Writer H265编码使用hvc1")]
     public void H265_UsesHvc1()
     {
-        var path = Path.GetTempFileName() + ".mp4";
+        var path = TestFile.GetTempPath(".mp4");
         try
         {
             using var w = new Mp4Writer(path);
@@ -67,7 +67,7 @@ public class Mp4WriterTests
     [Fact(DisplayName = "Mp4Writer 无帧Dispose安全")]
     public void NoFrames_DisposeSafe()
     {
-        var path = Path.GetTempFileName() + ".mp4";
+        var path = TestFile.GetTempPath(".mp4");
         try
         {
             using var w = new Mp4Writer(path);
@@ -89,7 +89,7 @@ public class Mp4WriterTests
     [Fact(DisplayName = "Mp4Writer 写入后可帧级读取（stco 绝对偏移 + 长度前缀样本）")]
     public void WriterReader_FrameRoundTrip()
     {
-        var path = Path.GetTempFileName() + ".mp4";
+        var path = TestFile.GetTempPath(".mp4");
         try
         {
             using (var w = new Mp4Writer(path))
@@ -127,7 +127,7 @@ public class Mp4WriterTests
     {
         if (!IsFfprobeAvailable()) return;
 
-        var path = Path.GetTempFileName() + ".mp4";
+        var path = TestFile.GetTempPath(".mp4");
         try
         {
             using (var w = new Mp4Writer(path))

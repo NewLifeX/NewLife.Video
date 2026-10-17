@@ -9,7 +9,7 @@ public class Mp4ReaderTests
     [Fact(DisplayName = "Mp4Reader读取有效MP4文件")]
     public void ReadFrame_ValidMp4_ParsesHeader()
     {
-        var path = Path.GetTempFileName() + ".mp4";
+        var path = TestFile.GetTempPath(".mp4");
         try
         {
             // 创建最小 MP4 文件（ftyp + moov + mdat）
@@ -38,7 +38,7 @@ public class Mp4ReaderTests
     [Fact(DisplayName = "Mp4Reader工厂路由.mp4扩展名")]
     public void Factory_CreatesMp4Reader_ForMp4()
     {
-        var path = Path.GetTempFileName() + ".mp4";
+        var path = TestFile.GetTempPath(".mp4");
         try
         {
             var mp4Data = CreateMinimalMp4();

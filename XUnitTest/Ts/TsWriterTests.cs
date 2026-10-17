@@ -11,7 +11,7 @@ public class TsWriterTests
     [Fact(DisplayName = "TsWriter 写入帧正确")]
     public void WriteFrame_Works()
     {
-        var path = Path.GetTempFileName() + ".ts";
+        var path = TestFile.GetTempPath(".ts");
         try
         {
             using var w = new TsWriter(path);

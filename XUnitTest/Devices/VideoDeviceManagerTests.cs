@@ -119,7 +119,11 @@ public class VideoDeviceManagerTests
         public IReadOnlyList<VideoCaptureFormat> SupportedFormats => Array.Empty<VideoCaptureFormat>();
         public Boolean IsCapturing { get; private set; }
 
-        public event EventHandler<VideoFrame> FrameCaptured;
+        public event EventHandler<VideoFrame> FrameCaptured
+        {
+            add { }
+            remove { }
+        }
 
         public TestCaptureDevice(Int32 width, Int32 height, Double frameRate, VideoTypes pixelFormat)
         {

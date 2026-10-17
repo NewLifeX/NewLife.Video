@@ -15,7 +15,7 @@ public class MkvReaderTests
     [Fact(DisplayName = "MkvReader 工厂路由.mkv")]
     public void Factory_Routes()
     {
-        var path = Path.GetTempFileName() + ".mkv";
+        var path = TestFile.GetTempPath(".mkv");
         try
         {
             // EBML 头: 0x1A 0x45 0xDF 0xA3
@@ -30,7 +30,7 @@ public class MkvReaderTests
     [Fact(DisplayName = "MkvReader 无效EBML返回空帧")]
     public void InvalidEbml_NoFrames()
     {
-        var path = Path.GetTempFileName() + ".mkv";
+        var path = TestFile.GetTempPath(".mkv");
         try
         {
             File.WriteAllBytes(path, new Byte[] { 0x00, 0x00, 0x00, 0x00 });

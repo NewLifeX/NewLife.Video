@@ -11,7 +11,7 @@ public class RawVideoWriterTests
     [Fact(DisplayName = "RawVideoWriter 写入YUV帧正确")]
     public void WriteFrame_Works()
     {
-        var path = Path.GetTempFileName() + ".yuv";
+        var path = TestFile.GetTempPath(".yuv");
         try
         {
             using var w = new RawVideoWriter(path);

@@ -33,7 +33,7 @@ public class FrameExtractorTests
     [Fact(DisplayName = "ExtractKeyFrames 不支持格式不抛异常")]
     public void ExtractKeyFrames_UnsupportedFormat_NoThrow()
     {
-        var path = Path.GetTempFileName() + ".unk";
+        var path = TestFile.GetTempPath(".unk");
         try
         {
             File.WriteAllText(path, "not a video");
@@ -52,7 +52,7 @@ public class FrameExtractorTests
     public void ExtractKeyFrames_MaxFramesZero_NoLimit()
     {
         // maxFrames=0 表示不限制，与正数逻辑一致
-        var path = Path.GetTempFileName() + ".unk";
+        var path = TestFile.GetTempPath(".unk");
         try
         {
             File.WriteAllText(path, "not a video");

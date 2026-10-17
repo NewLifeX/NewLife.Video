@@ -10,7 +10,7 @@ public class Fmp4SegmentWriterTests
     [Fact(DisplayName = "Fmp4SegmentWriter 创建文件写入器")]
     public void Create_FileWriter_Success()
     {
-        var path = Path.GetTempFileName();
+        var path = TestFile.GetTempPath();
         try
         {
             using var writer = new Fmp4SegmentWriter(path);

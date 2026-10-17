@@ -56,7 +56,7 @@ public class SnapshotEncoderTests
         var frame = VideoFrame.Create(16, 16, VideoTypes.RGB24);
 
         // BMP 不需要 ffmpeg，可以直接验证
-        var path = Path.GetTempFileName() + ".bmp";
+        var path = TestFile.GetTempPath(".bmp");
         try
         {
             SnapshotEncoder.SaveSnapshot(frame, path);

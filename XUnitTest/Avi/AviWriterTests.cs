@@ -11,7 +11,7 @@ public class AviWriterTests
     [Fact(DisplayName = "AviWriter 写入帧正确")]
     public void WriteFrame_Works()
     {
-        var path = Path.GetTempFileName() + ".avi";
+        var path = TestFile.GetTempPath(".avi");
         try
         {
             using (var w = new AviWriter(path))
@@ -28,7 +28,7 @@ public class AviWriterTests
     [Fact(DisplayName = "AviWriter 生成标准AVI文件头部")]
     public void GeneratesValidHeader()
     {
-        var path = Path.GetTempFileName() + ".avi";
+        var path = TestFile.GetTempPath(".avi");
         try
         {
             using (var w = new AviWriter(path))
@@ -53,7 +53,7 @@ public class AviWriterTests
     [Fact(DisplayName = "AviWriter H264编码使用H264 FourCC")]
     public void H264_UsesH264FourCC()
     {
-        var path = Path.GetTempFileName() + ".avi";
+        var path = TestFile.GetTempPath(".avi");
         try
         {
             using (var w = new AviWriter(path))
@@ -78,7 +78,7 @@ public class AviWriterTests
     [Fact(DisplayName = "AviWriter 包含idx1索引")]
     public void IncludesIdx1()
     {
-        var path = Path.GetTempFileName() + ".avi";
+        var path = TestFile.GetTempPath(".avi");
         try
         {
             using (var w = new AviWriter(path))
@@ -103,7 +103,7 @@ public class AviWriterTests
     [Fact(DisplayName = "AviWriter 可通过AviReader回读")]
     public void RoundTrip_WithReader()
     {
-        var path = Path.GetTempFileName() + ".avi";
+        var path = TestFile.GetTempPath(".avi");
         try
         {
             using (var w = new AviWriter(path))
