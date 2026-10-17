@@ -42,12 +42,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.301">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="10.0.402">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="NewLife.Audio" Version="1.2.2026.801" />
-    <PackageReference Include="NewLife.Core" Version="12.0.2026.1016-beta0911" />
+    <PackageReference Include="NewLife.Audio" Version="1.2.2026.1016-beta1410" />
+    <PackageReference Include="NewLife.Core" Version="12.0.2026.1017-beta1103" />
   </ItemGroup>
 
   <ItemGroup>
