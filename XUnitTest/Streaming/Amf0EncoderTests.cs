@@ -35,7 +35,7 @@ public class Amf0EncoderTests
         enc.WriteNull();
         var data = enc.ToArray();
         Assert.Equal(0x05, data[0]);
-        Assert.Equal(1, data.Length);
+        Assert.Single(data);
     }
 
     [Fact(DisplayName = "Amf0Encoder 编码Boolean正确")]
@@ -56,5 +56,18 @@ public class Amf0EncoderTests
         var data = enc.ToArray();
         Assert.Equal(0x01, data[0]);
         Assert.Equal(0x00, data[1]);
+    }
+
+    [Fact(DisplayName = "Amf0Encoder ObjectEnd 写入结束标记")]
+    public void ObjectEnd_WritesTerminator()
+    {
+        using var enc = new Amf0Encoder();
+        enc.WriteObjectBegin();
+        enc.WriteObjectProperty("app", "live");
+        enc.WriteObjectEnd();
+
+        var data = enc.ToArray();
+
+        Assert.Equal(new Byte[] { 0x00, 0x00, 0x09 }, data[^3..]);
     }
 }

@@ -114,11 +114,9 @@ public class Amf0Encoder : IDisposable
 
     private void WriteUInt24BE(Int32 v)
     {
-        Span<Byte> buf = stackalloc Byte[3];
-        var w = new SpanWriter(buf) { IsLittleEndian = false };
-        w.WriteByte((Byte)(v >> 16));
-        w.WriteByte((Byte)(v >> 8));
-        w.WriteByte((Byte)v);
+        _stream.WriteByte((Byte)(v >> 16));
+        _stream.WriteByte((Byte)(v >> 8));
+        _stream.WriteByte((Byte)v);
     }
 
     private void WriteUInt32BE(UInt32 v)
