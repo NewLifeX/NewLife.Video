@@ -1,10 +1,19 @@
 # NewLife.Video - Video Codec Library for .NET
 
 ![GitHub top language](https://img.shields.io/github/languages/top/newlifex/NewLife.Video?logo=github)
-![GitHub License](https://img.shields.io/github/license/newlifex/NewLife.Video?logo=github)
-![Nuget Downloads](https://img.shields.io/nuget/dt/NewLife.Video?logo=nuget)
-![Nuget](https://img.shields.io/nuget/v/NewLife.Video?logo=nuget)
-![Nuget (with prereleases)](https://img.shields.io/nuget/vpre/NewLife.Video?label=dev%20nuget&logo=nuget)
+
+
+![GitHub License](https://img.shields.io/github/license/NewLifeX/NewLife.Video?logo=github)
+![NuGet Downloads](https://img.shields.io/nuget/dt/NewLife.Video?logo=nuget)
+![NuGet](https://img.shields.io/nuget/v/NewLife.Video?logo=nuget)
+![NuGet prerelease](https://img.shields.io/nuget/vpre/NewLife.Video?label=dev%20nuget&logo=nuget)
+[![test](https://github.com/NewLifeX/NewLife.Video/actions/workflows/test.yml/badge.svg?branch=master)](https://github.com/NewLifeX/NewLife.Video/actions/workflows/test.yml)
+![platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)
+[![contributors](https://img.shields.io/github/contributors/NewLifeX/NewLife.Video?logo=github)](https://github.com/NewLifeX/NewLife.Video/graphs/contributors)
+
+<!-- lang:start -->
+🌐 [中文](Readme.MD) | [繁體中文](README.zh-TW.md) | [Español](README.es.md) | [Deutsch](README.de.md) | [日本語](README.ja.md) | [Français](README.fr.md) | [Português](README.pt.md) | [Русский](README.ru.md) | [한국어](README.ko.md) | [العربية](README.ar.md)
+<!-- lang:end -->
 
 > English | **[简体中文](Readme.MD)**
 
