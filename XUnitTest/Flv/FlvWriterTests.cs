@@ -27,7 +27,7 @@ public class FlvWriterTests
     [Fact(DisplayName = "FlvWriter 工厂路由.flv扩展名")]
     public void Factory_RoutesFlv()
     {
-        var w = VideoContainerFactory.CreateWriter("test.flv");
+        var w = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".flv"));
         Assert.IsType<FlvWriter>(w);
         w.Dispose();
     }

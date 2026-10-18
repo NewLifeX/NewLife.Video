@@ -27,7 +27,7 @@ public class TsWriterTests
     [Fact(DisplayName = "TsWriter 工厂路由.ts扩展名")]
     public void Factory_RoutesTs()
     {
-        var w = VideoContainerFactory.CreateWriter("test.ts");
+        var w = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".ts"));
         Assert.IsType<TsWriter>(w);
         w.Dispose();
     }

@@ -28,7 +28,7 @@ public class RawVideoWriterTests
     [Fact(DisplayName = "RawVideoWriter 工厂路由.yuv扩展名")]
     public void Factory_RoutesYuv()
     {
-        var w = VideoContainerFactory.CreateWriter("test.yuv");
+        var w = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".yuv"));
         Assert.IsType<RawVideoWriter>(w);
         w.Dispose();
     }

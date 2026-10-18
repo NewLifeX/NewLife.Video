@@ -124,7 +124,7 @@ public class AviWriterTests
     [Fact(DisplayName = "AviWriter 工厂路由.avi扩展名")]
     public void Factory_RoutesAvi()
     {
-        var w = VideoContainerFactory.CreateWriter("test.avi");
+        var w = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".avi"));
         Assert.IsType<AviWriter>(w);
         w.Dispose();
     }

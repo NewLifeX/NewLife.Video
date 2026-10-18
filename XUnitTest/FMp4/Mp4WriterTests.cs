@@ -81,7 +81,7 @@ public class Mp4WriterTests
     [Fact(DisplayName = "Mp4Writer 工厂路由.mp4扩展名")]
     public void Factory_RoutesMp4()
     {
-        var w = VideoContainerFactory.CreateWriter("test.mp4");
+        var w = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".mp4"));
         Assert.IsType<Mp4Writer>(w);
         w.Dispose();
     }

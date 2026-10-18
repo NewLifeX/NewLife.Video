@@ -83,31 +83,31 @@ public class VideoContainerFactoryTests
     [Fact(DisplayName = "VideoContainerFactory.CreateWriter 路由正确")]
     public void CreateWriter_Routes()
     {
-        var w1 = VideoContainerFactory.CreateWriter("test.mp4");
+        var w1 = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".mp4"));
         Assert.IsType<Mp4Writer>(w1);
         w1.Dispose();
 
-        var w2 = VideoContainerFactory.CreateWriter("test.flv");
+        var w2 = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".flv"));
         Assert.IsType<FlvWriter>(w2);
         w2.Dispose();
 
-        var w3 = VideoContainerFactory.CreateWriter("test.avi");
+        var w3 = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".avi"));
         Assert.IsType<AviWriter>(w3);
         w3.Dispose();
 
-        var w4 = VideoContainerFactory.CreateWriter("test.ts");
+        var w4 = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".ts"));
         Assert.IsType<TsWriter>(w4);
         w4.Dispose();
 
-        var w5 = VideoContainerFactory.CreateWriter("test.mkv");
+        var w5 = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".mkv"));
         Assert.IsType<MkvWriter>(w5);
         w5.Dispose();
 
-        var w6 = VideoContainerFactory.CreateWriter("test.webm");
+        var w6 = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".webm"));
         Assert.IsType<MkvWriter>(w6);
         w6.Dispose();
 
-        var w7 = VideoContainerFactory.CreateWriter("test.yuv");
+        var w7 = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".yuv"));
         Assert.IsType<RawVideoWriter>(w7);
         w7.Dispose();
     }

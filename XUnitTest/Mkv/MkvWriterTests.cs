@@ -40,11 +40,11 @@ public class MkvWriterTests
     [Fact(DisplayName = "MkvWriter 工厂路由.mkv和.webm")]
     public void Factory_RoutesBoth()
     {
-        var w1 = VideoContainerFactory.CreateWriter("test.mkv");
+        var w1 = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".mkv"));
         Assert.IsType<MkvWriter>(w1);
         w1.Dispose();
 
-        var w2 = VideoContainerFactory.CreateWriter("test.webm");
+        var w2 = VideoContainerFactory.CreateWriter(TestFile.GetTempPath(".webm"));
         Assert.IsType<MkvWriter>(w2);
         w2.Dispose();
     }
