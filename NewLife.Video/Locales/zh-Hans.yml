@@ -1,0 +1,13 @@
+# 简体中文译文。键为英文源文，缺失时运行期回退英文。
+"File not found.": "文件不存在"
+"Invalid AVI.": "无效 AVI"
+"Invalid RIFF.": "无效 RIFF"
+"Not an AVI file.": "不是 AVI"
+"The AV1 decoder does not support encoding; use FFmpegAV1Encoder.": "AV1 解码器不支持编码，请使用 FFmpegAV1Encoder"
+"The AV1 encoder does not support decoding; use FFmpegAV1Decoder.": "AV1 编码器不支持解码，请使用 FFmpegAV1Decoder"
+"The H.264 decoder does not support encoding; use FFmpegH264Encoder.": "H.264 解码器不支持编码，请使用 FFmpegH264Encoder"
+"The H.264 encoder does not support decoding; use FFmpegH264Decoder.": "H.264 编码器不支持解码，请使用 FFmpegH264Decoder"
+"The H.265 decoder does not support encoding.": "H.265 解码器不支持编码"
+"The H.265 encoder does not support decoding.": "H.265 编码器不支持解码"
+"Invalid JPEG: missing SOI marker.": "无效 JPEG：缺少 SOI 标记"
+"Video file not found.": "视频文件不存在"

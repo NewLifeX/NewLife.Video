@@ -1,5 +1,6 @@
 using NewLife.Data;
 using NewLife.Video.Converters;
+using NewLife;
 
 namespace NewLife.Video.Codecs;
 
@@ -28,7 +29,7 @@ public class MjpegCodec : IVideoCodec, ICodecInfo
         if (packet?.Data == null) return [];
         var span = packet.Data.GetSpan();
         if (span.Length < 2 || span[0] != 0xFF || span[1] != 0xD8)
-            throw new InvalidOperationException("无效 JPEG：缺少 SOI 标记");
+            throw new InvalidOperationException(L.T("Invalid JPEG: missing SOI marker."));
 
         try
         {

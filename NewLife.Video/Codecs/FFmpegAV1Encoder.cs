@@ -1,5 +1,6 @@
 using NewLife.Data;
 using NewLife.Video.FFmpeg;
+using NewLife;
 
 namespace NewLife.Video.Codecs;
 
@@ -54,7 +55,7 @@ public class FFmpegAV1Encoder : IVideoCodec, ICodecInfo, IDisposable
     /// <summary>解码（未实现）</summary>
     public VideoFrame[] Decode(VPacket packet)
     {
-        throw new NotSupportedException("AV1 编码器不支持解码，请使用 FFmpegAV1Decoder");
+        throw new NotSupportedException(L.T("The AV1 encoder does not support decoding; use FFmpegAV1Decoder."));
     }
 
     /// <summary>编码 YUV420P 帧为 AV1 流</summary>

@@ -1,5 +1,6 @@
 using NewLife.Data;
 using NewLife.Video.FFmpeg;
+using NewLife;
 
 namespace NewLife.Video.Codecs;
 
@@ -55,7 +56,7 @@ public class FFmpegH265Decoder : IVideoCodec, ICodecInfo, IDisposable
         return frames;
     }
 
-    public VPacket Encode(VideoFrame[] frames) => throw new NotSupportedException("H.265 解码器不支持编码");
+    public VPacket Encode(VideoFrame[] frames) => throw new NotSupportedException(L.T("The H.265 decoder does not support encoding."));
 
     public void Dispose() { if (_disposed) return; _disposed = true; }
     private Boolean _disposed;

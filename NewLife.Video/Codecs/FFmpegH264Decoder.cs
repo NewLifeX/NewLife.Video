@@ -1,5 +1,6 @@
 using NewLife.Data;
 using NewLife.Video.FFmpeg;
+using NewLife;
 
 namespace NewLife.Video.Codecs;
 
@@ -103,7 +104,7 @@ public class FFmpegH264Decoder : IVideoCodec, ICodecInfo, IDisposable
     /// <summary>编码（未实现）</summary>
     public VPacket Encode(VideoFrame[] frames)
     {
-        throw new NotSupportedException("H.264 解码器不支持编码，请使用 FFmpegH264Encoder");
+        throw new NotSupportedException(L.T("The H.264 decoder does not support encoding; use FFmpegH264Encoder."));
     }
 
     /// <summary>释放资源</summary>

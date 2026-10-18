@@ -2,6 +2,7 @@
 using NewLife.Buffers;
 using NewLife.Data;
 using NewLife.Video.Containers;
+using NewLife;
 
 namespace NewLife.Video.Avi;
 
@@ -35,7 +36,7 @@ public class AviReader : IVideoContainerReader
 
     public AviReader(String filePath)
     {
-        if (!File.Exists(filePath)) throw new FileNotFoundException("文件不存在", filePath);
+        if (!File.Exists(filePath)) throw new FileNotFoundException(L.T("File not found."), filePath);
         _stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         _totalFrames = -1;
         _duration = -1;
@@ -45,11 +46,11 @@ public class AviReader : IVideoContainerReader
         {
             // 验证 RIFF 头
             var riff = new Byte[12];
-            if (_stream.Read(riff, 0, 12) < 12) throw new InvalidOperationException("无效 AVI");
+            if (_stream.Read(riff, 0, 12) < 12) throw new InvalidOperationException(L.T("Invalid AVI."));
             if (riff[0] != 'R' || riff[1] != 'I' || riff[2] != 'F' || riff[3] != 'F')
-                throw new InvalidOperationException("无效 RIFF");
+                throw new InvalidOperationException(L.T("Invalid RIFF."));
             if (riff[8] != 'A' || riff[9] != 'V' || riff[10] != 'I' || riff[11] != ' ')
-                throw new InvalidOperationException("不是 AVI");
+                throw new InvalidOperationException(L.T("Not an AVI file."));
 
             // 递归解析元数据（RIFF 小端）
             var riffReader = new SpanReader(riff, 4);

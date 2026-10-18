@@ -1,6 +1,7 @@
 using NewLife.Buffers;
 using NewLife.Data;
 using NewLife.Video.FFmpeg;
+using NewLife;
 
 namespace NewLife.Video.Codecs;
 
@@ -95,7 +96,7 @@ public class FFmpegAV1Decoder : IVideoCodec, ICodecInfo, IDisposable
     /// <summary>编码（未实现）</summary>
     public VPacket Encode(VideoFrame[] frames)
     {
-        throw new NotSupportedException("AV1 解码器不支持编码，请使用 FFmpegAV1Encoder");
+        throw new NotSupportedException(L.T("The AV1 decoder does not support encoding; use FFmpegAV1Encoder."));
     }
 
     /// <summary>释放资源</summary>

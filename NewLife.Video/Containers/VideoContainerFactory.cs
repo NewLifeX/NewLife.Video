@@ -4,6 +4,7 @@ using NewLife.Video.FMp4;
 using NewLife.Video.Mkv;
 using NewLife.Video.Raw;
 using NewLife.Video.Ts;
+using NewLife;
 
 namespace NewLife.Video.Containers;
 
@@ -22,7 +23,7 @@ public static class VideoContainerFactory
     public static IVideoContainerReader CreateReader(String filePath)
     {
         if (!File.Exists(filePath))
-            throw new FileNotFoundException("视频文件不存在", filePath);
+            throw new FileNotFoundException(L.T("Video file not found."), filePath);
 
         var ext = Path.GetExtension(filePath).ToLowerInvariant();
 

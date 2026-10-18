@@ -1,5 +1,6 @@
 using NewLife.Data;
 using NewLife.Video.FFmpeg;
+using NewLife;
 
 namespace NewLife.Video.Codecs;
 
@@ -54,7 +55,7 @@ public class FFmpegH264Encoder : IVideoCodec, ICodecInfo, IDisposable
     /// <summary>解码（未实现）</summary>
     public VideoFrame[] Decode(VPacket packet)
     {
-        throw new NotSupportedException("H.264 编码器不支持解码，请使用 FFmpegH264Decoder");
+        throw new NotSupportedException(L.T("The H.264 encoder does not support decoding; use FFmpegH264Decoder."));
     }
 
     /// <summary>编码 YUV420P 帧为 H.264 裸流</summary>
