@@ -11,7 +11,7 @@ public class FrameExtractorTests
     {
         var ex = Assert.Throws<FileNotFoundException>(() =>
             FrameExtractor.ExtractSnapshot("Z:\\nonexistent_video.mp4", 0));
-        Assert.Contains("视频文件不存在", ex.Message);
+        Assert.Equal("Z:\\nonexistent_video.mp4", ex.FileName);
     }
 
     [Fact(DisplayName = "ExtractSnapshotByIndex 文件不存在抛 FileNotFoundException")]
@@ -19,7 +19,7 @@ public class FrameExtractorTests
     {
         var ex = Assert.Throws<FileNotFoundException>(() =>
             FrameExtractor.ExtractSnapshotByIndex("Z:\\nonexistent_video.avi", 0));
-        Assert.Contains("视频文件不存在", ex.Message);
+        Assert.Equal("Z:\\nonexistent_video.avi", ex.FileName);
     }
 
     [Fact(DisplayName = "ExtractKeyFrames 文件不存在抛 FileNotFoundException")]
@@ -27,7 +27,7 @@ public class FrameExtractorTests
     {
         var ex = Assert.Throws<FileNotFoundException>(() =>
             FrameExtractor.ExtractKeyFrames("Z:\\nonexistent_video.ts"));
-        Assert.Contains("视频文件不存在", ex.Message);
+        Assert.Equal("Z:\\nonexistent_video.ts", ex.FileName);
     }
 
     [Fact(DisplayName = "ExtractKeyFrames 不支持格式不抛异常")]

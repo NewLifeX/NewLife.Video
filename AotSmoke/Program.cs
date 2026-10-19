@@ -1,4 +1,6 @@
+using NewLife;
 using NewLife.Data;
+using NewLife.Log;
 using NewLife.Video;
 using NewLife.Video.ChipHeaders;
 using NewLife.Video.Codecs;
@@ -68,6 +70,26 @@ Check("基础类型 VideoFrame/VPacket", () =>
     var packet = new VPacket { Data = new ArrayPacket(new Byte[16]), CodecType = VideoTypes.H264, PTS = 1 };
     Ensure(packet.CodecType == VideoTypes.H264, "包类型错误");
     Ensure(packet.Data.Total == 16, "包长度错误");
+});
+
+Check("运行时多语言与带前缀日志", () =>
+{
+    var oldLog = VideoLog.Log;
+    try
+    {
+        var capture = new AotCaptureLogger();
+        VideoLog.Log = capture;
+
+        // InvariantGlobalization 下具名区域性不可用，验证英文回退与“先翻译后拼前缀”路径在 AOT 下可执行
+        Ensure(!String.IsNullOrEmpty(Localization.Translate("File not found.")), "翻译结果为空");
+
+        VideoLog.Write(LogLevel.Info, "[Aot]", "File not found.");
+        Ensure(capture.Last != null && capture.Last.StartsWith("[Aot] "), $"前缀日志异常：{capture.Last}");
+    }
+    finally
+    {
+        VideoLog.Log = oldLog;
+    }
 });
 
 Check("视频格式检测 VideoFormatDetector", () =>
@@ -373,3 +395,11 @@ if (failures.Count > 0)
 
 Console.WriteLine("全部场景通过");
 return 0;
+
+sealed class AotCaptureLogger : Logger
+{
+    public String Last { get; private set; }
+
+    protected override void OnWrite(LogLevel level, String format, params Object[] args)
+        => Last = args == null || args.Length == 0 ? format : String.Format(format, args);
+}

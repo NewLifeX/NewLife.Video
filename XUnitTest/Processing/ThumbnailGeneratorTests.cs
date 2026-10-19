@@ -11,7 +11,7 @@ public class ThumbnailGeneratorTests
     {
         var ex = Assert.Throws<FileNotFoundException>(() =>
             ThumbnailGenerator.GenerateGrid("Z:\\nonexistent.mp4"));
-        Assert.Contains("文件不存在", ex.Message);
+        Assert.Equal("Z:\\nonexistent.mp4", ex.FileName);
     }
 
     [Fact(DisplayName = "ThumbnailGenerator.GenerateGrid 自定义行列参数")]
@@ -19,7 +19,7 @@ public class ThumbnailGeneratorTests
     {
         var ex = Assert.Throws<FileNotFoundException>(() =>
             ThumbnailGenerator.GenerateGrid("Z:\\nonexistent.mp4", cols: 2, rows: 2));
-        Assert.Contains("文件不存在", ex.Message);
+        Assert.Equal("Z:\\nonexistent.mp4", ex.FileName);
     }
 
     [Fact(DisplayName = "ThumbnailGenerator.GenerateGrid 自定义缩略图尺寸")]
@@ -27,7 +27,7 @@ public class ThumbnailGeneratorTests
     {
         var ex = Assert.Throws<FileNotFoundException>(() =>
             ThumbnailGenerator.GenerateGrid("Z:\\nonexistent.mp4", 3, 3, 200, 120));
-        Assert.Contains("文件不存在", ex.Message);
+        Assert.Equal("Z:\\nonexistent.mp4", ex.FileName);
     }
 
     [Fact(DisplayName = "ThumbnailGenerator.GenerateSingle 文件不存在抛 FileNotFoundException")]
