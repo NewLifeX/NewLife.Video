@@ -1,0 +1,13 @@
+# Русский 词表（ru）。键为英文源文，与源码字符串逐字一致；缺少的键运行时回退英文。
+"File not found.": "Файл не найден."
+"Invalid AVI.": "Недопустимый AVI."
+"Invalid RIFF.": "Недопустимый RIFF."
+"Not an AVI file.": "Это не файл AVI."
+"The AV1 decoder does not support encoding; use FFmpegAV1Encoder.": "Декодер AV1 не поддерживает кодирование; используйте FFmpegAV1Encoder."
+"The AV1 encoder does not support decoding; use FFmpegAV1Decoder.": "Кодировщик AV1 не поддерживает декодирование; используйте FFmpegAV1Decoder."
+"The H.264 decoder does not support encoding; use FFmpegH264Encoder.": "Декодер H.264 не поддерживает кодирование; используйте FFmpegH264Encoder."
+"The H.264 encoder does not support decoding; use FFmpegH264Decoder.": "Кодировщик H.264 не поддерживает декодирование; используйте FFmpegH264Decoder."
+"The H.265 decoder does not support encoding.": "Декодер H.265 не поддерживает кодирование."
+"The H.265 encoder does not support decoding.": "Кодировщик H.265 не поддерживает декодирование."
+"Invalid JPEG: missing SOI marker.": "Недопустимый JPEG: отсутствует маркер SOI."
+"Video file not found.": "Видеофайл не найден."

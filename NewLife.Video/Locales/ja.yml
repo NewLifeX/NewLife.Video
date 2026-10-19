@@ -1,0 +1,13 @@
+# 日本語 词表（ja）。键为英文源文，与源码字符串逐字一致；缺少的键运行时回退英文。
+"File not found.": "ファイルが見つかりません。"
+"Invalid AVI.": "無効な AVI です。"
+"Invalid RIFF.": "無効な RIFF です。"
+"Not an AVI file.": "AVI ファイルではありません。"
+"The AV1 decoder does not support encoding; use FFmpegAV1Encoder.": "AV1 デコーダーはエンコードをサポートしていません。FFmpegAV1Encoder を使用してください。"
+"The AV1 encoder does not support decoding; use FFmpegAV1Decoder.": "AV1 エンコーダーはデコードをサポートしていません。FFmpegAV1Decoder を使用してください。"
+"The H.264 decoder does not support encoding; use FFmpegH264Encoder.": "H.264 デコーダーはエンコードをサポートしていません。FFmpegH264Encoder を使用してください。"
+"The H.264 encoder does not support decoding; use FFmpegH264Decoder.": "H.264 エンコーダーはデコードをサポートしていません。FFmpegH264Decoder を使用してください。"
+"The H.265 decoder does not support encoding.": "H.265 デコーダーはエンコードをサポートしていません。"
+"The H.265 encoder does not support decoding.": "H.265 エンコーダーはデコードをサポートしていません。"
+"Invalid JPEG: missing SOI marker.": "無効な JPEG です。SOI マーカーがありません。"
+"Video file not found.": "動画ファイルが見つかりません。"

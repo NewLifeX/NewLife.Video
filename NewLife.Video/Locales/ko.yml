@@ -1,0 +1,13 @@
+# 한국어 词表（ko）。键为英文源文，与源码字符串逐字一致；缺少的键运行时回退英文。
+"File not found.": "파일을 찾을 수 없습니다."
+"Invalid AVI.": "유효하지 않은 AVI입니다."
+"Invalid RIFF.": "유효하지 않은 RIFF입니다."
+"Not an AVI file.": "AVI 파일이 아닙니다."
+"The AV1 decoder does not support encoding; use FFmpegAV1Encoder.": "AV1 디코더는 인코딩을 지원하지 않습니다. FFmpegAV1Encoder를 사용하세요."
+"The AV1 encoder does not support decoding; use FFmpegAV1Decoder.": "AV1 인코더는 디코딩을 지원하지 않습니다. FFmpegAV1Decoder를 사용하세요."
+"The H.264 decoder does not support encoding; use FFmpegH264Encoder.": "H.264 디코더는 인코딩을 지원하지 않습니다. FFmpegH264Encoder를 사용하세요."
+"The H.264 encoder does not support decoding; use FFmpegH264Decoder.": "H.264 인코더는 디코딩을 지원하지 않습니다. FFmpegH264Decoder를 사용하세요."
+"The H.265 decoder does not support encoding.": "H.265 디코더는 인코딩을 지원하지 않습니다."
+"The H.265 encoder does not support decoding.": "H.265 인코더는 디코딩을 지원하지 않습니다."
+"Invalid JPEG: missing SOI marker.": "유효하지 않은 JPEG입니다. SOI 마커가 없습니다."
+"Video file not found.": "비디오 파일을 찾을 수 없습니다."

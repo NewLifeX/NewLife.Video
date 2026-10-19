@@ -1,0 +1,13 @@
+# العربية 词表（ar）。键为英文源文，与源码字符串逐字一致；缺少的键运行时回退英文。
+"File not found.": "لم يتم العثور على الملف."
+"Invalid AVI.": "AVI غير صالح."
+"Invalid RIFF.": "RIFF غير صالح."
+"Not an AVI file.": "ليس ملف AVI."
+"The AV1 decoder does not support encoding; use FFmpegAV1Encoder.": "لا يدعم مفكك ترميز AV1 الترميز؛ استخدم FFmpegAV1Encoder."
+"The AV1 encoder does not support decoding; use FFmpegAV1Decoder.": "لا يدعم مُرمِّز AV1 فك الترميز؛ استخدم FFmpegAV1Decoder."
+"The H.264 decoder does not support encoding; use FFmpegH264Encoder.": "لا يدعم مفكك ترميز H.264 الترميز؛ استخدم FFmpegH264Encoder."
+"The H.264 encoder does not support decoding; use FFmpegH264Decoder.": "لا يدعم مُرمِّز H.264 فك الترميز؛ استخدم FFmpegH264Decoder."
+"The H.265 decoder does not support encoding.": "لا يدعم مفكك ترميز H.265 الترميز."
+"The H.265 encoder does not support decoding.": "لا يدعم مُرمِّز H.265 فك الترميز."
+"Invalid JPEG: missing SOI marker.": "JPEG غير صالح: علامة SOI مفقودة."
+"Video file not found.": "لم يتم العثور على ملف الفيديو."

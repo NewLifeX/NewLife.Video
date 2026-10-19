@@ -1,0 +1,13 @@
+# Português 词表（pt）。键为英文源文，与源码字符串逐字一致；缺少的键运行时回退英文。
+"File not found.": "Arquivo não encontrado."
+"Invalid AVI.": "AVI inválido."
+"Invalid RIFF.": "RIFF inválido."
+"Not an AVI file.": "Não é um arquivo AVI."
+"The AV1 decoder does not support encoding; use FFmpegAV1Encoder.": "O decodificador AV1 não suporta codificação; use FFmpegAV1Encoder."
+"The AV1 encoder does not support decoding; use FFmpegAV1Decoder.": "O codificador AV1 não suporta decodificação; use FFmpegAV1Decoder."
+"The H.264 decoder does not support encoding; use FFmpegH264Encoder.": "O decodificador H.264 não suporta codificação; use FFmpegH264Encoder."
+"The H.264 encoder does not support decoding; use FFmpegH264Decoder.": "O codificador H.264 não suporta decodificação; use FFmpegH264Decoder."
+"The H.265 decoder does not support encoding.": "O decodificador H.265 não suporta codificação."
+"The H.265 encoder does not support decoding.": "O codificador H.265 não suporta decodificação."
+"Invalid JPEG: missing SOI marker.": "JPEG inválido: marcador SOI ausente."
+"Video file not found.": "Arquivo de vídeo não encontrado."
