@@ -147,7 +147,7 @@ public class RecordingPlan
     public override String ToString()
     {
         if (Schedule.HasValue)
-            return $"定时录像 [{Name}] {Schedule.Value.Start}~{Schedule.Value.End}";
-        return $"事件录像 [{Name}]";
+            return L.T("Scheduled recording [{0}] {1}~{2}", Name, Schedule.Value.Start, Schedule.Value.End);
+        return L.T("Event recording [{0}]", Name);
     }
 }

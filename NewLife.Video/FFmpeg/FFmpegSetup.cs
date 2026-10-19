@@ -93,7 +93,7 @@ public static class FFmpegSetup
     {
         var linkName = GetPlatformLinkName();
         if (linkName == null)
-            throw new PlatformNotSupportedException("不支持的操作系统");
+            throw new PlatformNotSupportedException(L.T("Unsupported operating system."));
 
         var dir = FFmpegDirectory;
         Directory.CreateDirectory(dir);
@@ -103,7 +103,7 @@ public static class FFmpegSetup
         if (Directory.Exists(extractDir)) Directory.Delete(extractDir, true);
         Directory.CreateDirectory(extractDir);
 
-        XTrace.WriteLine("从插件服务器下载 {0} ...", linkName);
+        VideoLog.Write(LogLevel.Info, "[FFmpeg]", "Downloading {0} from the plugin server ...", linkName);
 
         using var client = new WebClientX { AuthKey = "NewLife", Log = XTrace.Log };
         var file = client.DownloadLinkAndExtract(DownloadBaseUrl, linkName, extractDir, true);
@@ -120,7 +120,7 @@ public static class FFmpegSetup
                     var dest = Path.Combine(dir, name);
                     if (File.Exists(dest)) File.Delete(dest);
                     File.Move(fi, dest);
-                    XTrace.WriteLine("FFmpeg 下载完成: {0}", dest);
+                    VideoLog.Write(LogLevel.Info, "[FFmpeg]", "FFmpeg downloaded: {0}", dest);
                     break;
                 }
             }

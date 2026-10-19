@@ -63,7 +63,7 @@ public class Fmp4SegmentWriter : IVideoContainerWriter
     public void WriteFrame(VPacket packet)
     {
         if (packet?.Data == null) return;
-        if (!_headerWritten) throw new InvalidOperationException("必须先调用 WriteMetadata");
+        if (!_headerWritten) throw new InvalidOperationException(L.T("WriteMetadata must be called first."));
 
         if (_basePts < 0) _basePts = packet.PTS;
 

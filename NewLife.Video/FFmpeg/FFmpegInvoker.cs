@@ -190,7 +190,7 @@ public class FFmpegInvoker
         var arguments = $"-v quiet -print_format json -show_format -show_streams \"{filePath}\"";
         var result = await ExecuteAsync(arguments);
         if (result.ExitCode != 0)
-            throw new InvalidOperationException($"FFprobe 执行失败: {result.Error}");
+            throw new InvalidOperationException(L.T("FFprobe execution failed: {0}", result.Error));
 
         return result.Output;
     }

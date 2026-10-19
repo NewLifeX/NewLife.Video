@@ -124,7 +124,7 @@ public static class SnapshotEncoder
             SnapshotFormat.Tiff => EncodeToTiff(frame),
             SnapshotFormat.Gif => EncodeToGif(frame),
             SnapshotFormat.Avif => EncodeToAvif(frame, quality),
-            _ => throw new NotSupportedException($"不支持的快照格式：{fmt}"),
+            _ => throw new NotSupportedException(L.T("Unsupported snapshot format: {0}.", fmt)),
         };
 
         File.WriteAllBytes(filePath, data);

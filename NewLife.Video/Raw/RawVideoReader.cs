@@ -41,7 +41,7 @@ public class RawVideoReader : IVideoContainerReader
     /// <param name="pixelFormat">像素格式</param>
     public RawVideoReader(String filePath, Int32 width, Int32 height, VideoTypes pixelFormat)
     {
-        if (!File.Exists(filePath)) throw new FileNotFoundException("文件不存在", filePath);
+        if (!File.Exists(filePath)) throw new FileNotFoundException(L.T("File not found."), filePath);
 
         VideoWidth = width;
         VideoHeight = height;

@@ -50,7 +50,7 @@ public class VideoDeviceManager
             }
         }
 
-        throw new NotSupportedException($"无法打开设备 [{deviceId}]，没有可用的后端支持");
+        throw new NotSupportedException(L.T("Unable to open device [{0}]; no available backend supports it.", deviceId));
     }
 
     /// <summary>注册后端</summary>

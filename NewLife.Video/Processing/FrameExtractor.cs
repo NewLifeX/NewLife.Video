@@ -17,7 +17,7 @@ public class FrameExtractor
     public static VideoFrame ExtractSnapshot(String filePath, Int64 timestampMs)
     {
         if (!File.Exists(filePath))
-            throw new FileNotFoundException("视频文件不存在", filePath);
+            throw new FileNotFoundException(L.T("Video file not found."), filePath);
 
         using var reader = VideoContainerFactory.CreateReader(filePath);
 
@@ -35,7 +35,7 @@ public class FrameExtractor
     public static VideoFrame ExtractSnapshotByIndex(String filePath, Int64 frameIndex)
     {
         if (!File.Exists(filePath))
-            throw new FileNotFoundException("视频文件不存在", filePath);
+            throw new FileNotFoundException(L.T("Video file not found."), filePath);
 
         using var reader = VideoContainerFactory.CreateReader(filePath);
         return ExtractByFrameIndex(reader, frameIndex);
@@ -73,7 +73,7 @@ public class FrameExtractor
         var keyFrames = new List<VideoFrame>();
 
         if (!File.Exists(filePath))
-            throw new FileNotFoundException("视频文件不存在", filePath);
+            throw new FileNotFoundException(L.T("Video file not found."), filePath);
 
         using var reader = VideoContainerFactory.CreateReader(filePath);
 

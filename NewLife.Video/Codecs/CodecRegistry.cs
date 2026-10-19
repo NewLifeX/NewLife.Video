@@ -36,7 +36,7 @@ public class CodecRegistry
         if (_codecs.TryGetValue(videoType, out var codec)) return codec;
         if (_factories.TryGetValue(videoType, out var factory)) return factory();
 
-        throw new NotSupportedException($"[{videoType}] 没有注册对应的编解码器");
+        throw new NotSupportedException(L.T("No codec is registered for [{0}].", videoType));
     }
 
     /// <summary>检查是否支持指定编码类型</summary>

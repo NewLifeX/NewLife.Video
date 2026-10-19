@@ -34,7 +34,7 @@ public class MkvReader : IVideoContainerReader
 
     public MkvReader(String filePath)
     {
-        if (!File.Exists(filePath)) throw new FileNotFoundException("文件不存在", filePath);
+        if (!File.Exists(filePath)) throw new FileNotFoundException(L.T("File not found."), filePath);
         _stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         _totalFrames = -1;
         _duration = -1;

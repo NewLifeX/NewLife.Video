@@ -20,7 +20,7 @@ public class RtpH265Packetizer
     /// <param name="mtu">最大传输单元</param>
     public RtpH265Packetizer(Int32 mtu = 1400)
     {
-        if (mtu < 200) throw new ArgumentOutOfRangeException(nameof(mtu), "MTU 不能小于 200");
+        if (mtu < 200) throw new ArgumentOutOfRangeException(nameof(mtu), L.T("MTU cannot be less than 200."));
         _mtu = mtu;
     }
 

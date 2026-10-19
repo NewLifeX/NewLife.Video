@@ -81,7 +81,7 @@ public class FFmpegH264Encoder : IVideoCodec, ICodecInfo, IDisposable
             }
             else
             {
-                throw new NotSupportedException($"H.264 编码器仅支持 YUV420P 输入，当前格式: {frame.PixelFormat}");
+                throw new NotSupportedException(L.T("The H.264 encoder only supports YUV420P input; current format: {0}.", frame.PixelFormat));
             }
 
             var copyLen = Math.Min(frameData.Length, frameSize);

@@ -45,7 +45,7 @@ public class FlvReader : IVideoContainerReader
     /// <param name="filePath">FLV 文件路径</param>
     public FlvReader(String filePath)
     {
-        if (!File.Exists(filePath)) throw new FileNotFoundException("文件不存在", filePath);
+        if (!File.Exists(filePath)) throw new FileNotFoundException(L.T("File not found."), filePath);
 
         _stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         _totalFrames = -1;
@@ -68,11 +68,11 @@ public class FlvReader : IVideoContainerReader
     {
         var header = new Byte[9];
         if (_stream.Read(header, 0, 9) < 9)
-            throw new InvalidOperationException("无效的 FLV 文件：文件头不足 9 字节");
+            throw new InvalidOperationException(L.T("Invalid FLV file: header is shorter than 9 bytes."));
 
         // 验证 FLV 签名
         if (header[0] != 'F' || header[1] != 'L' || header[2] != 'V')
-            throw new InvalidOperationException("不是有效的 FLV 文件");
+            throw new InvalidOperationException(L.T("Not a valid FLV file."));
 
         var reader = new SpanReader(header) { IsLittleEndian = false };
         reader.ReadBytes(4); // 跳过签名 + 版本
@@ -80,7 +80,7 @@ public class FlvReader : IVideoContainerReader
         var hasVideo = (flags & 0x01) != 0;
 
         if (!hasVideo)
-            throw new NotSupportedException("FLV 文件中没有视频轨");
+            throw new NotSupportedException(L.T("The FLV file contains no video track."));
 
         var dataOffset = reader.ReadUInt32();
 

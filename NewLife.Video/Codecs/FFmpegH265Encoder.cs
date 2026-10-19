@@ -46,7 +46,7 @@ public class FFmpegH265Encoder : IVideoCodec, ICodecInfo, IDisposable
         for (var i = 0; i < frames.Length; i++)
         {
             if (frames[i].PixelFormat != VideoTypes.YUV420P)
-                throw new NotSupportedException($"H.265 编码器仅支持 YUV420P，当前: {frames[i].PixelFormat}");
+                throw new NotSupportedException(L.T("The H.265 encoder only supports YUV420P input; current format: {0}.", frames[i].PixelFormat));
             Array.Copy(frames[i].Data, 0, rawData, i * frameSize, Math.Min(frames[i].Data.Length, frameSize));
         }
 

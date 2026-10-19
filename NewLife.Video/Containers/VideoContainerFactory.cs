@@ -101,7 +101,7 @@ public static class VideoContainerFactory
             ".ts" or ".mts" => new TsWriter(filePath),
             ".mkv" or ".webm" => new MkvWriter(filePath),
             ".yuv" or ".nv12" or ".rgb" or ".raw" => new RawVideoWriter(filePath),
-            _ => throw new NotSupportedException($"不支持写入容器格式: {ext}"),
+            _ => throw new NotSupportedException(L.T("Unsupported container format for writing: {0}.", ext)),
         };
     }
 

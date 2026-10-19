@@ -65,10 +65,6 @@ public class AVFoundationBackend : IVideoBackend
     /// </remarks>
     public IVideoCaptureDevice CreateCaptureDevice(String deviceId, Int32 width, Int32 height, Double frameRate, VideoTypes pixelFormat)
     {
-        throw new NotSupportedException(
-            "AVFoundation 后端需 .NET MAUI (macOS) 或 Xamarin.Mac 绑定支持。\n" +
-            "当前为骨架实现，采集功能待平台原生 API 对接。\n" +
-            "实现路径：P/Invoke objc_msgSend 调用 AVCaptureSession/AVCaptureDevice API，\n" +
-            "或使用 .NET MAUI 的 Microsoft.macOS 包中的 AVFoundation 绑定。");
+        throw new NotSupportedException(L.T("The AVFoundation backend requires .NET MAUI (macOS) or Xamarin.Mac binding support; capture is currently a skeleton implementation awaiting native API integration."));
     }
 }

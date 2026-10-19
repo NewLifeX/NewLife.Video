@@ -53,7 +53,7 @@ public class Mp4Reader : IVideoContainerReader
     /// <param name="filePath">MP4 文件路径</param>
     public Mp4Reader(String filePath)
     {
-        if (!File.Exists(filePath)) throw new FileNotFoundException("文件不存在", filePath);
+        if (!File.Exists(filePath)) throw new FileNotFoundException(L.T("File not found."), filePath);
 
         _stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
         _totalFrames = -1;

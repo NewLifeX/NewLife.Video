@@ -55,6 +55,6 @@ public class V4L2Backend : IVideoBackend
     /// <remarks>需完整 ioctl 层实现（mmap 零拷贝缓冲区管理）</remarks>
     public IVideoCaptureDevice CreateCaptureDevice(String deviceId, Int32 width, Int32 height, Double frameRate, VideoTypes pixelFormat)
     {
-        throw new NotSupportedException("V4L2 后端需完整 ioctl/mmap 层实现。当前支持设备枚举，采集功能待平台原生 API 对接。");
+        throw new NotSupportedException(L.T("The V4L2 backend requires a complete ioctl/mmap implementation; device enumeration is supported, while capture awaits native API integration."));
     }
 }

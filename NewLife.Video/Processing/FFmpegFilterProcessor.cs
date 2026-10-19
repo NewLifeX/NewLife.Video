@@ -46,7 +46,7 @@ public class FFmpegFilterProcessor : IVideoProcessor
         if (frame?.Data == null) throw new ArgumentNullException(nameof(frame));
 
         if (!_invoker.IsAvailable())
-            throw new InvalidOperationException("FFmpeg 不可用，无法执行滤镜处理。请确保 ffmpeg 在 PATH 中。");
+            throw new InvalidOperationException(L.T("FFmpeg is unavailable; cannot apply filter processing. Ensure ffmpeg is available in PATH."));
 
         var width = frame.Width;
         var height = frame.Height;
@@ -64,11 +64,11 @@ public class FFmpegFilterProcessor : IVideoProcessor
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"FFmpeg 滤镜处理失败：{_filterString}。{ex.Message}", ex);
+            throw new InvalidOperationException(L.T("FFmpeg filter processing failed: {0}. {1}", _filterString, ex.Message), ex);
         }
 
         if (outputData == null || outputData.Length == 0)
-            throw new InvalidOperationException($"FFmpeg 滤镜处理失败（空输出）：{_filterString}");
+            throw new InvalidOperationException(L.T("FFmpeg filter processing failed (empty output): {0}.", _filterString));
 
         // 推断输出尺寸（滤镜可能改变分辨率）
         var outWidth = width;

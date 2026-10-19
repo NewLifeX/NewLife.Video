@@ -69,7 +69,7 @@ public class FfmpegPlayer : IDisposable
     public void Play()
     {
         if (_running) return;
-        if (String.IsNullOrEmpty(_url)) throw new InvalidOperationException("请先设置播放源");
+        if (String.IsNullOrEmpty(_url)) throw new InvalidOperationException(L.T("Set a playback source first."));
 
         // 1. 先探测分辨率
         if (Width <= 0 || Height <= 0)

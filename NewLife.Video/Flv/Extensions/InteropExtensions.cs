@@ -30,7 +30,7 @@ namespace NewLife.Video.Flv.Extensions;
                 }
                 catch (Exception exception)
                 {
-                    throw new InvalidOperationException("Error in BytesToStruct ! " + exception.Message);
+                    throw new InvalidOperationException(L.T("Error in BytesToStruct. {0}", exception.Message));
                 }
                 finally
                 {
@@ -81,7 +81,7 @@ namespace NewLife.Video.Flv.Extensions;
             }
             catch (Exception exception)
             {
-                throw new InvalidOperationException("Error in StructToBytes ! " + exception.Message);
+                throw new InvalidOperationException(L.T("Error in StructToBytes. {0}", exception.Message));
             }
             finally
             {

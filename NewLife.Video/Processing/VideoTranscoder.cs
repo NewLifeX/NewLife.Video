@@ -10,7 +10,7 @@ public static class VideoTranscoder
     {
         if (String.IsNullOrEmpty(inputPath)) throw new ArgumentNullException(nameof(inputPath));
         if (String.IsNullOrEmpty(outputPath)) throw new ArgumentNullException(nameof(outputPath));
-        if (!File.Exists(inputPath)) throw new FileNotFoundException("输入文件不存在", inputPath);
+        if (!File.Exists(inputPath)) throw new FileNotFoundException(L.T("Input file not found."), inputPath);
 
         options ??= new TranscodeOptions();
         progress?.Invoke(0);
@@ -20,7 +20,7 @@ public static class VideoTranscoder
 
         try
         {
-            if (reader == null) throw new NotSupportedException($"不支持的输入格式：{Path.GetExtension(inputPath)}");
+            if (reader == null) throw new NotSupportedException(L.T("Unsupported input format: {0}.", Path.GetExtension(inputPath)));
 
             var codecType = reader.VideoCodecType;
             if (options.EncoderName != null)

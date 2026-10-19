@@ -57,11 +57,11 @@ public class RtmpClient : IDisposable
     private void ParseUrl()
     {
         if (!_url.StartsWith("rtmp://", StringComparison.OrdinalIgnoreCase))
-            throw new ArgumentException("RTMP URL 必须以 rtmp:// 开头");
+            throw new ArgumentException(L.T("The RTMP URL must start with rtmp://."));
 
         var uri = _url.Substring(7);
         var slashIdx = uri.IndexOf('/');
-        if (slashIdx < 0) throw new ArgumentException("URL 格式错误");
+        if (slashIdx < 0) throw new ArgumentException(L.T("Invalid URL format."));
 
         var hostPart = uri.Substring(0, slashIdx);
         var pathPart = uri.Substring(slashIdx + 1);
@@ -106,7 +106,7 @@ public class RtmpClient : IDisposable
         while (read < response.Length)
         {
             var n = await _networkStream.ReadAsync(response, read, response.Length - read);
-            if (n == 0) throw new IOException("握手失败");
+            if (n == 0) throw new IOException(L.T("Handshake failed."));
             read += n;
         }
         var c2 = new Byte[1536];
@@ -127,7 +127,7 @@ public class RtmpClient : IDisposable
     /// <summary>发送 connect 命令</summary>
     public async Task<Boolean> ConnectStreamAsync()
     {
-        if (!IsConnected) throw new InvalidOperationException("未连接");
+        if (!IsConnected) throw new InvalidOperationException(L.T("Not connected."));
 
         _transactionId++;
         var cmd = new Amf0Encoder();
@@ -154,7 +154,7 @@ public class RtmpClient : IDisposable
     /// <summary>发送 createStream 命令</summary>
     public async Task<Int32> CreateStreamAsync()
     {
-        if (!IsConnected) throw new InvalidOperationException("未连接");
+        if (!IsConnected) throw new InvalidOperationException(L.T("Not connected."));
 
         _transactionId++;
         var cmd = new Amf0Encoder();
@@ -179,7 +179,7 @@ public class RtmpClient : IDisposable
     /// <summary>发送 publish 命令</summary>
     public async Task<Boolean> PublishAsync()
     {
-        if (!IsConnected || _streamId <= 0) throw new InvalidOperationException("未连接或未创建流");
+        if (!IsConnected || _streamId <= 0) throw new InvalidOperationException(L.T("Not connected or stream not created."));
 
         _transactionId++;
         var cmd = new Amf0Encoder();
@@ -199,7 +199,7 @@ public class RtmpClient : IDisposable
     /// <summary>推送视频帧。自动发送 onMetaData 和序列头</summary>
     public async Task PushVideoAsync(VPacket packet)
     {
-        if (!_published) throw new InvalidOperationException("尚未 publish");
+        if (!_published) throw new InvalidOperationException(L.T("Publish has not been called."));
         if (packet?.Data == null) return;
 
         if (!_metadataSent)

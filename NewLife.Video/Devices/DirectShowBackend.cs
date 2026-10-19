@@ -39,6 +39,6 @@ public class DirectShowBackend : IVideoBackend
     /// <remarks>需 DirectShowLib 依赖。采集链路：VideoSourceFilter → SampleGrabber → NullRenderer</remarks>
     public IVideoCaptureDevice CreateCaptureDevice(String deviceId, Int32 width, Int32 height, Double frameRate, VideoTypes pixelFormat)
     {
-        throw new NotSupportedException("DirectShow 后端需引入 DirectShowLib NuGet 包后启用完整采集。当前为骨架实现。");
+        throw new NotSupportedException(L.T("The DirectShow backend requires the DirectShowLib NuGet package to enable full capture; it is currently a skeleton implementation."));
     }
 }

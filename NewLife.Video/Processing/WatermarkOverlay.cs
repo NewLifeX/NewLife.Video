@@ -63,7 +63,7 @@ public class WatermarkOverlay : IVideoProcessor
         }
         else
         {
-            throw new NotSupportedException($"不支持的像素格式: {frame.PixelFormat}");
+            throw new NotSupportedException(L.T("Unsupported pixel format: {0}.", frame.PixelFormat));
         }
 
         // 绘制文字水印（简单 8x16 位图字体）

@@ -15,7 +15,7 @@ public class ThumbnailGenerator
     public static VideoFrame GenerateGrid(String filePath, Int32 cols = 4, Int32 rows = 3,
         Int32 thumbWidth = 160, Int32 thumbHeight = 90)
     {
-        if (!File.Exists(filePath)) throw new FileNotFoundException("文件不存在", filePath);
+        if (!File.Exists(filePath)) throw new FileNotFoundException(L.T("File not found."), filePath);
 
         // 提取关键帧
         var keyFrames = FrameExtractor.ExtractKeyFrames(filePath, cols * rows);

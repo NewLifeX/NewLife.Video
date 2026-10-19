@@ -323,7 +323,7 @@ public class RtmpChunkStream
         while (total < count)
         {
             var n = await _stream.ReadAsync(buf, offset + total, count - total);
-            if (n == 0) throw new IOException("RTMP 连接关闭");
+            if (n == 0) throw new IOException(L.T("The RTMP connection was closed."));
             total += n;
         }
     }

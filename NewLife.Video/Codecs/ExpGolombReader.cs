@@ -203,7 +203,7 @@ public ref struct ExpGolombReader
         var bits = Math.Min(BitsAvailable, size);
         var valu = (UInt32)Word >> (32 - bits);
         if (size > 32)
-            throw new OverflowException("Cannot read more than 32 bits at a time");
+            throw new OverflowException(L.T("Cannot read more than 32 bits at a time."));
 
         BitsAvailable -= bits;
         if (BitsAvailable > 0)

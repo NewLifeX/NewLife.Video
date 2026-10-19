@@ -20,7 +20,7 @@ public static class WebPEncoder
         if (rgbData == null) throw new ArgumentNullException(nameof(rgbData));
         if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
         if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
-        if (rgbData.Length < width * height * 3) throw new ArgumentException("数据长度不足", nameof(rgbData));
+        if (rgbData.Length < width * height * 3) throw new ArgumentException(L.T("Insufficient data length."), nameof(rgbData));
 
         // 转换 RGB24 为 ARGB（A=255 不透明）
         var pixelCount = width * height;

@@ -92,7 +92,7 @@ public class MjpegCodec : IVideoCodec, ICodecInfo
         if (frame.PixelFormat == VideoTypes.RGB24) rgb = frame.Data;
         else if (frame.PixelFormat == VideoTypes.YUV420P)
             rgb = ColorSpaceConverter.YUV420PToRGB24(frame.GetYPlane(), frame.GetUPlane(), frame.GetVPlane(), frame.Width, frame.Height, frame.YStride, frame.UVStride);
-        else throw new NotSupportedException($"不支持的像素格式: {frame.PixelFormat}");
+        else throw new NotSupportedException(L.T("Unsupported pixel format: {0}.", frame.PixelFormat));
 
         var enc = new JpegEncoder(rgb, frame.Width, frame.Height, 75);
         var jpeg = enc.Encode();

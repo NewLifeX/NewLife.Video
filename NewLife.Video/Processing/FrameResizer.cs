@@ -55,7 +55,7 @@ public class FrameResizer : IVideoProcessor
         }
         else
         {
-            throw new NotSupportedException($"不支持的像素格式: {frame.PixelFormat}");
+            throw new NotSupportedException(L.T("Unsupported pixel format: {0}.", frame.PixelFormat));
         }
 
         // 最近邻缩放

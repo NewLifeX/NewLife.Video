@@ -76,7 +76,7 @@ public class FrameSequenceEncoder
             VideoTypes.H264 => new FFmpegH264Encoder(_width, _height, frameRate: (Int32)_frameRate),
             VideoTypes.H265 => new FFmpegH265Encoder(_width, _height, frameRate: (Int32)_frameRate),
             VideoTypes.MJPEG => new MjpegCodec(),
-            _ => throw new NotSupportedException($"不支持的编码类型: {_codecType}"),
+            _ => throw new NotSupportedException(L.T("Unsupported codec type: {0}.", _codecType)),
         };
 
         var packet = encoder.Encode(yuvFrames.ToArray());

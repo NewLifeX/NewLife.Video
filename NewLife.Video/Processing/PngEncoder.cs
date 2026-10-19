@@ -20,7 +20,7 @@ public static class PngEncoder
         if (rgbData == null) throw new ArgumentNullException(nameof(rgbData));
         if (width <= 0) throw new ArgumentOutOfRangeException(nameof(width));
         if (height <= 0) throw new ArgumentOutOfRangeException(nameof(height));
-        if (rgbData.Length < width * height * 3) throw new ArgumentException("数据长度不足", nameof(rgbData));
+        if (rgbData.Length < width * height * 3) throw new ArgumentException(L.T("Insufficient data length."), nameof(rgbData));
 
         // 构建过滤后的行数据（每行 1 字节 filter + width*3 字节像素）
         var rawData = FilterRows(rgbData, width, height);
