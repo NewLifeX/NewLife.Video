@@ -50,3 +50,4 @@
 "WriteMetadata must be called first.": "必須先呼叫 WriteMetadata。"
 "Downloading {0} from the plugin server ...": "正在從外掛伺服器下載 {0} ..."
 "FFmpeg downloaded: {0}": "FFmpeg 下載完成：{0}"
+"Connection failed: {0}": "連線失敗：{0}"

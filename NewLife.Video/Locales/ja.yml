@@ -50,3 +50,4 @@
 "WriteMetadata must be called first.": "先に WriteMetadata を呼び出す必要があります。"
 "Downloading {0} from the plugin server ...": "プラグイン サーバーから {0} をダウンロードしています ..."
 "FFmpeg downloaded: {0}": "FFmpeg のダウンロードが完了しました: {0}"
+"Connection failed: {0}": "接続に失敗しました: {0}"

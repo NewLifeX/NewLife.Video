@@ -1,5 +1,6 @@
 using NewLife.Buffers;
 using NewLife.Data;
+using NewLife.Log;
 using System.Net.Sockets;
 using System.Text;
 
@@ -52,7 +53,11 @@ public class RtspClient : IDisposable
             _networkStream = _tcpClient.GetStream();
             return true;
         }
-        catch { return false; }
+        catch (Exception ex)
+        {
+            VideoLog.Write(LogLevel.Warn, "[RTSP]", "Connection failed: {0}", ex.Message);
+            return false;
+        }
     }
 
     /// <summary>发送 OPTIONS 请求</summary>

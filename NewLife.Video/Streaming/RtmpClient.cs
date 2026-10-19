@@ -1,4 +1,5 @@
 using NewLife.Data;
+using NewLife.Log;
 using System.Net.Sockets;
 
 namespace NewLife.Video.Streaming;
@@ -88,7 +89,12 @@ public class RtmpClient : IDisposable
             await _chunkStream.SendWindowAckSizeAsync(2500000);
             return true;
         }
-        catch { Dispose(); return false; }
+        catch (Exception ex)
+        {
+            VideoLog.Write(LogLevel.Warn, "[RTMP]", "Connection failed: {0}", ex.Message);
+            Dispose();
+            return false;
+        }
     }
 
     private async Task SendHandshakeAsync()

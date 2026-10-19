@@ -50,3 +50,4 @@
 "WriteMetadata must be called first.": "يجب استدعاء WriteMetadata أولاً."
 "Downloading {0} from the plugin server ...": "جارٍ تنزيل {0} من خادم الإضافات ..."
 "FFmpeg downloaded: {0}": "تم تنزيل FFmpeg: {0}"
+"Connection failed: {0}": "فشل الاتصال: {0}"

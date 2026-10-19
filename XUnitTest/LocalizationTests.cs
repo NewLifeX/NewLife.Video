@@ -3,6 +3,7 @@ using NewLife;
 using NewLife.Log;
 using NewLife.Video;
 using NewLife.Video.Codecs;
+using NewLife.Video.Streaming;
 using Xunit;
 
 namespace XUnitTest;
@@ -100,6 +101,33 @@ public class LocalizationTests
         {
             VideoLog.Log = oldLog;
             Localization.LogCulture = oldLogCulture;
+        }
+    }
+
+    [Fact(DisplayName = "流媒体连接失败输出带前缀日志")]
+    public async Task ConnectFailure_LogsWithPrefix()
+    {
+        var oldLog = VideoLog.Log;
+        try
+        {
+            var capture = new CaptureLogger();
+            VideoLog.Log = capture;
+
+            using (var rtsp = new RtspClient("rtsp://127.0.0.1:1/stream"))
+            {
+                Assert.False(await rtsp.ConnectAsync());
+            }
+            using (var rtmp = new RtmpClient("rtmp://127.0.0.1:1/live/test"))
+            {
+                Assert.False(await rtmp.ConnectAsync());
+            }
+
+            Assert.Contains(capture.Lines, line => line.StartsWith("[RTSP] ", StringComparison.Ordinal));
+            Assert.Contains(capture.Lines, line => line.StartsWith("[RTMP] ", StringComparison.Ordinal));
+        }
+        finally
+        {
+            VideoLog.Log = oldLog;
         }
     }
 

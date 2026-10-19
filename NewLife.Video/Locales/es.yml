@@ -50,3 +50,4 @@
 "WriteMetadata must be called first.": "Se debe llamar primero a WriteMetadata."
 "Downloading {0} from the plugin server ...": "Descargando {0} del servidor de complementos ..."
 "FFmpeg downloaded: {0}": "FFmpeg descargado: {0}"
+"Connection failed: {0}": "Error de conexión: {0}"
