@@ -14,15 +14,17 @@
 [![contributors](https://img.shields.io/github/contributors/NewLifeX/NewLife.Video?logo=github)](https://github.com/NewLifeX/NewLife.Video/graphs/contributors)
 
 <!-- lang:start -->
-🌐 [繁體中文](README.zh-TW.md) | [English](README.en.md) | [Español](README.es.md) | [Deutsch](README.de.md) | [日本語](README.ja.md) | [Français](README.fr.md) | [Português](README.pt.md) | [Русский](README.ru.md) | [한국어](README.ko.md) | [العربية](README.ar.md)
+🌐 [English](README.md) | [繁體中文](README.zh-TW.md) | [Español](README.es.md) | [Deutsch](README.de.md) | [日本語](README.ja.md) | [Français](README.fr.md) | [Português](README.pt.md) | [Русский](README.ru.md) | [한국어](README.ko.md) | [العربية](README.ar.md)
 <!-- lang:end -->
 
-> **[English](README.en.md)** | 简体中文
+> **[English](README.md)** | 简体中文
 
 支持各种视频编解码、容器格式、帧处理、流媒体传输和IoT视频适配
 
 源码： https://github.com/NewLifeX/NewLife.Video  
 Nuget：NewLife.Video  
+
+> ℹ️ 本中文版与 [English README](README.md) 同批维护；若两者内容不一致，以英文版为对外口径。
 
 ## 功能特性
 
@@ -124,6 +126,18 @@ var discovery = new OnvifDiscovery();
 var devices = await discovery.DiscoverAsync();
 ```
 
+## 架构理念
+
+**纯托管 + FFmpeg 混合**：简单操作（MJPEG 编解码、YUV↔RGB 转换、容器解析、帧处理）为零依赖纯托管实现；复杂编码（H.264/H.265）交给 FFmpeg 进程处理。
+
+**帧级 API**：不止于文件转码——提供逐帧解码/编码/处理能力，适合实时视频流。
+
+**IoT 优先**：深度集成 ONVIF、GB/T 28181 与芯片视频头，面向视频监控与物联网场景。
+
+## 目标框架
+
+`netstandard2.1` / `netstandard2.0` / `net461` / `net8.0` / `net10.0` —— 兼容 .NET Framework 4.6.1+、.NET Core 3.0+、.NET 5+ 与 Mono。
+
 ## 新生命项目矩阵
 各项目默认支持net9.0/netstandard2.1/netstandard2.0/net4.62/net4.5，旧版（2024.0801）支持net4.0/net2.0  
 
@@ -160,6 +174,10 @@ var devices = await discovery.DiscoverAsync();
 |          [SmartA2](https://github.com/NewLifeX/SmartA2)          | 2019  | 嵌入式工业计算机，物联网边缘网关，高性能.NET8主机，应用于工业、农业、交通、医疗             |
 |                          FIoT物联网平台                          | 2020  | 物联网整体解决方案，建筑、环保、农业，软硬件及大数据分析一体化，单机十万级点位项目验证      |
 |                        UWB高精度室内定位                         | 2020  | 厘米级（10~20cm）高精度室内定位，软硬件一体化，与其它系统联动，大型展厅项目验证             |
+
+## 许可证
+
+MIT 许可证
 
 ## 新生命开发团队
 ![XCode](https://newlifex.com/logo.png)  
