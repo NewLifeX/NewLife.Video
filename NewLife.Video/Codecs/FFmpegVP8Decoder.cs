@@ -1,3 +1,4 @@
+using NewLife;
 using NewLife.Data;
 using NewLife.Video.FFmpeg;
 
@@ -44,7 +45,7 @@ public class FFmpegVP8Decoder : IVideoCodec, ICodecInfo, IDisposable
         return frames;
     }
 
-    public VPacket Encode(VideoFrame[] frames) => throw new NotSupportedException();
+    public VPacket Encode(VideoFrame[] frames) => throw new NotSupportedException(L.T("The VP8 decoder does not support encoding."));
     public void Dispose() { if (_disposed) return; _disposed = true; }
     private Boolean _disposed;
 }

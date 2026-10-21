@@ -1,3 +1,4 @@
+using NewLife;
 using NewLife.Data;
 using NewLife.Video.FFmpeg;
 
@@ -22,7 +23,7 @@ public class FFmpegVP9Encoder : IVideoCodec, ICodecInfo, IDisposable
         _height = height;
     }
 
-    public VideoFrame[] Decode(VPacket packet) => throw new NotSupportedException();
+    public VideoFrame[] Decode(VPacket packet) => throw new NotSupportedException(L.T("The VP9 encoder does not support decoding."));
 
     public VPacket Encode(VideoFrame[] frames)
     {
