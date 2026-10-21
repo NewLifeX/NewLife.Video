@@ -1,8 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;netstandard2.0;net461;net8.0;net10.0</TargetFrameworks>
-    <AssemblyTitle>视频编解码</AssemblyTitle>
-    <Description>支持各种视频编解码、容器格式、帧处理、流媒体传输和IoT视频适配</Description>
+    <AssemblyTitle>NewLife Video Library</AssemblyTitle>
+    <Description>Video codecs, container formats, frame processing, streaming media and IoT video adaptation.</Description>
     <Company>新生命开发团队</Company>
     <Copyright>©2002-2026 新生命开发团队</Copyright>
     <VersionPrefix>1.2</VersionPrefix>
@@ -26,6 +26,7 @@
 
   <PropertyGroup>
     <PackageId>$(AssemblyName)</PackageId>
+    <PackageDescription>Video codecs, container formats, frame processing, streaming media and IoT video adaptation. 视频编解码、容器格式、帧处理、流媒体传输与IoT视频适配。</PackageDescription>
     <Authors>$(Company)</Authors>
     <PackageProjectUrl>https://newlifex.com/iot</PackageProjectUrl>
     <PackageIcon>leaf.png</PackageIcon>
@@ -47,7 +48,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="NewLife.Audio" Version="1.2.2026.1019-beta1253" />
-    <PackageReference Include="NewLife.Core" Version="12.0.2026.1019-beta1413" />
+    <PackageReference Include="NewLife.Core" Version="12.0.2026.1021-beta0321" />
   </ItemGroup>
 
   <ItemGroup>
