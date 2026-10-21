@@ -1,5 +1,8 @@
 # NewLife.Video - Библиотека видеокодеков
 
+![GitHub top language](https://img.shields.io/github/languages/top/newlifex/NewLife.Video?logo=github)
+
+
 ![GitHub License](https://img.shields.io/github/license/NewLifeX/NewLife.Video?logo=github)
 ![NuGet Downloads](https://img.shields.io/nuget/dt/NewLife.Video?logo=nuget)
 ![NuGet](https://img.shields.io/nuget/v/NewLife.Video?logo=nuget)
@@ -16,30 +19,124 @@
 
 > Перевод может отставать от [английской версии](README.md).
 
-NewLife.Video обеспечивает мультиплексирование, демультиплексирование и транскодирование H.264/H.265, MP4, FLV, RTMP и RTSP для стриминга и видеонаблюдения.
+Поддержка широкого спектра видеокодеков, форматов контейнеров, обработки кадров, потокового мультимедиа и адаптации IoT-видео.
 
-## Установка
+Исходный код: https://github.com/NewLifeX/NewLife.Video  
+NuGet: `NewLife.Video`  
 
-```bash
-dotnet add package NewLife.Video
-```
+## Возможности
+
+### Движок кодеков
+- Декодирование и кодирование H.264/H.265 (обёртка над конвейером FFmpeg, сквозная передача аппаратного кодировщика)
+- MJPEG — кодек на чистом управляемом коде
+- Декодирование и кодирование VP8/VP9/AV1 (обёртка над конвейером FFmpeg)
+- Преобразование цветового пространства: YUV420P/NV12 ↔ RGB24/BGRA32 (BT.601, с ускорением SIMD)
+- Адаптация заголовков чипов: Hisilicon/Dahua/Uniview
+- Автоматическое определение, загрузка и кэширование среды выполнения FFmpeg
+- API транскодирования в один клик: VideoTranscoder
+
+### Форматы контейнеров
+| Формат | Чтение | Запись | Примечания |
+|------|:--:|:--:|------|
+| MP4 (ISO BMFF) | ✅ | ✅ | Полная структура боксов ftyp/moov/mdat |
+| FLV | ✅ | ✅ | Заголовок FLV + VideoTag |
+| AVI (RIFF) | ✅ | ✅ | Полная структура avih/strh/strf/movi/idx1 |
+| TS (MPEG-TS) | ✅ | ✅ | PAT/PMT + 188-байтовые пакеты TS |
+| MKV/WebM (Matroska) | ✅ | ✅ | EBML/Segment/Tracks/Cluster/SimpleBlock |
+| Необработанные видеокадры | ✅ | ✅ | YUV420P/NV12/RGB24 |
+| fMP4/CMAF (сегментированный) | ❌ | ✅ | Fmp4SegmentWriter для прямой трансляции |
+
+### Обработка кадров
+Изменение размера, обрезка, поворот и отражение, настройка цвета, текстовый водяной знак, наложение метки времени, генерация миниатюр, обнаружение движения, изменение частоты кадров.
+
+### Форматы изображений
+- Вывод снимков: JPEG/BMP/TIFF/PNG/WebP/GIF — кодирование на чистом управляемом коде, AVIF через конвейер FFmpeg
+- Кодирование анимированного GIF на чистом управляемом коде (GIF 89a, собственная реализация сжатия LZW)
+- Конвейер пакетного кодирования кадров: пакетный вывод нескольких кадров + сетка миниатюр
+
+### Потоковое мультимедиа
+- Пакетирование и депакетирование RTP: H.264 (RFC 6184), H.265 (RFC 7798)
+- Клиент RTSP: OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN
+- Отправка RTMP: рукопожатие + командный уровень AMF0 (connect/createStream/publish)
+- Сегментация HLS: генерация плейлиста m3u8 + сегменты TS + автоматическая очистка
+- JitterBuffer, видеоканал WebSocket
+
+### Потоковое воспроизведение
+- Движок воспроизведения FfmpegPlayer: RTSP/RTMP/HLS/локальные файлы, сырые кадры выводятся через событие FrameDecoded
+- fMP4 по WebSocket: Fmp4WebSocketStreamer для воспроизведения в браузере в реальном времени с задержкой 1–3 секунды
+- Мост RTSP→WebSocket: RTSP-потоки камер воспроизводятся в браузере
+- Управление несколькими камерами: пул соединений/автоматическое переподключение/мониторинг состояния CameraStreamManager (16+ каналов 1080p на процесс)
+- Рендерер кадров на чистом управляемом коде: VideoFrameRenderer выводит буферы памяти BGRA32
+
+### Адаптация IoT-видео
+- ONVIF: обнаружение устройств WS-Discovery, получение URL медиапотока, управление PTZ, пограничное хранилище Profile G
+- GB/T 28181: регистрация SIP/периодический сигнал, живое вещание по запросу (INVITE+SDP+RTP)
+- Расписание записи: по таймеру + по событию
+- Видеозаголовки чипов: Hisilicon/Dahua/Uniview
+
+### Захват с устройств
+- ScreenCapture: захват рабочего стола Windows DXGI / кроссплатформенный совместимый подход
+- DirectShow / V4L2 / macOS AVFoundation — поддержка нескольких бэкендов
+
+### Настольный клиент (NewLife.Video.Studio)
+- Полнофункциональное настольное приложение Avalonia, охватывающее весь рабочий процесс захвата, воспроизведения, обработки, транскодирования и потоковой передачи
+- Захват с камеры/экрана/устройства, просмотр информации о медиафайле, просмотр кадров
+- Пакетная обработка, конвертация форматов, консоль FFmpeg, прямая трансляция HLS, управление PTZ ONVIF
+
+## Документация
+
+| Документ | Описание |
+|------|------|
+| [Требования](Doc/需求文档.md) | Видение проекта, ключевые цели и состав модулей |
+| [Список функций](Doc/功能模块清单.md) | 82 функции с отслеживанием реализации, тестов и комментариев |
+| [Архитектура](Doc/架构设计.md) | Слоистая архитектура, взаимодействие компонентов и ключевые проектные решения |
+| [Анализ конкурентов](Doc/竞品分析报告.md) | Сравнение с конкурентами и отличия в обработке видео на .NET |
+| [История изменений](Doc/ChangeLog.md) | История выпусков |
+
+> 📖 Полная документация ведётся на китайском языке: [документы репозитория](Doc)
 
 ## Быстрый старт
 
 ```csharp
-var reader = new Mp4Reader(stream);
-var frame = reader.ReadFrame();
+// 1. Используем встроенные кодеки
+var factory = new VideoCodecFactory(); // Автоматически регистрирует MJPEG/H.264/H.265/VP8/VP9
+
+// 2. Чтение и запись контейнеров
+using var writer = VideoContainerFactory.CreateWriter("output.mp4");
+writer.WriteMetadata(1920, 1080, VideoTypes.H264, 30);
+writer.WriteFrame(new VPacket { Data = new Packet(h264Data), CodecType = VideoTypes.H264 });
+// Dispose автоматически записывает полный файл
+
+// 3. Конвейер обработки кадров
+var pipeline = new VideoPipeline();
+pipeline.Append(new FrameResizer(640, 480))
+       .Append(new TimestampOverlay())
+       .Append(new WatermarkOverlay("Camera-01"));
+
+// 4. Потоковая отправка
+var client = new RtmpClient("rtmp://server/live/stream");
+await client.ConnectAsync();
+await client.ConnectStreamAsync();
+await client.CreateStreamAsync();
+await client.PublishAsync();
+await client.PushVideoAsync(new VPacket { Data = new Packet(avccData), CodecType = VideoTypes.H264 });
+
+// 5. Обнаружение устройств ONVIF
+var discovery = new OnvifDiscovery();
+var devices = await discovery.DiscoverAsync();
 ```
 
-## Возможности
+## Философия архитектуры
 
-- Потоковая обработка и связь в реальном времени
-- Широкий охват версий популярных протоколов и форматов
-- Кроссплатформенность: Windows, Linux, macOS, ARM64/LoongArch64
+**Чистый управляемый код + гибрид с FFmpeg**: простые операции (кодек MJPEG, преобразование YUV↔RGB, разбор контейнеров, обработка кадров) реализованы полностью на управляемом коде без зависимостей. Сложные кодеки (H.264/H.265) делегируются процессам FFmpeg.
 
-## Документация
+**API уровня кадра**: не ограничивается транскодированием файлов — предоставляет покадровое декодирование/кодирование/обработку, что идеально подходит для потокового видео в реальном времени.
 
-> 📖 Полная документация (на китайском): [документы репозитория](Doc)
+**IoT в приоритете**: глубокая интеграция с ONVIF, GB/T 28181 и заголовками IoT-чипов — решение создано для видеонаблюдения и сценариев IoT.
+
+## Целевые платформы
+
+`netstandard2.1` / `netstandard2.0` / `net461` / `net8.0` / `net10.0` — совместимо с .NET Framework 4.6.1+, .NET Core 3.0+, .NET 5+ и Mono.
 
 ## Карта экосистемы
 
@@ -89,7 +186,11 @@ NewLife — это многоуровневая экосистема незав�
 | [GitCandy](https://github.com/NewLifeX/GitCandy) | Самостоятельно размещаемая система управления исходным кодом Git. | — |
 | [LuckyClover](https://github.com/NewLifeX/LuckyClover) | Автоматически устанавливает подходящую среду выполнения .NET при запуске на старом хосте. | — |
 
-> Бейджи показывают основной пакет каждого проекта; пакеты тем, расширений и сателлитов перечислены на соответствующих страницах NuGet.Более 30 пакетов, не перечисленных здесь (FTP, LoRa, расширения Office, драйверы протоколов и другие), доступны в [организации NewLifeX](https://github.com/NewLifeX) и на [newlifex.com](https://newlifex.com).
+> Бейджи показывают основной пакет каждого проекта; пакеты тем, расширений и сателлитов перечислены на соответствующих страницах NuGet. Более 30 пакетов, не перечисленных здесь (FTP, LoRa, расширения Office, драйверы протоколов и другие), доступны в [организации NewLifeX](https://github.com/NewLifeX) и на [newlifex.com](https://newlifex.com).
+
+## Лицензия
+
+MIT License
 
 ## Команда
 
@@ -107,9 +208,3 @@ Open-source компоненты скачали <!--nuget-total:start-->6.48M<!-
 ![智能大石头](https://newlifex.com/stone.jpg)
 
 </details>
-
-## Лицензия
-
-MIT License © 2002-2026 Команда NewLife
-
-[GitHub](https://github.com/NewLifeX/NewLife.Video) | [Website](https://newlifex.com)

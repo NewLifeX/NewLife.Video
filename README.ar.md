@@ -1,5 +1,8 @@
 # NewLife.Video - مكتبة ترميز الفيديو
 
+![GitHub top language](https://img.shields.io/github/languages/top/newlifex/NewLife.Video?logo=github)
+
+
 ![GitHub License](https://img.shields.io/github/license/NewLifeX/NewLife.Video?logo=github)
 ![NuGet Downloads](https://img.shields.io/nuget/dt/NewLife.Video?logo=nuget)
 ![NuGet](https://img.shields.io/nuget/v/NewLife.Video?logo=nuget)
@@ -16,30 +19,122 @@
 
 > قد تتأخر هذه الترجمة عن [النسخة الإنجليزية](README.md).
 
-يوفر NewLife.Video التجميع والتفكيك والتحويل لصيغ H.264/H.265 وMP4 وFLV وRTMP وRTSP، للبث المباشر والمراقبة.
+دعم واسع لمجموعة كبيرة من مرمّزات الفيديو وصيغ الحاويات ومعالجة الإطارات والوسائط المتدفقة وتكييف فيديو إنترنت الأشياء.
 
-## التثبيت
+المصدر: https://github.com/NewLifeX/NewLife.Video  
+NuGet: `NewLife.Video`  
 
-```bash
-dotnet add package NewLife.Video
-```
+## الميزات
+
+### محرّك الترميز
+- فك وترميز H.264/H.265 (غلاف أنبوب FFmpeg، وتمرير مباشر للمرمّز العتادي)
+- فك وترميز MJPEG بإدارة كاملة للشيفرة
+- فك وترميز VP8/VP9/AV1 (غلاف أنبوب FFmpeg)
+- تحويل فضاء الألوان: YUV420P/NV12 ↔ RGB24/BGRA32 (BT.601، مع تسريع SIMD)
+- تكييف ترويسات الشرائح: Hisilicon/Dahua/Uniview
+- اكتشاف/تنزيل/تخزين مؤقت لبيئة تشغيل FFmpeg تلقائيًا
+- واجهة برمجية للتحويل الشامل بأمر واحد: VideoTranscoder
+
+### صيغ الحاويات
+| الصيغة | القراءة | الكتابة | ملاحظات |
+|------|:--:|:--:|------|
+| MP4 (ISO BMFF) | ✅ | ✅ | بنية صناديق ftyp/moov/mdat كاملة |
+| FLV | ✅ | ✅ | ترويسة FLV + VideoTag |
+| AVI (RIFF) | ✅ | ✅ | بنية avih/strh/strf/movi/idx1 كاملة |
+| TS (MPEG-TS) | ✅ | ✅ | PAT/PMT + حزم TS بحجم 188 بايت |
+| MKV/WebM (Matroska) | ✅ | ✅ | EBML/Segment/Tracks/Cluster/SimpleBlock |
+| إطارات فيديو خام | ✅ | ✅ | YUV420P/NV12/RGB24 |
+| fMP4/CMAF (مقسّم) | ❌ | ✅ | Fmp4SegmentWriter للبث المباشر |
+
+### معالجة الإطارات
+تغيير الحجم، والقص، والتدوير والانعكاس، وضبط الألوان، والعلامة المائية النصية، وتراكب الطابع الزمني، وتوليد الصور المصغّرة، وكشف الحركة، وتحويل معدل الإطارات.
+
+### صيغ الصور
+- إخراج اللقطات: ترميز JPEG/BMP/TIFF/PNG/WebP/GIF بإدارة كاملة للشيفرة، وAVIF عبر أنبوب FFmpeg
+- ترميز GIF متحرك بإدارة كاملة للشيفرة (GIF 89a، ضغط LZW داخلي)
+- خط أنابيب ترميز دفعي للإطارات: إخراج دفعي متعدد الإطارات + صور مصغّرة شبكية
+
+### الوسائط المتدفقة
+- تحزيم/إزالة تحزيم RTP: H.264 (RFC 6184)، H.265 (RFC 7798)
+- عميل RTSP: OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN
+- دفع RTMP: مصافحة + طبقة أوامر AMF0 (connect/createStream/publish)
+- تقسيم HLS: توليد قائمة m3u8 + مقاطع TS + تنظيف تلقائي
+- JitterBuffer، وقناة فيديو WebSocket
+
+### تشغيل البث
+- محرّك التشغيل FfmpegPlayer: RTSP/RTMP/HLS/الملفات المحلية، والإطارات الخام تُصدر عبر الحدث FrameDecoded
+- fMP4 عبر WebSocket: Fmp4WebSocketStreamer للتشغيل الفوري في المتصفح بزمن تأخير 1-3 ثوانٍ
+- جسر RTSP→WebSocket: تشغيل بثّ كاميرات RTSP في المتصفح
+- إدارة كاميرات متعددة: تجمّع اتصالات CameraStreamManager/إعادة اتصال تلقائية/مراقبة صحّة (16+ قناة 1080p لكل عملية)
+- عارض إطارات بإدارة كاملة للشيفرة: VideoFrameRenderer يُخرج مخازن ذاكرة BGRA32
+
+### تكييف فيديو إنترنت الأشياء
+- ONVIF: اكتشاف الأجهزة عبر WS-Discovery، واسترجاع عنوان بث Media، والتحكم PTZ، والتخزين الطرفي Profile G
+- GB/T 28181: تسجيل/نبض SIP، والبث عند الطلب المباشر (INVITE+SDP+RTP)
+- جدولة التسجيل: بالمؤقت + بالمشغّلات
+- ترويسات فيديو الشرائح: Hisilicon/Dahua/Uniview
+
+### التقاط الأجهزة
+- ScreenCapture: التقاط سطح المكتب DXGI على Windows / نهج متوافق عبر المنصات
+- دعم خلفيات متعددة: DirectShow / V4L2 / macOS AVFoundation
+
+### عميل سطح المكتب (NewLife.Video.Studio)
+- تطبيق Avalonia متكامل يغطي كامل سلسلة الالتقاط والتشغيل والمعالجة والتحويل والبث
+- التقاط الكاميرا/الشاشة/الأجهزة، وعارض معلومات الوسائط، ومتصفّح الإطارات
+- المعالجة الدفعية، وتحويل الصيغ، وطرفية FFmpeg، والبث المباشر HLS، والتحكم ONVIF PTZ
+
+## التوثيق
+
+| المستند | الوصف |
+|------|------|
+| [المتطلبات](Doc/需求文档.md) | رؤية المشروع والأهداف الأساسية وتقسيم الوحدات |
+| [قائمة الميزات](Doc/功能模块清单.md) | 82 ميزة متتبَّعة عبر التنفيذ والاختبار والتعليقات |
+| [التصميم المعماري](Doc/架构设计.md) | المعمارية الطبقية وتفاعل المكوّنات وقرارات التصميم الرئيسية |
+| [تحليل المنافسين](Doc/竞品分析报告.md) | مقارنة تنافسية وأوجه التمايز في معالجة الفيديو على .NET |
+| [سجل التغييرات](Doc/ChangeLog.md) | تاريخ الإصدارات |
 
 ## البدء السريع
 
 ```csharp
-var reader = new Mp4Reader(stream);
-var frame = reader.ReadFrame();
+// 1. استخدام المرمّزات المدمجة
+var factory = new VideoCodecFactory(); // يسجّل MJPEG/H.264/H.265/VP8/VP9 تلقائيًا
+
+// 2. قراءة الحاويات وكتابتها
+using var writer = VideoContainerFactory.CreateWriter("output.mp4");
+writer.WriteMetadata(1920, 1080, VideoTypes.H264, 30);
+writer.WriteFrame(new VPacket { Data = new Packet(h264Data), CodecType = VideoTypes.H264 });
+// عند Dispose يُكتب الملف كاملًا تلقائيًا
+
+// 3. خط أنابيب معالجة الإطارات
+var pipeline = new VideoPipeline();
+pipeline.Append(new FrameResizer(640, 480))
+       .Append(new TimestampOverlay())
+       .Append(new WatermarkOverlay("Camera-01"));
+
+// 4. دفع البث
+var client = new RtmpClient("rtmp://server/live/stream");
+await client.ConnectAsync();
+await client.ConnectStreamAsync();
+await client.CreateStreamAsync();
+await client.PublishAsync();
+await client.PushVideoAsync(new VPacket { Data = new Packet(avccData), CodecType = VideoTypes.H264 });
+
+// 5. اكتشاف أجهزة ONVIF
+var discovery = new OnvifDiscovery();
+var devices = await discovery.DiscoverAsync();
 ```
 
-## الميزات الرئيسية
+## فلسفة التصميم المعماري
 
-- إمكانات البث والاتصال الفوري
-- تغطية واسعة لإصدارات البروتوكولات والصيغ الشائعة
-- متعدد المنصات: Windows وLinux وmacOS وARM64/LoongArch64
+**إدارة كاملة للشيفرة + هجين مع FFmpeg**: العمليات البسيطة (ترميز MJPEG، والتحويل بين YUV وRGB، وتحليل الحاويات، ومعالجة الإطارات) تنفيذات مُدارة بالكامل بلا اعتماديات خارجية. أما المرمّزات المعقّدة (H.264/H.265) فتُفوَّض إلى عمليات FFmpeg.
 
-## التوثيق
+**واجهة برمجية على مستوى الإطار**: لا تقتصر على تحويل الملفات، بل توفّر إمكانات فك الترميز والترميز والمعالجة لكل إطار على حدة، وهو ما يناسب بثّ الفيديو في الزمن الحقيقي.
 
-> 📖 التوثيق الكامل (بالصينية): [مستندات المستودع](Doc)
+**إنترنت الأشياء أولًا**: تكامل عميق مع ONVIF وGB/T 28181 وترويسات شرائح إنترنت الأشياء، وهو ما صُمّم خصيصًا لمراقبة الفيديو وسيناريوهات إنترنت الأشياء.
+
+## أطر العمل المستهدفة
+
+`netstandard2.1` / `netstandard2.0` / `net461` / `net8.0` / `net10.0` — متوافقة مع .NET Framework 4.6.1+ و.NET Core 3.0+ و.NET 5+ وMono.
 
 ## خريطة المنظومة
 
@@ -89,7 +184,11 @@ NewLife منظومة متعدّدة الطبقات من مشاريع مفتوح�
 | [GitCandy](https://github.com/NewLifeX/GitCandy) | نظام استضافة ذاتية لإدارة الشيفرة المصدرية Git. | — |
 | [LuckyClover](https://github.com/NewLifeX/LuckyClover) | يثبّت بيئة تشغيل .NET المطابقة تلقائيًا عند التشغيل من مضيف أقدم. | — |
 
-> تعرض الشارات الحزمة الرئيسية لكل مشروع؛ أما حزم السمات والإضافات والحزم التابعة فمذكورة في صفحاتها على NuGet.الحزم التي تتجاوز 30 حزمة وغير المذكورة هنا (FTP وLoRa وإضافات Office وبرامج تشغيل البروتوكولات وغيرها) متاحة في [منظمة NewLifeX](https://github.com/NewLifeX) وعلى [newlifex.com](https://newlifex.com).
+> تعرض الشارات الحزمة الرئيسية لكل مشروع؛ أما حزم السمات والإضافات والحزم التابعة فمذكورة في صفحاتها على NuGet. أما الحزم الإضافية التي يتجاوز عددها 30 حزمة وغير المذكورة هنا (FTP وLoRa وإضافات Office وبرامج تشغيل البروتوكولات وغيرها) فمتاحة في [منظمة NewLifeX](https://github.com/NewLifeX) وعلى [newlifex.com](https://newlifex.com).
+
+## الترخيص
+
+MIT License
 
 ## الفريق
 
@@ -107,9 +206,3 @@ NewLife منظومة متعدّدة الطبقات من مشاريع مفتوح�
 ![智能大石头](https://newlifex.com/stone.jpg)
 
 </details>
-
-## الترخيص
-
-MIT License © 2002-2026 فريق NewLife
-
-[GitHub](https://github.com/NewLifeX/NewLife.Video) | [Website](https://newlifex.com)

@@ -1,5 +1,8 @@
 # NewLife.Video - Bibliothèque de codecs vidéo
 
+![GitHub top language](https://img.shields.io/github/languages/top/newlifex/NewLife.Video?logo=github)
+
+
 ![GitHub License](https://img.shields.io/github/license/NewLifeX/NewLife.Video?logo=github)
 ![NuGet Downloads](https://img.shields.io/nuget/dt/NewLife.Video?logo=nuget)
 ![NuGet](https://img.shields.io/nuget/v/NewLife.Video?logo=nuget)
@@ -16,30 +19,122 @@
 
 > Cette traduction peut être en retard sur la [version anglaise](README.md).
 
-NewLife.Video fournit multiplexage, démultiplexage et transcodage pour H.264/H.265, MP4, FLV, RTMP et RTSP, pour le streaming et la vidéosurveillance.
+Prise en charge d'un large éventail de codecs vidéo, de formats de conteneurs, de traitement des trames, de diffusion en continu et d'adaptation vidéo IoT.
 
-## Installation
+Source : https://github.com/NewLifeX/NewLife.Video  
+NuGet : `NewLife.Video`  
 
-```bash
-dotnet add package NewLife.Video
-```
+## Fonctionnalités
+
+### Moteur de codecs
+- Décodage et encodage H.264/H.265 (encapsulation du pipe FFmpeg, passthrough de l'encodeur matériel)
+- Codec MJPEG entièrement en code managé
+- Décodage et encodage VP8/VP9/AV1 (encapsulation du pipe FFmpeg)
+- Conversion d'espace colorimétrique : YUV420P/NV12 ↔ RGB24/BGRA32 (BT.601, accélérée SIMD)
+- Adaptation des en-têtes de puces : Hisilicon/Dahua/Uniview
+- Détection automatique, téléchargement et mise en cache du runtime FFmpeg
+- API de transcodage en un clic : VideoTranscoder
+
+### Formats de conteneurs
+| Format | Lecture | Écriture | Remarques |
+|------|:--:|:--:|------|
+| MP4 (ISO BMFF) | ✅ | ✅ | Structure de boîtes ftyp/moov/mdat complète |
+| FLV | ✅ | ✅ | En-tête FLV + VideoTag |
+| AVI (RIFF) | ✅ | ✅ | Structure avih/strh/strf/movi/idx1 complète |
+| TS (MPEG-TS) | ✅ | ✅ | PAT/PMT + paquets TS de 188 octets |
+| MKV/WebM (Matroska) | ✅ | ✅ | EBML/Segment/Tracks/Cluster/SimpleBlock |
+| Trames vidéo brutes | ✅ | ✅ | YUV420P/NV12/RGB24 |
+| fMP4/CMAF (segmenté) | ❌ | ✅ | Fmp4SegmentWriter pour la diffusion en direct |
+
+### Traitement des trames
+Redimensionnement, recadrage, rotation et miroir, ajustement des couleurs, filigrane texte, superposition d'horodatage, génération de vignettes, détection de mouvement, conversion de fréquence d'images.
+
+### Formats d'images
+- Sortie d'instantanés : encodage JPEG/BMP/TIFF/PNG/WebP/GIF entièrement en code managé, AVIF via le pipe FFmpeg
+- Encodage GIF animé entièrement en code managé (GIF 89a, compression LZW maison)
+- Pipeline d'encodage par lots de trames : sortie par lots de plusieurs trames + vignettes en grille
+
+### Diffusion en continu
+- Paquétisation et dépaquétisation RTP : H.264 (RFC 6184), H.265 (RFC 7798)
+- Client RTSP : OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN
+- Push RTMP : poignée de main + couche de commandes AMF0 (connect/createStream/publish)
+- Segmentation HLS : génération de playlist m3u8 + segments TS + nettoyage automatique
+- JitterBuffer, canal vidéo WebSocket
+
+### Lecture en continu
+- Moteur de lecture FfmpegPlayer : RTSP/RTMP/HLS/fichiers locaux, trames brutes émises via l'événement FrameDecoded
+- fMP4 sur WebSocket : Fmp4WebSocketStreamer pour une lecture temps réel dans le navigateur avec une latence de 1 à 3 secondes
+- Passerelle RTSP→WebSocket : flux RTSP de caméras lus dans le navigateur
+- Gestion multicaméra : pool de connexions, reconnexion automatique et supervision de santé de CameraStreamManager (plus de 16 canaux 1080p par processus)
+- Afficheur de trames entièrement en code managé : VideoFrameRenderer produit des tampons mémoire BGRA32
+
+### Adaptation vidéo IoT
+- ONVIF : découverte d'appareils WS-Discovery, récupération des URL de flux Media, contrôle PTZ, stockage en périphérie Profile G
+- GB/T 28181 : enregistrement et heartbeat SIP, direct à la demande (INVITE+SDP+RTP)
+- Planification d'enregistrement : minuteur + déclenchement par événements
+- En-têtes vidéo de puces : Hisilicon/Dahua/Uniview
+
+### Capture depuis les appareils
+- ScreenCapture : capture de bureau Windows DXGI / approche compatible multiplateforme
+- Prise en charge multi-backend DirectShow / V4L2 / macOS AVFoundation
+
+### Client de bureau (NewLife.Video.Studio)
+- Application de bureau Avalonia complète couvrant tout le cycle de capture, de lecture, de traitement, de transcodage et de diffusion
+- Capture caméra/écran/appareil, visualiseur d'informations média, navigateur de trames
+- Traitement par lots, conversion de format, console FFmpeg, diffusion en direct HLS, contrôle PTZ ONVIF
+
+## Documentation
+
+| Document | Description |
+|------|------|
+| [Exigences](Doc/需求文档.md) | Vision du projet, objectifs principaux et découpage des modules |
+| [Liste des fonctionnalités](Doc/功能模块清单.md) | 82 fonctionnalités suivies sur les axes implémentation, tests et commentaires |
+| [Architecture](Doc/架构设计.md) | Architecture en couches, interaction des composants et décisions de conception clés |
+| [Analyse concurrentielle](Doc/竞品分析报告.md) | Comparaison concurrentielle et différenciation dans le traitement vidéo .NET |
+| [Journal des modifications](Doc/ChangeLog.md) | Historique des versions |
 
 ## Démarrage rapide
 
 ```csharp
-var reader = new Mp4Reader(stream);
-var frame = reader.ReadFrame();
+// 1. Utiliser les codecs intégrés
+var factory = new VideoCodecFactory(); // Enregistre automatiquement MJPEG/H.264/H.265/VP8/VP9
+
+// 2. Lecture et écriture de conteneurs
+using var writer = VideoContainerFactory.CreateWriter("output.mp4");
+writer.WriteMetadata(1920, 1080, VideoTypes.H264, 30);
+writer.WriteFrame(new VPacket { Data = new Packet(h264Data), CodecType = VideoTypes.H264 });
+// Dispose écrit automatiquement le fichier complet
+
+// 3. Pipeline de traitement des trames
+var pipeline = new VideoPipeline();
+pipeline.Append(new FrameResizer(640, 480))
+       .Append(new TimestampOverlay())
+       .Append(new WatermarkOverlay("Camera-01"));
+
+// 4. Push de diffusion
+var client = new RtmpClient("rtmp://server/live/stream");
+await client.ConnectAsync();
+await client.ConnectStreamAsync();
+await client.CreateStreamAsync();
+await client.PublishAsync();
+await client.PushVideoAsync(new VPacket { Data = new Packet(avccData), CodecType = VideoTypes.H264 });
+
+// 5. Découverte d'appareils ONVIF
+var discovery = new OnvifDiscovery();
+var devices = await discovery.DiscoverAsync();
 ```
 
-## Fonctionnalités
+## Philosophie d'architecture
 
-- Capacités de streaming et de communication temps réel
-- Large couverture des versions de protocoles et formats courants
-- Multiplateforme : Windows, Linux, macOS et ARM64/LoongArch64
+**Code managé pur + hybride FFmpeg** : les opérations simples (codec MJPEG, conversion YUV↔RGB, analyse de conteneurs, traitement des trames) sont des implémentations entièrement managées et sans dépendance. Les codecs complexes (H.264/H.265) délèguent le travail à des processus FFmpeg.
 
-## Documentation
+**API au niveau de la trame** : pas limitée au transcodage de fichiers — elle fournit des capacités de décodage, d'encodage et de traitement trame par trame, idéales pour les flux vidéo temps réel.
 
-> 📖 Documentation complète (chinois) : [documents du dépôt](Doc)
+**L'IoT d'abord** : intégration poussée avec ONVIF, GB/T 28181 et les en-têtes de puces IoT — conçue pour la vidéosurveillance et les scénarios IoT.
+
+## Frameworks cibles
+
+`netstandard2.1` / `netstandard2.0` / `net461` / `net8.0` / `net10.0` — compatible avec .NET Framework 4.6.1+, .NET Core 3.0+, .NET 5+ et Mono.
 
 ## Carte de l'écosystème
 
@@ -91,6 +186,10 @@ NewLife est un écosystème en couches de projets open source versionnés indép
 
 > Les badges indiquent le paquet principal de chaque projet ; les paquets de thèmes, d'extensions et satellites sont répertoriés sur leurs pages NuGet.Les plus de 30 paquets non listés ici (FTP, LoRa, extensions Office, pilotes de protocoles, etc.) sont disponibles dans l'[organisation NewLifeX](https://github.com/NewLifeX) et sur [newlifex.com](https://newlifex.com).
 
+## Licence
+
+MIT License
+
 ## Équipe
 
 <img src="https://newlifex.com/logo.png" width="48" align="right" alt="NewLife" />
@@ -107,9 +206,3 @@ Site web : https://newlifex.com · Organisation open source : https://github.com
 ![智能大石头](https://newlifex.com/stone.jpg)
 
 </details>
-
-## Licence
-
-MIT License © 2002-2026 Équipe NewLife
-
-[GitHub](https://github.com/NewLifeX/NewLife.Video) | [Website](https://newlifex.com)

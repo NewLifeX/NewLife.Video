@@ -1,4 +1,7 @@
-# NewLife.Video - 視訊編解碼庫
+# NewLife.Video - 影片編解碼庫
+
+![GitHub top language](https://img.shields.io/github/languages/top/newlifex/NewLife.Video?logo=github)
+
 
 ![GitHub License](https://img.shields.io/github/license/NewLifeX/NewLife.Video?logo=github)
 ![NuGet Downloads](https://img.shields.io/nuget/dt/NewLife.Video?logo=nuget)
@@ -16,30 +19,122 @@
 
 > 本翻譯可能落後，以 [English README](README.md) 為準。
 
-NewLife.Video 提供 H.264/H.265、MP4、FLV、RTMP、RTSP 等視訊格式的封裝、解封裝與轉碼能力，面向串流媒體與安防場景。
+支援各式影片編解碼、封裝格式、影格處理、串流媒體與 IoT 影片適配。
 
-## 安裝
+原始碼：https://github.com/NewLifeX/NewLife.Video  
+NuGet：`NewLife.Video`  
 
-```bash
-dotnet add package NewLife.Video
-```
+## 功能特色
+
+### 編解碼引擎
+- H.264/H.265 解碼與編碼（FFmpeg 管道封裝，支援硬體編碼器直通）
+- MJPEG 純受控編解碼
+- VP8/VP9/AV1 解碼與編碼（FFmpeg 管道封裝）
+- 色彩空間轉換：YUV420P/NV12 ↔ RGB24/BGRA32（BT.601，SIMD 加速）
+- 晶片標頭適配：Hisilicon/Dahua/Uniview
+- FFmpeg 執行階段自動偵測／下載／快取
+- 一鍵轉碼 API：VideoTranscoder
+
+### 封裝格式
+| 格式 | 讀取 | 寫入 | 備註 |
+|------|:--:|:--:|------|
+| MP4 (ISO BMFF) | ✅ | ✅ | 完整的 ftyp/moov/mdat box 結構 |
+| FLV | ✅ | ✅ | FLV 標頭 + VideoTag |
+| AVI (RIFF) | ✅ | ✅ | 完整的 avih/strh/strf/movi/idx1 結構 |
+| TS (MPEG-TS) | ✅ | ✅ | PAT/PMT + 188 位元組 TS 封包 |
+| MKV/WebM (Matroska) | ✅ | ✅ | EBML/Segment/Tracks/Cluster/SimpleBlock |
+| 原始影片影格 | ✅ | ✅ | YUV420P/NV12/RGB24 |
+| fMP4/CMAF（分段） | ❌ | ✅ | Fmp4SegmentWriter，適用於直播串流 |
+
+### 影格處理
+尺寸縮放、區域裁剪、旋轉與翻轉、色彩調整、文字浮水印、時間戳記疊加、縮圖產生、移動偵測、影格率轉換。
+
+### 影像格式
+- 快照輸出：JPEG/BMP/TIFF/PNG/WebP/GIF 純受控編碼，AVIF 透過 FFmpeg 管道編碼
+- 動畫 GIF 純受控編碼（GIF 89a，自研 LZW 壓縮）
+- 批次影格編碼管線：多影格批次輸出 + 網格縮圖
+
+### 串流媒體
+- RTP 封包化／解封包化：H.264（RFC 6184）、H.265（RFC 7798）
+- RTSP 用戶端：OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN
+- RTMP 推送：握手 + AMF0 命令層（connect/createStream/publish）
+- HLS 分段：m3u8 播放清單產生 + TS 分段 + 自動清理
+- JitterBuffer、WebSocket 影片通道
+
+### 串流播放
+- FfmpegPlayer 播放引擎：支援 RTSP/RTMP/HLS/本機檔案，原始影格經由 FrameDecoded 事件輸出
+- fMP4 over WebSocket：Fmp4WebSocketStreamer 實現瀏覽器即時播放，延遲 1-3 秒
+- RTSP→WebSocket 橋接：將攝影機 RTSP 串流投放至瀏覽器播放
+- 多攝影機管理：CameraStreamManager 連線集區／自動重連／健康監測（單一程序 16+ 路 1080p）
+- 純受控影格轉譯器：VideoFrameRenderer 輸出 BGRA32 記憶體緩衝區
+
+### IoT 影片適配
+- ONVIF：WS-Discovery 裝置探索、Media 串流位址取得、PTZ 雲台控制、Profile G 邊緣儲存
+- GB/T 28181：SIP 註冊／心跳、即時點播（INVITE+SDP+RTP）
+- 錄影排程：計時器 + 事件觸發
+- 晶片影片標頭：Hisilicon/Dahua/Uniview
+
+### 裝置擷取
+- ScreenCapture：Windows DXGI 桌面擷取／跨平台相容方案
+- DirectShow / V4L2 / macOS AVFoundation 多後端支援
+
+### 桌面用戶端（NewLife.Video.Studio）
+- 以 Avalonia 打造的全功能桌面應用程式，涵蓋擷取、播放、處理、轉碼與串流完整流程
+- 攝影機／螢幕／裝置擷取、媒體資訊檢視器、影格瀏覽器
+- 批次處理、格式轉換、FFmpeg 主控台、HLS 直播、ONVIF 雲台控制
+
+## 說明文件
+
+| 文件 | 說明 |
+|------|------|
+| [需求文件](Doc/需求文档.md) | 專案願景、核心目標與模組劃分 |
+| [功能清單](Doc/功能模块清单.md) | 82 項功能的實作／測試／註解三維狀態追蹤 |
+| [架構設計](Doc/架构设计.md) | 分層架構、元件互動與關鍵設計決策 |
+| [競品分析](Doc/竞品分析报告.md) | .NET 影片處理領域的競品比較與差異化定位 |
+| [更新日誌](Doc/ChangeLog.md) | 版本發行歷史 |
 
 ## 快速開始
 
 ```csharp
-var reader = new Mp4Reader(stream);
-var frame = reader.ReadFrame();
+// 1. 使用內建編解碼器
+var factory = new VideoCodecFactory(); // 自動註冊 MJPEG/H.264/H.265/VP8/VP9
+
+// 2. 封裝容器讀寫
+using var writer = VideoContainerFactory.CreateWriter("output.mp4");
+writer.WriteMetadata(1920, 1080, VideoTypes.H264, 30);
+writer.WriteFrame(new VPacket { Data = new Packet(h264Data), CodecType = VideoTypes.H264 });
+// Dispose 時自動寫入完整檔案
+
+// 3. 影格處理管線
+var pipeline = new VideoPipeline();
+pipeline.Append(new FrameResizer(640, 480))
+       .Append(new TimestampOverlay())
+       .Append(new WatermarkOverlay("Camera-01"));
+
+// 4. 串流推送
+var client = new RtmpClient("rtmp://server/live/stream");
+await client.ConnectAsync();
+await client.ConnectStreamAsync();
+await client.CreateStreamAsync();
+await client.PublishAsync();
+await client.PushVideoAsync(new VPacket { Data = new Packet(avccData), CodecType = VideoTypes.H264 });
+
+// 5. ONVIF 裝置探索
+var discovery = new OnvifDiscovery();
+var devices = await discovery.DiscoverAsync();
 ```
 
-## 核心特性
+## 架構理念
 
-- 串流處理與即時通訊能力
-- 涵蓋主流協定與格式版本，相容性強
-- 跨平台支援 Windows、Linux、macOS 與 ARM64/LoongArch64
+**純受控 + FFmpeg 混合**：簡單操作（MJPEG 編解碼、YUV↔RGB 轉換、封裝格式解析、影格處理）皆為零相依的純受控實作；複雜編解碼（H.264/H.265）則交由 FFmpeg 程序處理。
 
-## 文件
+**影格級 API**：不只侷限於檔案轉碼——提供逐影格解碼／編碼／處理能力，適合即時影片串流。
 
-> 📖 完整文件（中文）見 [儲存庫文件](Doc)
+**IoT 優先**：深度整合 ONVIF、GB/T 28181 與晶片影片標頭，專為影片監控與物聯網場景打造。
+
+## 目標框架
+
+`netstandard2.1` / `netstandard2.0` / `net461` / `net8.0` / `net10.0` —— 相容於 .NET Framework 4.6.1+、.NET Core 3.0+、.NET 5+ 與 Mono。
 
 ## 生態版圖
 
@@ -91,6 +186,10 @@ NewLife 生態系按相依分層，各專案獨立版本、獨立發行。下面
 
 > 徽章取各專案主套件；主題套件、擴充套件與衛星套件見對應 NuGet 頁面。未在表中列出的 30 多個套件（FTP、LoRa、Office 擴充、各類協定驅動等）見 [NewLifeX 組織](https://github.com/NewLifeX) 與 [newlifex.com](https://newlifex.com)。
 
+## 授權
+
+MIT 授權
+
 ## 新生命開發團隊
 
 <img src="https://newlifex.com/logo.png" width="48" align="right" alt="NewLife" />
@@ -107,9 +206,3 @@ NewLife 生態系按相依分層，各專案獨立版本、獨立發行。下面
 ![智能大石头](https://newlifex.com/stone.jpg)
 
 </details>
-
-## 授權
-
-MIT License © 2002-2026 新生命開發團隊
-
-[GitHub](https://github.com/NewLifeX/NewLife.Video) | [Website](https://newlifex.com)

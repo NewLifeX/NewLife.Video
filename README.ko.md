@@ -1,5 +1,8 @@
 # NewLife.Video - 비디오 코덱 라이브러리
 
+![GitHub top language](https://img.shields.io/github/languages/top/newlifex/NewLife.Video?logo=github)
+
+
 ![GitHub License](https://img.shields.io/github/license/NewLifeX/NewLife.Video?logo=github)
 ![NuGet Downloads](https://img.shields.io/nuget/dt/NewLife.Video?logo=nuget)
 ![NuGet](https://img.shields.io/nuget/v/NewLife.Video?logo=nuget)
@@ -16,30 +19,122 @@
 
 > 이 번역은 [영어 버전](README.md)보다 늦을 수 있습니다.
 
-NewLife.Video는 H.264/H.265, MP4, FLV, RTMP, RTSP의 먹싱·디먹싱·트랜스코딩을 제공하며 스트리밍과 영상 보안에 적합합니다.
+광범위한 비디오 코덱, 컨테이너 형식, 프레임 처리, 스트리밍 미디어 및 IoT 비디오 적응을 지원합니다.
 
-## 설치
+소스: https://github.com/NewLifeX/NewLife.Video  
+NuGet: `NewLife.Video`  
 
-```bash
-dotnet add package NewLife.Video
-```
+## 기능
+
+### 코덱 엔진
+- H.264/H.265 디코딩 및 인코딩 (FFmpeg 파이프 래퍼, 하드웨어 인코더 패스스루)
+- MJPEG 순수 관리 코드 코덱
+- VP8/VP9/AV1 디코딩 및 인코딩 (FFmpeg 파이프 래퍼)
+- 색 공간 변환: YUV420P/NV12 ↔ RGB24/BGRA32 (BT.601, SIMD 가속)
+- 칩 헤더 적응: Hisilicon/Dahua/Uniview
+- FFmpeg 런타임 자동 감지/다운로드/캐싱
+- 원클릭 트랜스코딩 API: VideoTranscoder
+
+### 컨테이너 형식
+| 형식 | 읽기 | 쓰기 | 비고 |
+|------|:--:|:--:|------|
+| MP4 (ISO BMFF) | ✅ | ✅ | 완전한 ftyp/moov/mdat 박스 구조 |
+| FLV | ✅ | ✅ | FLV 헤더 + VideoTag |
+| AVI (RIFF) | ✅ | ✅ | 완전한 avih/strh/strf/movi/idx1 구조 |
+| TS (MPEG-TS) | ✅ | ✅ | PAT/PMT + 188바이트 TS 패킷 |
+| MKV/WebM (Matroska) | ✅ | ✅ | EBML/Segment/Tracks/Cluster/SimpleBlock |
+| 원시 비디오 프레임 | ✅ | ✅ | YUV420P/NV12/RGB24 |
+| fMP4/CMAF (분할) | ❌ | ✅ | 라이브 스트리밍용 Fmp4SegmentWriter |
+
+### 프레임 처리
+크기 조정, 자르기, 회전 및 뒤집기, 색상 조정, 텍스트 워터마크, 타임스탬프 오버레이, 썸네일 생성, 동작 감지, 프레임 레이트 변환.
+
+### 이미지 형식
+- 스냅샷 출력: JPEG/BMP/TIFF/PNG/WebP/GIF 순수 관리 코드 인코딩, AVIF는 FFmpeg 파이프 사용
+- 애니메이션 GIF 순수 관리 코드 인코딩 (GIF 89a, 자체 LZW 압축)
+- 배치 프레임 인코딩 파이프라인: 다중 프레임 배치 출력 + 그리드 썸네일
+
+### 스트리밍 미디어
+- RTP 패킷화/디패킷화: H.264 (RFC 6184), H.265 (RFC 7798)
+- RTSP 클라이언트: OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN
+- RTMP 푸시: 핸드셰이크 + AMF0 명령 계층 (connect/createStream/publish)
+- HLS 분할: m3u8 플레이리스트 생성 + TS 세그먼트 + 자동 정리
+- JitterBuffer, WebSocket 비디오 채널
+
+### 스트리밍 재생
+- FfmpegPlayer 재생 엔진: RTSP/RTMP/HLS/로컬 파일, FrameDecoded 이벤트로 원시 프레임 전달
+- WebSocket 기반 fMP4: Fmp4WebSocketStreamer로 브라우저 실시간 재생, 지연 1~3초
+- RTSP→WebSocket 브리지: 카메라 RTSP 스트림을 브라우저에서 재생
+- 다중 카메라 관리: CameraStreamManager 연결 풀/자동 재연결/상태 모니터링 (프로세스당 1080p 16채널 이상)
+- 순수 관리 코드 프레임 렌더러: VideoFrameRenderer가 BGRA32 메모리 버퍼 출력
+
+### IoT 비디오 적응
+- ONVIF: WS-Discovery 장치 검색, Media 스트림 URL 조회, PTZ 제어, Profile G 에지 스토리지
+- GB/T 28181: SIP 등록/하트비트, 라이브 온디맨드 (INVITE+SDP+RTP)
+- 녹화 스케줄: 타이머 + 이벤트 트리거
+- 칩 비디오 헤더: Hisilicon/Dahua/Uniview
+
+### 장치 캡처
+- ScreenCapture: Windows DXGI 데스크톱 캡처 / 크로스 플랫폼 호환 방식
+- DirectShow / V4L2 / macOS AVFoundation 다중 백엔드 지원
+
+### 데스크톱 클라이언트 (NewLife.Video.Studio)
+- 캡처, 재생, 처리, 트랜스코딩, 스트리밍 전 과정을 아우르는 풀기능 Avalonia 데스크톱 애플리케이션
+- 카메라/화면/장치 캡처, 미디어 정보 뷰어, 프레임 브라우저
+- 배치 처리, 형식 변환, FFmpeg 콘솔, HLS 라이브 스트리밍, ONVIF PTZ 제어
+
+## 문서
+
+| 문서 | 설명 |
+|------|------|
+| [요구사항](Doc/需求文档.md) | 프로젝트 비전, 핵심 목표 및 모듈 구성 |
+| [기능 목록](Doc/功能模块清单.md) | 구현/테스트/주석 3개 축으로 추적하는 82개 기능 |
+| [아키텍처](Doc/架构设计.md) | 계층 아키텍처, 컴포넌트 상호작용 및 핵심 설계 결정 |
+| [경쟁 분석](Doc/竞品分析报告.md) | .NET 비디오 처리 분야의 경쟁 비교와 차별화 |
+| [변경 로그](Doc/ChangeLog.md) | 릴리스 이력 |
 
 ## 빠른 시작
 
 ```csharp
-var reader = new Mp4Reader(stream);
-var frame = reader.ReadFrame();
+// 1. 내장 코덱 사용
+var factory = new VideoCodecFactory(); // MJPEG/H.264/H.265/VP8/VP9 자동 등록
+
+// 2. 컨테이너 읽기/쓰기
+using var writer = VideoContainerFactory.CreateWriter("output.mp4");
+writer.WriteMetadata(1920, 1080, VideoTypes.H264, 30);
+writer.WriteFrame(new VPacket { Data = new Packet(h264Data), CodecType = VideoTypes.H264 });
+// Dispose 시 완전한 파일이 자동으로 기록됩니다
+
+// 3. 프레임 처리 파이프라인
+var pipeline = new VideoPipeline();
+pipeline.Append(new FrameResizer(640, 480))
+       .Append(new TimestampOverlay())
+       .Append(new WatermarkOverlay("Camera-01"));
+
+// 4. 스트리밍 푸시
+var client = new RtmpClient("rtmp://server/live/stream");
+await client.ConnectAsync();
+await client.ConnectStreamAsync();
+await client.CreateStreamAsync();
+await client.PublishAsync();
+await client.PushVideoAsync(new VPacket { Data = new Packet(avccData), CodecType = VideoTypes.H264 });
+
+// 5. ONVIF 장치 검색
+var discovery = new OnvifDiscovery();
+var devices = await discovery.DiscoverAsync();
 ```
 
-## 주요 기능
+## 아키텍처 철학
 
-- 스트리밍 및 실시간 통신 기능
-- 주요 프로토콜과 형식 버전을 폭넓게 지원
-- 크로스 플랫폼: Windows, Linux, macOS, ARM64/LoongArch64
+**순수 관리 코드 + FFmpeg 하이브리드**: 단순한 작업(MJPEG 코덱, YUV↔RGB 변환, 컨테이너 파싱, 프레임 처리)은 의존성이 없는 순수 관리 코드로 구현합니다. 복잡한 코덱(H.264/H.265)은 FFmpeg 프로세스에 위임합니다.
 
-## 문서
+**프레임 단위 API**: 파일 트랜스코딩에 그치지 않고 프레임 단위 디코딩/인코딩/처리 기능을 제공하므로 실시간 비디오 스트림에 이상적입니다.
 
-> 📖 전체 문서(중국어): [저장소 문서](Doc)
+**IoT 우선**: ONVIF, GB/T 28181, IoT 칩 헤더와 깊이 통합되어 영상 보안과 IoT 시나리오에 맞춰 설계되었습니다.
+
+## 대상 프레임워크
+
+`netstandard2.1` / `netstandard2.0` / `net461` / `net8.0` / `net10.0` — .NET Framework 4.6.1+, .NET Core 3.0+, .NET 5+ 및 Mono와 호환됩니다.
 
 ## 생태계 지도
 
@@ -91,7 +186,11 @@ NewLife는 독립적으로 버전이 관리되는 오픈소스 프로젝트의 �
 
 > 배지는 각 프로젝트의 기본 패키지를 나타냅니다. 테마, 확장, 위성 패키지는 해당 NuGet 페이지에서 확인하세요.여기에 나열하지 않은 30여 개 패키지(FTP, LoRa, Office 확장, 각종 프로토콜 드라이버 등)는 [NewLifeX 조직](https://github.com/NewLifeX)과 [newlifex.com](https://newlifex.com)에서 확인할 수 있습니다.
 
-## 뉴라이프 개발팀
+## 라이선스
+
+MIT License
+
+## 팀
 
 <img src="https://newlifex.com/logo.png" width="48" align="right" alt="NewLife" />
 
@@ -107,9 +206,3 @@ NewLife는 독립적으로 버전이 관리되는 오픈소스 프로젝트의 �
 ![智能大石头](https://newlifex.com/stone.jpg)
 
 </details>
-
-## 라이선스
-
-MIT License © 2002-2026 NewLife 팀
-
-[GitHub](https://github.com/NewLifeX/NewLife.Video) | [Website](https://newlifex.com)

@@ -1,5 +1,8 @@
 # NewLife.Video - ビデオコーデックライブラリ
 
+![GitHub top language](https://img.shields.io/github/languages/top/newlifex/NewLife.Video?logo=github)
+
+
 ![GitHub License](https://img.shields.io/github/license/NewLifeX/NewLife.Video?logo=github)
 ![NuGet Downloads](https://img.shields.io/nuget/dt/NewLife.Video?logo=nuget)
 ![NuGet](https://img.shields.io/nuget/v/NewLife.Video?logo=nuget)
@@ -16,30 +19,122 @@
 
 > この翻訳は [英語版](README.md) より遅れている場合があります。
 
-NewLife.Video は H.264/H.265、MP4、FLV、RTMP、RTSP の多重化・分離・トランスコードを提供し、ストリーミングや監視用途に適しています。
+幅広いビデオコーデック、コンテナ形式、フレーム処理、ストリーミングメディア、IoT ビデオ適応をサポートします。
 
-## インストール
+ソース：https://github.com/NewLifeX/NewLife.Video  
+NuGet：`NewLife.Video`  
 
-```bash
-dotnet add package NewLife.Video
-```
+## 機能
+
+### コーデックエンジン
+- H.264/H.265 のデコード＆エンコード（FFmpeg パイプのラッパー、ハードウェアエンコーダーのパススルー）
+- MJPEG の完全マネージドコーデック
+- VP8/VP9/AV1 のデコード＆エンコード（FFmpeg パイプのラッパー）
+- 色空間変換：YUV420P/NV12 ↔ RGB24/BGRA32（BT.601、SIMD による高速化）
+- チップヘッダーへの適応：Hisilicon/Dahua/Uniview
+- FFmpeg ランタイムの自動検出／ダウンロード／キャッシュ
+- ワンクリックで使えるトランスコード API：VideoTranscoder
+
+### コンテナ形式
+| 形式 | 読み込み | 書き込み | 備考 |
+|------|:--:|:--:|------|
+| MP4 (ISO BMFF) | ✅ | ✅ | 完全な ftyp/moov/mdat ボックス構造 |
+| FLV | ✅ | ✅ | FLV ヘッダー + VideoTag |
+| AVI (RIFF) | ✅ | ✅ | 完全な avih/strh/strf/movi/idx1 構造 |
+| TS (MPEG-TS) | ✅ | ✅ | PAT/PMT + 188 バイトの TS パケット |
+| MKV/WebM (Matroska) | ✅ | ✅ | EBML/Segment/Tracks/Cluster/SimpleBlock |
+| 生ビデオフレーム | ✅ | ✅ | YUV420P/NV12/RGB24 |
+| fMP4/CMAF（セグメント化） | ❌ | ✅ | ライブ配信用の Fmp4SegmentWriter |
+
+### フレーム処理
+リサイズ、クロップ、回転と反転、色調整、テキストウォーターマーク、タイムスタンプのオーバーレイ、サムネイル生成、動き検出、フレームレート変換。
+
+### 画像形式
+- スナップショット出力：JPEG/BMP/TIFF/PNG/WebP/GIF は完全マネージド実装でエンコード、AVIF は FFmpeg パイプ経由
+- アニメーション GIF の完全マネージドエンコード（GIF 89a、独自実装の LZW 圧縮）
+- バッチフレームエンコードパイプライン：複数フレームの一括出力とグリッド状サムネイル
+
+### ストリーミングメディア
+- RTP のパケット化／デパケット化：H.264（RFC 6184）、H.265（RFC 7798）
+- RTSP クライアント：OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN
+- RTMP プッシュ：ハンドシェイク + AMF0 コマンド層（connect/createStream/publish）
+- HLS セグメント化：m3u8 プレイリスト生成 + TS セグメント + 自動クリーンアップ
+- JitterBuffer、WebSocket ビデオチャネル
+
+### ストリーミング再生
+- FfmpegPlayer 再生エンジン：RTSP/RTMP/HLS/ローカルファイルに対応し、生フレームは FrameDecoded イベントで出力
+- WebSocket 経由の fMP4：Fmp4WebSocketStreamer によりブラウザでリアルタイム再生（レイテンシ 1〜3 秒）
+- RTSP→WebSocket ブリッジ：カメラの RTSP ストリームをブラウザで再生
+- マルチカメラ管理：CameraStreamManager によるコネクションプール／自動再接続／ヘルスモニタリング（プロセスあたり 1080p を 16 チャネル以上）
+- 完全マネージドのフレームレンダラー：VideoFrameRenderer が BGRA32 のメモリバッファを出力
+
+### IoT ビデオ適応
+- ONVIF：WS-Discovery によるデバイス探索、Media ストリーム URL の取得、PTZ 制御、Profile G のエッジストレージ
+- GB/T 28181：SIP 登録／ハートビート、ライブオンデマンド（INVITE+SDP+RTP）
+- 録画スケジュール：タイマーとイベントトリガー
+- チップのビデオヘッダー：Hisilicon/Dahua/Uniview
+
+### デバイスキャプチャ
+- ScreenCapture：Windows DXGI によるデスクトップキャプチャ／クロスプラットフォーム互換の方式
+- DirectShow / V4L2 / macOS AVFoundation のマルチバックエンド対応
+
+### デスクトップクライアント（NewLife.Video.Studio）
+- キャプチャ、再生、処理、トランスコード、ストリーミングに至るワークフロー全体を網羅するフル機能の Avalonia デスクトップアプリ
+- カメラ／画面／デバイスのキャプチャ、メディア情報ビューア、フレームブラウザ
+- バッチ処理、形式変換、FFmpeg コンソール、HLS ライブ配信、ONVIF PTZ 制御
+
+## ドキュメント
+
+| ドキュメント | 説明 |
+|------|------|
+| [要件定義](Doc/需求文档.md) | プロジェクトのビジョン、中核目標、モジュール構成 |
+| [機能一覧](Doc/功能模块清单.md) | 実装／テスト／コメントの 3 観点で 82 機能を追跡 |
+| [アーキテクチャ](Doc/架构设计.md) | 階層アーキテクチャ、コンポーネント間の連携、主要な設計判断 |
+| [競合分析](Doc/竞品分析报告.md) | .NET ビデオ処理分野での競合比較と差別化 |
+| [変更履歴](Doc/ChangeLog.md) | リリース履歴 |
 
 ## クイックスタート
 
 ```csharp
-var reader = new Mp4Reader(stream);
-var frame = reader.ReadFrame();
+// 1. 組み込みコーデックを使う
+var factory = new VideoCodecFactory(); // MJPEG/H.264/H.265/VP8/VP9 を自動登録
+
+// 2. コンテナの読み書き
+using var writer = VideoContainerFactory.CreateWriter("output.mp4");
+writer.WriteMetadata(1920, 1080, VideoTypes.H264, 30);
+writer.WriteFrame(new VPacket { Data = new Packet(h264Data), CodecType = VideoTypes.H264 });
+// Dispose 時に完全なファイルを自動的に書き込む
+
+// 3. フレーム処理パイプライン
+var pipeline = new VideoPipeline();
+pipeline.Append(new FrameResizer(640, 480))
+       .Append(new TimestampOverlay())
+       .Append(new WatermarkOverlay("Camera-01"));
+
+// 4. ストリーミング配信
+var client = new RtmpClient("rtmp://server/live/stream");
+await client.ConnectAsync();
+await client.ConnectStreamAsync();
+await client.CreateStreamAsync();
+await client.PublishAsync();
+await client.PushVideoAsync(new VPacket { Data = new Packet(avccData), CodecType = VideoTypes.H264 });
+
+// 5. ONVIF デバイスの探索
+var discovery = new OnvifDiscovery();
+var devices = await discovery.DiscoverAsync();
 ```
 
-## 主な機能
+## アーキテクチャの方針
 
-- ストリーミングとリアルタイム通信
-- 主要なプロトコル／フォーマットの各バージョンに対応
-- クロスプラットフォーム：Windows / Linux / macOS / ARM64 / LoongArch64
+**完全マネージド + FFmpeg のハイブリッド**：単純な処理（MJPEG コーデック、YUV↔RGB 変換、コンテナ解析、フレーム処理）は依存ゼロの完全マネージド実装です。複雑なコーデック（H.264/H.265）は FFmpeg プロセスに委譲します。
 
-## ドキュメント
+**フレームレベルの API**：ファイル単位のトランスコードに留まらず、フレーム単位のデコード／エンコード／処理機能を提供するため、リアルタイムのビデオストリームに最適です。
 
-> 📖 詳細ドキュメント（中国語）： [リポジトリ内ドキュメント](Doc)
+**IoT ファースト**：ONVIF、GB/T 28181、IoT チップヘッダーと深く統合しており、ビデオ監視や IoT のシナリオ向けに設計されています。
+
+## 対象フレームワーク
+
+`netstandard2.1` / `netstandard2.0` / `net461` / `net8.0` / `net10.0` — .NET Framework 4.6.1 以降、.NET Core 3.0 以降、.NET 5 以降、Mono に対応しています。
 
 ## エコシステムマップ
 
@@ -91,7 +186,11 @@ NewLife は、独立したバージョン管理を行うオープンソースプ
 
 > バッジは各プロジェクトの主要パッケージを示します。テーマ、拡張、サテライトパッケージは各 NuGet ページを参照してください。ここに記載していない 30 以上のパッケージ（FTP、LoRa、Office 拡張、各種プロトコルドライバーなど）は [NewLifeX 組織](https://github.com/NewLifeX) と [newlifex.com](https://newlifex.com) で公開しています。
 
-## 新生命開発チーム
+## ライセンス
+
+MIT License
+
+## チーム
 
 <img src="https://newlifex.com/logo.png" width="48" align="right" alt="NewLife" />
 
@@ -107,9 +206,3 @@ NewLife は、独立したバージョン管理を行うオープンソースプ
 ![智能大石头](https://newlifex.com/stone.jpg)
 
 </details>
-
-## ライセンス
-
-MIT License © 2002-2026 NewLife チーム
-
-[GitHub](https://github.com/NewLifeX/NewLife.Video) | [Website](https://newlifex.com)

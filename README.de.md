@@ -1,5 +1,8 @@
 # NewLife.Video - Video-Codec-Bibliothek
 
+![GitHub top language](https://img.shields.io/github/languages/top/newlifex/NewLife.Video?logo=github)
+
+
 ![GitHub License](https://img.shields.io/github/license/NewLifeX/NewLife.Video?logo=github)
 ![NuGet Downloads](https://img.shields.io/nuget/dt/NewLife.Video?logo=nuget)
 ![NuGet](https://img.shields.io/nuget/v/NewLife.Video?logo=nuget)
@@ -16,30 +19,122 @@
 
 > Diese Übersetzung kann hinter der [englischen Version](README.md) zurückliegen.
 
-NewLife.Video bietet Muxing, Demuxing und Transcoding für H.264/H.265, MP4, FLV, RTMP und RTSP – für Streaming und Videoüberwachung.
+Unterstützung für eine breite Palette von Videocodecs, Containerformaten, Frame-Verarbeitung, Streaming-Medien und IoT-Videoanpassung.
 
-## Installation
+Quelle: https://github.com/NewLifeX/NewLife.Video  
+NuGet: `NewLife.Video`  
 
-```bash
-dotnet add package NewLife.Video
-```
+## Funktionen
+
+### Codec-Engine
+- H.264/H.265 Dekodierung & Kodierung (FFmpeg-Pipe-Wrapper, Passthrough für Hardware-Encoder)
+- MJPEG-Codec vollständig in verwaltetem Code
+- VP8/VP9/AV1 Dekodierung & Kodierung (FFmpeg-Pipe-Wrapper)
+- Farbraumkonvertierung: YUV420P/NV12 ↔ RGB24/BGRA32 (BT.601, SIMD-beschleunigt)
+- Anpassung an Chip-Header: Hisilicon/Dahua/Uniview
+- Automatische Erkennung/Download/Caching der FFmpeg-Laufzeit
+- Ein-Klick-Transcoding-API: VideoTranscoder
+
+### Containerformate
+| Format | Lesen | Schreiben | Hinweise |
+|------|:--:|:--:|------|
+| MP4 (ISO BMFF) | ✅ | ✅ | Vollständige ftyp/moov/mdat-Box-Struktur |
+| FLV | ✅ | ✅ | FLV-Header + VideoTag |
+| AVI (RIFF) | ✅ | ✅ | Vollständige avih/strh/strf/movi/idx1-Struktur |
+| TS (MPEG-TS) | ✅ | ✅ | PAT/PMT + 188-Byte-TS-Pakete |
+| MKV/WebM (Matroska) | ✅ | ✅ | EBML/Segment/Tracks/Cluster/SimpleBlock |
+| Rohvideo-Frames | ✅ | ✅ | YUV420P/NV12/RGB24 |
+| fMP4/CMAF (segmentiert) | ❌ | ✅ | Fmp4SegmentWriter für Live-Streaming |
+
+### Frame-Verarbeitung
+Größenänderung, Zuschneiden, Drehen & Spiegeln, Farbanpassung, Text-Wasserzeichen, Zeitstempel-Overlay, Thumbnail-Erzeugung, Bewegungserkennung, Bildratenkonvertierung.
+
+### Bildformate
+- Snapshot-Ausgabe: JPEG/BMP/TIFF/PNG/WebP/GIF vollständig in verwaltetem Code, AVIF über FFmpeg-Pipe
+- Animierte GIFs vollständig in verwaltetem Code (GIF 89a, eigene LZW-Kompression)
+- Batch-Frame-Kodierungs-Pipeline: Ausgabe mehrerer Frames als Batch + Raster-Thumbnails
+
+### Streaming-Medien
+- RTP-Paketierung/Depaketierung: H.264 (RFC 6184), H.265 (RFC 7798)
+- RTSP-Client: OPTIONS/DESCRIBE/SETUP/PLAY/TEARDOWN
+- RTMP-Push: Handshake + AMF0-Befehlsschicht (connect/createStream/publish)
+- HLS-Segmentierung: m3u8-Playlist-Erzeugung + TS-Segmente + automatische Bereinigung
+- JitterBuffer, WebSocket-Videokanal
+
+### Streaming-Wiedergabe
+- Wiedergabe-Engine FfmpegPlayer: RTSP/RTMP/HLS/lokale Dateien, Rohframes über das FrameDecoded-Ereignis
+- fMP4 über WebSocket: Fmp4WebSocketStreamer für Echtzeit-Wiedergabe im Browser mit 1–3 Sekunden Latenz
+- RTSP→WebSocket-Bridge: RTSP-Streams von Kameras im Browser wiedergeben
+- Multi-Kamera-Verwaltung: CameraStreamManager Verbindungspool/automatische Wiederverbindung/Zustandsüberwachung (über 16 1080p-Kanäle pro Prozess)
+- Reiner Managed-Frame-Renderer: VideoFrameRenderer gibt BGRA32-Speicherpuffer aus
+
+### IoT-Videoanpassung
+- ONVIF: WS-Discovery-Geräteerkennung, Abruf der Media-Stream-URL, PTZ-Steuerung, Profile-G-Edge-Speicher
+- GB/T 28181: SIP-Registrierung/Heartbeat, Live-On-Demand (INVITE+SDP+RTP)
+- Aufnahmezeitplan: timer- und ereignisgesteuert
+- Chip-Video-Header: Hisilicon/Dahua/Uniview
+
+### Geräteaufnahme
+- ScreenCapture: DXGI-Desktopaufnahme unter Windows / plattformübergreifend kompatibler Ansatz
+- Unterstützung mehrerer Backends: DirectShow / V4L2 / macOS AVFoundation
+
+### Desktop-Client (NewLife.Video.Studio)
+- Voll funktionsfähige Avalonia-Desktop-App für den gesamten Workflow aus Aufnahme, Wiedergabe, Verarbeitung, Transcoding und Streaming
+- Aufnahme von Kamera/Bildschirm/Gerät, Medieninfo-Viewer, Frame-Browser
+- Batch-Verarbeitung, Formatkonvertierung, FFmpeg-Konsole, HLS-Live-Streaming, ONVIF-PTZ-Steuerung
+
+## Dokumentation
+
+| Dokument | Beschreibung |
+|------|------|
+| [Anforderungen](Doc/需求文档.md) | Projektvision, Kernziele und Modulaufteilung |
+| [Funktionsliste](Doc/功能模块清单.md) | 82 Funktionen, verfolgt über Implementierung/Tests/Kommentare |
+| [Architektur](Doc/架构设计.md) | Geschichtete Architektur, Komponenteninteraktion und zentrale Designentscheidungen |
+| [Wettbewerbsanalyse](Doc/竞品分析报告.md) | Wettbewerbsvergleich und Differenzierung in der .NET-Videoverarbeitung |
+| [Änderungsprotokoll](Doc/ChangeLog.md) | Versionshistorie |
 
 ## Schnellstart
 
 ```csharp
-var reader = new Mp4Reader(stream);
-var frame = reader.ReadFrame();
+// 1. Integrierte Codecs verwenden
+var factory = new VideoCodecFactory(); // Registriert automatisch MJPEG/H.264/H.265/VP8/VP9
+
+// 2. Container lesen und schreiben
+using var writer = VideoContainerFactory.CreateWriter("output.mp4");
+writer.WriteMetadata(1920, 1080, VideoTypes.H264, 30);
+writer.WriteFrame(new VPacket { Data = new Packet(h264Data), CodecType = VideoTypes.H264 });
+// Dispose schreibt automatisch die vollständige Datei
+
+// 3. Frame-Verarbeitungs-Pipeline
+var pipeline = new VideoPipeline();
+pipeline.Append(new FrameResizer(640, 480))
+       .Append(new TimestampOverlay())
+       .Append(new WatermarkOverlay("Camera-01"));
+
+// 4. Streaming-Push
+var client = new RtmpClient("rtmp://server/live/stream");
+await client.ConnectAsync();
+await client.ConnectStreamAsync();
+await client.CreateStreamAsync();
+await client.PublishAsync();
+await client.PushVideoAsync(new VPacket { Data = new Packet(avccData), CodecType = VideoTypes.H264 });
+
+// 5. ONVIF-Geräteerkennung
+var discovery = new OnvifDiscovery();
+var devices = await discovery.DiscoverAsync();
 ```
 
-## Funktionen
+## Architekturphilosophie
 
-- Streaming- und Echtzeitkommunikationsfähigkeiten
-- Breite Abdeckung gängiger Protokoll- und Formatversionen
-- Plattformübergreifend: Windows, Linux, macOS und ARM64/LoongArch64
+**Reiner Managed-Code + FFmpeg-Hybrid**: Einfache Operationen (MJPEG-Codec, YUV↔RGB-Konvertierung, Container-Parsing, Frame-Verarbeitung) sind abhängigkeitsfreie Implementierungen in reinem Managed-Code. Komplexe Codecs (H.264/H.265) delegieren an FFmpeg-Prozesse.
 
-## Dokumentation
+**Frame-Level-API**: Nicht auf Dateitranscoding beschränkt — bietet Dekodierung/Kodierung/Verarbeitung pro Frame und eignet sich ideal für Echtzeit-Videostreams.
 
-> 📖 Vollständige Dokumentation (Chinesisch): [Repository-Dokumente](Doc)
+**IoT-First**: Tiefe Integration von ONVIF, GB/T 28181 und IoT-Chip-Headern — speziell für Videoüberwachung und IoT-Szenarien entwickelt.
+
+## Zielframeworks
+
+`netstandard2.1` / `netstandard2.0` / `net461` / `net8.0` / `net10.0` — kompatibel mit .NET Framework 4.6.1+, .NET Core 3.0+, .NET 5+ und Mono.
 
 ## Ökosystem-Karte
 
@@ -91,6 +186,10 @@ NewLife ist ein geschichtetes Ökosystem unabhängig versionierter Open-Source-P
 
 > Die Badges zeigen das primäre Paket jedes Projekts; Theme-, Erweiterungs- und Satellitenpakete sind auf den jeweiligen NuGet-Seiten aufgeführt.Die hier nicht aufgeführten über 30 Pakete (FTP, LoRa, Office-Erweiterungen, Protokolltreiber und mehr) sind in der [NewLifeX-Organisation](https://github.com/NewLifeX) und auf [newlifex.com](https://newlifex.com) verfügbar.
 
+## Lizenz
+
+MIT License
+
 ## Team
 
 <img src="https://newlifex.com/logo.png" width="48" align="right" alt="NewLife" />
@@ -107,9 +206,3 @@ Website: https://newlifex.com · Open-Source-Organisation: https://github.com/Ne
 ![智能大石头](https://newlifex.com/stone.jpg)
 
 </details>
-
-## Lizenz
-
-MIT License © 2002-2026 NewLife-Team
-
-[GitHub](https://github.com/NewLifeX/NewLife.Video) | [Website](https://newlifex.com)
