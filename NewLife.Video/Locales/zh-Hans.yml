@@ -30,7 +30,7 @@
 "Not a valid FLV file.": "不是有效的 FLV 文件。"
 "Not connected or stream not created.": "未连接或未创建流。"
 "Not connected.": "未连接。"
-"Publish has not been called.": "尚未 publish。"
+"Publish has not been called.": "尚未调用 publish。"
 "Scheduled recording [{0}] {1}~{2}": "定时录像 [{0}] {1}~{2}"
 "Set a playback source first.": "请先设置播放源。"
 "The AVFoundation backend requires .NET MAUI (macOS) or Xamarin.Mac binding support; capture is currently a skeleton implementation awaiting native API integration.": "AVFoundation 后端需 .NET MAUI (macOS) 或 Xamarin.Mac 绑定支持；当前为骨架实现，采集功能待平台原生 API 对接。"
