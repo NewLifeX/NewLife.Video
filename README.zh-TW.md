@@ -19,7 +19,7 @@
 
 > 本翻譯可能落後，以 [English README](README.md) 為準。
 
-支援各式影片編解碼、封裝格式、影格處理、串流媒體與 IoT 影片適配。
+支援各式影片編解碼、封裝格式、影格處理、串流媒體與 IoT 影片整合。
 
 原始碼：https://github.com/NewLifeX/NewLife.Video  
 NuGet：`NewLife.Video`  
@@ -31,7 +31,7 @@ NuGet：`NewLife.Video`
 - MJPEG 純受控編解碼
 - VP8/VP9/AV1 解碼與編碼（FFmpeg 管道封裝）
 - 色彩空間轉換：YUV420P/NV12 ↔ RGB24/BGRA32（BT.601，SIMD 加速）
-- 晶片標頭適配：Hisilicon/Dahua/Uniview
+- 晶片標頭整合：Hisilicon/Dahua/Uniview
 - FFmpeg 執行階段自動偵測／下載／快取
 - 一鍵轉碼 API：VideoTranscoder
 
@@ -68,7 +68,7 @@ NuGet：`NewLife.Video`
 - 多攝影機管理：CameraStreamManager 連線集區／自動重連／健康監測（單一程序 16+ 路 1080p）
 - 純受控影格轉譯器：VideoFrameRenderer 輸出 BGRA32 記憶體緩衝區
 
-### IoT 影片適配
+### IoT 影片整合
 - ONVIF：WS-Discovery 裝置探索、Media 串流位址取得、PTZ 雲台控制、Profile G 邊緣儲存
 - GB/T 28181：SIP 註冊／心跳、即時點播（INVITE+SDP+RTP）
 - 錄影排程：計時器 + 事件觸發
