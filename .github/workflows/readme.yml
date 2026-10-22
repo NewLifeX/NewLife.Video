@@ -11,6 +11,7 @@ on:
       - 'readme-package.json'
       - 'Tools/Scripts/sync-readme-languages.ps1'
       - 'Tools/Scripts/sync-readme-package.ps1'
+      - 'Tools/Scripts/check-readmes.ps1'
       - '.github/workflows/readme.yml'
   pull_request:
     branches: [ '*' ]
@@ -20,6 +21,7 @@ on:
       - 'readme-package.json'
       - 'Tools/Scripts/sync-readme-languages.ps1'
       - 'Tools/Scripts/sync-readme-package.ps1'
+      - 'Tools/Scripts/check-readmes.ps1'
       - '.github/workflows/readme.yml'
   workflow_dispatch:
 
@@ -40,3 +42,6 @@ jobs:
     - name: Check README package copy
       shell: pwsh
       run: pwsh -NoProfile -File ./Tools/Scripts/sync-readme-package.ps1 -Check
+    - name: Check README translations
+      shell: pwsh
+      run: pwsh -NoProfile -File ./Tools/Scripts/check-readmes.ps1
