@@ -4,7 +4,7 @@
 
 | 脚本 | 用途 | 常用命令 |
 |------|------|----------|
-| `check-locales.ps1` | 词表门禁：键集合、占位符、格式说明符、孤儿键、`L.T` 缺词条；源文扫描含 `.cs` 与 `.csproj` | `pwsh -File Tools/Scripts/check-locales.ps1` |
+| `check-locales.ps1` | 词表门禁：键集合、占位符、格式说明符、孤儿键、`L.T`/日志/程序集元数据缺词条；源文扫描含 `.cs` 与 `.csproj` | `pwsh -File Tools/Scripts/check-locales.ps1` |
 | `show-locales.ps1` | 人工观察各语言译文，并列出与英文原文相同的未翻译条目 | `pwsh -File Tools/Scripts/show-locales.ps1 -All` |
 | `sync-readme-languages.ps1` | 按 `readme-languages.json` 生成各 README 的语言切换行 | `pwsh -File Tools/Scripts/sync-readme-languages.ps1 -Check` |
 | `sync-readme-package.ps1` | 从 `README.md` 生成 `README.nuget.md`，并校验 `PackageReadmeFile` | `pwsh -File Tools/Scripts/sync-readme-package.ps1 -Check` |

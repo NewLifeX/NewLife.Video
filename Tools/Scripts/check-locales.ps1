@@ -212,6 +212,43 @@ if (!$SkipOrphan) {
     foreach ($key in $missingMessages) { $allErrors += "缺少词条（源码已调用 L.T）：$key" }
 }
 
+# 程序集元数据回填：AssemblyTitle/Description 使用英文源文，也必须进入词表
+if (!$SkipOrphan) {
+    $metadataPattern = '<(?:AssemblyTitle|Description)>\s*([^<]+?)\s*</(?:AssemblyTitle|Description)>'
+    $metadataValues = [Collections.Generic.SortedSet[String]]::new([StringComparer]::Ordinal)
+    foreach ($project in ($sourceDirs | ForEach-Object { Get-ChildItem $_ -Recurse -Filter *.csproj } |
+        Where-Object { $_.FullName -notmatch '\\(obj|bin)\\' })) {
+        $text = [IO.File]::ReadAllText($project.FullName)
+        foreach ($m in [regex]::Matches($text, $metadataPattern)) {
+            $value = [System.Net.WebUtility]::HtmlDecode($m.Groups[1].Value)
+            if ([String]::IsNullOrWhiteSpace($value) -or $value.Contains('$(')) { continue }
+            if (!$reference.Entries.Contains($value)) { [void]$metadataValues.Add($value) }
+        }
+    }
+    foreach ($key in $metadataValues) { $allErrors += "缺少词条（程序集元数据）：$key" }
+}
+
+# 日志消息回填：VideoLog / Log / XTrace 的字面量格式串必须在词表中，否则日志永远输出英文
+if (!$SkipOrphan) {
+    $logPatterns = @(
+        '(?:VideoLog\.(?:Debug|Info|Warn|Error)|XTrace\.(?:WriteLine|WriteLog|WriteError)|Log\??\.(?:Debug|Info|Warn|Error|Fatal))\s*\(\s*"((?:[^"\\]|\\.)*)"',
+        'VideoLog\.Write\s*\(\s*LogLevel\.\w+\s*,\s*"[^"]*"\s*,\s*"((?:[^"\\]|\\.)*)"'
+    )
+    $missingLogs = [Collections.Generic.SortedSet[String]]::new([StringComparer]::Ordinal)
+    foreach ($file in ($sourceDirs | ForEach-Object { Get-ChildItem $_ -Recurse -Filter *.cs } |
+        Where-Object { $_.FullName -notmatch '\\(obj|bin|Locales)\\' })) {
+        $text = [IO.File]::ReadAllText($file.FullName)
+        foreach ($pattern in $logPatterns) {
+            foreach ($m in [regex]::Matches($text, $pattern)) {
+                $literal = $m.Groups[1].Value.Replace('\"', '"').Replace('\\', '\').Replace('\n', "`n").Replace('\r', "`r").Replace('\t', "`t")
+                if ($literal.Length -eq 0 -or $reference.Entries.Contains($literal)) { continue }
+                [void]$missingLogs.Add($literal)
+            }
+        }
+    }
+    foreach ($key in $missingLogs) { $allErrors += "缺少词条（日志消息）：$key" }
+}
+
 foreach ($e in $allErrors) { Write-Host $e -ForegroundColor Red }
 foreach ($w in $allWarnings) { Write-Host $w -ForegroundColor Yellow }
 
