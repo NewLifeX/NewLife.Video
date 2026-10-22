@@ -215,6 +215,67 @@ public class LocalizationTests
         }
     }
 
+    [Theory(DisplayName = "程序集标题在全部语言中有译文")]
+    [InlineData("zh-Hans", "NewLife视频组件库")]
+    [InlineData("zh-Hant", "NewLife影片組件庫")]
+    [InlineData("es", "Biblioteca NewLife Video")]
+    [InlineData("de", "NewLife Video-Bibliothek")]
+    [InlineData("ja", "NewLife ビデオライブラリ")]
+    [InlineData("fr", "Bibliothèque NewLife Video")]
+    [InlineData("pt", "Biblioteca NewLife Video")]
+    [InlineData("ru", "Библиотека NewLife Video")]
+    [InlineData("ko", "NewLife 비디오 라이브러리")]
+    [InlineData("ar", "مكتبة NewLife Video")]
+    public void AssemblyTitle_AllCultures(String cultureName, String expected)
+    {
+        var culture = TryGetCulture(cultureName);
+        if (culture == null) return;
+
+        var assembly = typeof(VideoLog).Assembly;
+        var title = assembly.GetCustomAttribute<AssemblyTitleAttribute>()?.Title ?? String.Empty;
+        var description = assembly.GetCustomAttribute<AssemblyDescriptionAttribute>()?.Description ?? String.Empty;
+
+        var old = Localization.Culture;
+        try
+        {
+            Localization.Culture = culture;
+            Assert.Equal(expected, Localization.Translate(title));
+            Assert.NotEqual(description, Localization.Translate(description));
+        }
+        finally
+        {
+            Localization.Culture = old;
+        }
+    }
+
+    [Theory(DisplayName = "日志消息在全部语言中有译文")]
+    [InlineData("zh-Hans")]
+    [InlineData("zh-Hant")]
+    [InlineData("es")]
+    [InlineData("de")]
+    [InlineData("ja")]
+    [InlineData("fr")]
+    [InlineData("pt")]
+    [InlineData("ru")]
+    [InlineData("ko")]
+    [InlineData("ar")]
+    public void LogMessage_AllCultures(String cultureName)
+    {
+        var culture = TryGetCulture(cultureName);
+        if (culture == null) return;
+
+        var old = Localization.LogCulture;
+        try
+        {
+            Localization.LogCulture = culture;
+            Assert.NotEqual("Connection failed: {0}", Localization.TranslateForLog("Connection failed: {0}"));
+        }
+        finally
+        {
+            Localization.LogCulture = old;
+        }
+    }
+
     [Fact(DisplayName = "VP8/VP9 不支持方向的异常消息本地化")]
     public void UnsupportedDirection_MessageIsLocalized()
     {
