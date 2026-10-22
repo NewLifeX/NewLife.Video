@@ -60,6 +60,14 @@ foreach ($item in $languages) {
         $errors += "$($item.file)：链接数 $($stats.Links)，基准 $($baseline.Links)（允许 ±1）"
     }
 
+    $badge = [regex]::Match($stats.Text, 'badge/locales-(\d+)-')
+    if (!$badge.Success) {
+        $errors += "$($item.file)：缺少 locales 徽章"
+    }
+    elseif ([int]$badge.Groups[1].Value -ne $languages.Count) {
+        $errors += "$($item.file)：locales 徽章为 $($badge.Groups[1].Value)，配置为 $($languages.Count)"
+    }
+
     if ($item.code -eq 'en') { continue }
 
     if ($stats.Text -notmatch '\]\(README\.md\)') {

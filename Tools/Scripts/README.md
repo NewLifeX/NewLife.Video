@@ -8,7 +8,7 @@
 | `show-locales.ps1` | 人工观察各语言译文，并列出与英文原文相同的未翻译条目 | `pwsh -File Tools/Scripts/show-locales.ps1 -All` |
 | `sync-readme-languages.ps1` | 按 `readme-languages.json` 生成各 README 的语言切换行 | `pwsh -File Tools/Scripts/sync-readme-languages.ps1 -Check` |
 | `sync-readme-package.ps1` | 从 `README.md` 生成 `README.nuget.md`，并校验 `PackageReadmeFile` | `pwsh -File Tools/Scripts/sync-readme-package.ps1 -Check` |
-| `check-readmes.ps1` | 校验 11 份 README 的标题数、代码围栏、链接数、翻译说明与英文标题残留 | `pwsh -File Tools/Scripts/check-readmes.ps1` |
+| `check-readmes.ps1` | 校验 11 份 README 的标题数、代码围栏、链接数、locales 徽章、翻译说明与英文标题残留 | `pwsh -File Tools/Scripts/check-readmes.ps1` |
 
 ## 本地化校验
 
